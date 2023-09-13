@@ -1,20 +1,15 @@
 use bevy::prelude::{shape::Plane, *};
-use pih_pah::lib::{Lobby, PlayerInput, ServerMessages, PROTOCOL_ID, panic_on_error_system};
-use pih_pah::lib::utils::net::{is_http_address, is_ip_with_port};
 use pih_pah::lib::music::plugin::MusicPlugins;
+use pih_pah::lib::ui::UiPlugins;
+use pih_pah::lib::utils::net::{is_http_address, is_ip_with_port};
+use pih_pah::lib::{panic_on_error_system, Lobby, PlayerInput, ServerMessages, PROTOCOL_ID};
 
 use bevy_renet::{
-    renet::{
-        transport::ClientAuthentication,
-        ConnectionConfig, DefaultChannel, RenetClient
-    },
+    renet::{transport::ClientAuthentication, ConnectionConfig, DefaultChannel, RenetClient},
     transport::NetcodeClientPlugin,
     RenetClientPlugin,
 };
-use renet::{
-    transport::NetcodeClientTransport,
-    ClientId,
-};
+use renet::{transport::NetcodeClientTransport, ClientId};
 
 use std::time::SystemTime;
 use std::{collections::HashMap, net::UdpSocket};
@@ -24,7 +19,9 @@ fn new_renet_client(addr: String) -> (RenetClient, NetcodeClientTransport) {
     println!("{}", addr);
     let server_addr = addr.parse().unwrap();
     let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
-    let current_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
+    let current_time = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap();
     let client_id = current_time.as_millis() as u64;
     let authentication = ClientAuthentication::Unsecure {
         client_id,
@@ -42,7 +39,7 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() < 2 {
-        println!("Usage: "); 
+        println!("Usage: ");
         println!("\tclient.rs '<ip>:<port>'");
         println!("\tclient.rs 'http::\\\\my\\server\\address'");
 
@@ -53,14 +50,13 @@ fn main() {
     let server_addr = match &args[1] {
         addr if is_http_address(addr) => addr,
         addr if is_ip_with_port(addr) => addr,
-        _ => panic!("Invalid argument, must be an HTTP address or an IP with port.")
+        _ => panic!("Invalid argument, must be an HTTP address or an IP with port."),
     };
-
 
     let mut app = App::new();
     app.init_resource::<Lobby>();
 
-    app.add_plugins((DefaultPlugins, MusicPlugins));
+    app.add_plugins((DefaultPlugins, MusicPlugins, UiPlugins));
     app.add_plugins(RenetClientPlugin);
     app.add_plugins(NetcodeClientPlugin);
     app.init_resource::<PlayerInput>();
@@ -70,7 +66,8 @@ fn main() {
 
     app.add_systems(
         Update,
-        (player_input, client_send_input, client_sync_players).run_if(bevy_renet::transport::client_connected()),
+        (player_input, client_send_input, client_sync_players)
+            .run_if(bevy_renet::transport::client_connected()),
     );
     app.add_systems(Startup, setup);
 
@@ -81,7 +78,8 @@ fn main() {
 
 fn player_input(keyboard_input: Res<Input<KeyCode>>, mut player_input: ResMut<PlayerInput>) {
     player_input.left = keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::Left);
-    player_input.right = keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right);
+    player_input.right =
+        keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right);
     player_input.up = keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
     player_input.down = keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
 }
@@ -138,7 +136,11 @@ fn client_sync_players(
     }
 }
 
-fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
+fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
     // plane
     commands.spawn(PbrBundle {
         mesh: meshes.add(Mesh::from(Plane::from_size(5.0))),

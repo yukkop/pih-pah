@@ -1,6 +1,9 @@
 use bevy::prelude::*;
-use pih_pah::lib::{Lobby, PlayerInput, Player, ServerMessages, PROTOCOL_ID, move_players_system, panic_on_error_system};
 use pih_pah::lib::utils::net::{is_http_address, is_ip_with_port};
+use pih_pah::lib::{
+    move_players_system, panic_on_error_system, Lobby, Player, PlayerInput, ServerMessages,
+    PROTOCOL_ID,
+};
 
 use bevy_renet::{
     renet::{
@@ -10,10 +13,7 @@ use bevy_renet::{
     transport::NetcodeServerPlugin,
     RenetServerPlugin,
 };
-use renet::{
-    transport::NetcodeServerTransport,
-    ClientId,
-};
+use renet::{transport::NetcodeServerTransport, ClientId};
 
 use std::time::SystemTime;
 use std::{collections::HashMap, net::UdpSocket};
@@ -22,7 +22,7 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() < 2 {
-        println!("Usage: "); 
+        println!("Usage: ");
         println!("\tserver.rs '<ip>:<port>'");
         println!("\tserver.rs 'http::\\\\my\\server\\address'");
 
@@ -33,7 +33,7 @@ fn main() {
     let server_addr = match &args[1] {
         addr if is_http_address(addr) => addr,
         addr if is_ip_with_port(addr) => addr,
-        _ => panic!("Invalid argument, must be an HTTP address or an IP with port.")
+        _ => panic!("Invalid argument, must be an HTTP address or an IP with port."),
     };
 
     let mut app = App::new();
@@ -48,7 +48,12 @@ fn main() {
 
     app.add_systems(
         Update,
-        (server_update_system, server_sync_players, move_players_system).run_if(resource_exists::<RenetServer>()),
+        (
+            server_update_system,
+            server_sync_players,
+            move_players_system,
+        )
+            .run_if(resource_exists::<RenetServer>()),
     );
     app.add_systems(Startup, setup_server);
 
@@ -62,7 +67,9 @@ fn new_renet_server(addr: String) -> (RenetServer, NetcodeServerTransport) {
 
     let public_addr = addr.parse().unwrap();
     let socket = UdpSocket::bind(public_addr).unwrap();
-    let current_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
+    let current_time = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap();
     let server_config = ServerConfig {
         current_time,
         max_clients: 64,
@@ -103,13 +110,17 @@ fn server_update_system(
                 // We could send an InitState with all the players id and positions for the client
                 // but this is easier to do.
                 for &player_id in lobby.players.keys() {
-                    let message = bincode::serialize(&ServerMessages::PlayerConnected { id: player_id }).unwrap();
+                    let message =
+                        bincode::serialize(&ServerMessages::PlayerConnected { id: player_id })
+                            .unwrap();
                     server.send_message(*client_id, DefaultChannel::ReliableOrdered, message);
                 }
 
                 lobby.players.insert(*client_id, player_entity);
 
-                let message = bincode::serialize(&ServerMessages::PlayerConnected { id: *client_id }).unwrap();
+                let message =
+                    bincode::serialize(&ServerMessages::PlayerConnected { id: *client_id })
+                        .unwrap();
                 server.broadcast_message(DefaultChannel::ReliableOrdered, message);
             }
             ServerEvent::ClientDisconnected { client_id, reason } => {
@@ -118,14 +129,17 @@ fn server_update_system(
                     commands.entity(player_entity).despawn();
                 }
 
-                let message = bincode::serialize(&ServerMessages::PlayerDisconnected { id: *client_id }).unwrap();
+                let message =
+                    bincode::serialize(&ServerMessages::PlayerDisconnected { id: *client_id })
+                        .unwrap();
                 server.broadcast_message(DefaultChannel::ReliableOrdered, message);
             }
         }
     }
 
     for client_id in server.clients_id().into_iter() {
-        while let Some(message) = server.receive_message(client_id, DefaultChannel::ReliableOrdered) {
+        while let Some(message) = server.receive_message(client_id, DefaultChannel::ReliableOrdered)
+        {
             let player_input: PlayerInput = bincode::deserialize(&message).unwrap();
             if let Some(player_entity) = lobby.players.get(&client_id) {
                 commands.entity(*player_entity).insert(player_input);
@@ -144,10 +158,11 @@ fn server_sync_players(mut server: ResMut<RenetServer>, query: Query<(&Transform
     server.broadcast_message(DefaultChannel::Unreliable, sync_message);
 }
 
-fn setup_server(mut commands: Commands,
-                // mut meshes: ResMut<Assets<Mesh>>,
-                // mut materials: ResMut<Assets<StandardMaterial>>
-                ) {
+fn setup_server(
+    mut commands: Commands,
+    // mut meshes: ResMut<Assets<Mesh>>,
+    // mut materials: ResMut<Assets<StandardMaterial>>
+) {
     // plane
     commands.spawn(PbrBundle {
         // mesh: meshes.add(Mesh::from(Plane::from_size(5.0))),

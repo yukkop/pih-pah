@@ -20,5 +20,6 @@ renet = { git = "https://github.com/lucaspoffo/renet.git", package = "renet", ve
 bevy_renet = { git = "https://github.com/lucaspoffo/renet.git", package = "bevy_renet", version = "0.0.9" }
 regex = "1.9.5"
 url = "2.4.1"
-bevy_kira_audio = { version = "0.17.0", features = [ "wav" ] }
+bevy_kira_audio = { version = "0.17.0", default-features = false, features = [ "wav" ] }
+bevy_egui = "0.21.0"
 # renet_steam = { path = "../renet_steam", version = "0.0.1", features = [ "bevy" ], optional = true }
