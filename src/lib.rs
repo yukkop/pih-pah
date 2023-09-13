@@ -1,5 +1,6 @@
 pub mod lib {
   pub mod utils;
+  pub mod music;
 
   use renet::transport::NetcodeTransportError;
   use bevy::prelude::*;

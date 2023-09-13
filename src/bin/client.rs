@@ -1,6 +1,7 @@
 use bevy::prelude::{shape::Plane, *};
 use pih_pah::lib::{Lobby, PlayerInput, ServerMessages, PROTOCOL_ID, panic_on_error_system};
 use pih_pah::lib::utils::net::{is_http_address, is_ip_with_port};
+use pih_pah::lib::music::plugin::MusicPlugins;
 
 use bevy_renet::{
     renet::{
@@ -59,7 +60,7 @@ fn main() {
     let mut app = App::new();
     app.init_resource::<Lobby>();
 
-    app.add_plugins(DefaultPlugins);
+    app.add_plugins((DefaultPlugins, MusicPlugins));
     app.add_plugins(RenetClientPlugin);
     app.add_plugins(NetcodeClientPlugin);
     app.init_resource::<PlayerInput>();
