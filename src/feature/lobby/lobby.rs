@@ -1,8 +1,5 @@
-pub mod player;
-pub mod scene;
-
-use player::PlayerPlugins;
-use scene::{SceneMinimalPlugins, SceneDefaultPlugins};
+use crate::feature::lobby::player::PlayerPlugins;
+use crate::feature::lobby::scene::{SceneMinimalPlugins, SceneDefaultPlugins};
 
 use bevy::prelude::*;
 

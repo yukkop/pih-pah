@@ -1,9 +1,9 @@
 use bevy::prelude::{shape::Plane, *};
-use pih_pah::lib::music::plugin::MusicPlugins;
-use pih_pah::lib::ui::UiPlugins;
-use pih_pah::lib::utils::net::{is_http_address, is_ip_with_port};
+use pih_pah::feature::music::MusicPlugins;
+use pih_pah::feature::ui::UiPlugins;
+use pih_pah::lib::netutils::{is_http_address, is_ip_with_port};
 use pih_pah::lib::{panic_on_error_system, Lobby, PlayerInput, ServerMessages, PROTOCOL_ID};
-use pih_pah::lobby::LobbyDefaultPlugins;
+use pih_pah::feature::lobby::LobbyDefaultPlugins;
 use pih_pah::lib::{PLAYER_SIZE, PLAYER_SPAWN_POINT};
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -17,6 +17,9 @@ use renet::{transport::NetcodeClientTransport, ClientId};
 
 use std::time::SystemTime;
 use std::{collections::HashMap, net::UdpSocket};
+
+#[cfg(not(any(feature = "wayland", feature = "x11")))]
+compile_error!("Either 'wayland' or 'x11' feature must be enabled flag.");
 
 fn new_renet_client(addr: String) -> (RenetClient, NetcodeClientTransport) {
     let client = RenetClient::new(ConnectionConfig::default());
