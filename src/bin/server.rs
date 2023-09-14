@@ -149,10 +149,11 @@ fn server_update_system(
     }
 }
 
-fn server_sync_players(mut server: ResMut<RenetServer>, query: Query<(&Position, &Player)>) {
-    let mut players: HashMap<ClientId, [f32; 3]> = HashMap::new();
-    for (position, player) in query.iter() {
-        players.insert(player.id, position.0.into());
+fn server_sync_players(mut server: ResMut<RenetServer>, query: Query<(&Position, &Rotation, &Player)>) {
+    // let mut players: HashMap<ClientId, [[f32; 3]; 2]> = HashMap::new();
+    let mut players: HashMap<ClientId, ([f32; 3], [f32; 4])> = HashMap::new();
+    for (position, rotation, player) in query.iter() {
+        players.insert(player.id, (position.0.into(), rotation.0.into()));
     }
 
     let sync_message = bincode::serialize(&players).unwrap();

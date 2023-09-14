@@ -130,11 +130,12 @@ fn client_sync_players(
   
   // 
   while let Some(message) = client.receive_message(DefaultChannel::Unreliable) {
-      let players: HashMap<ClientId, [f32; 3]> = bincode::deserialize(&message).unwrap();
-      for (player_id, translation) in players.iter() {
+      let players: HashMap<ClientId, ([f32; 3], [f32; 4])> = bincode::deserialize(&message).unwrap();
+      for (player_id, data) in players.iter() {
           if let Some(player_entity) = lobby.players.get(player_id) {
               let transform = Transform {
-                  translation: (*translation).into(),
+                  translation: (data.0).into(),
+                  rotation: Quat::from_array(data.1), 
                   ..Default::default()
               };
               commands.entity(*player_entity).insert(transform);
