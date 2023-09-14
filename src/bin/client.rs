@@ -3,6 +3,10 @@ use pih_pah::lib::music::plugin::MusicPlugins;
 use pih_pah::lib::ui::UiPlugins;
 use pih_pah::lib::utils::net::{is_http_address, is_ip_with_port};
 use pih_pah::lib::{panic_on_error_system, Lobby, PlayerInput, ServerMessages, PROTOCOL_ID};
+use pih_pah::lobby::LobbyDefaultPlugins;
+use pih_pah::lib::{PLAYER_SIZE, PLAYER_SPAWN_POINT};
+
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use bevy_renet::{
     renet::{transport::ClientAuthentication, ConnectionConfig, DefaultChannel, RenetClient},
@@ -16,7 +20,7 @@ use std::{collections::HashMap, net::UdpSocket};
 
 fn new_renet_client(addr: String) -> (RenetClient, NetcodeClientTransport) {
     let client = RenetClient::new(ConnectionConfig::default());
-    println!("{}", addr);
+    log::info!("{}", addr);
     let server_addr = addr.parse().unwrap();
     let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
     let current_time = SystemTime::now()
@@ -36,6 +40,7 @@ fn new_renet_client(addr: String) -> (RenetClient, NetcodeClientTransport) {
 }
 
 fn main() {
+    env_logger::init();
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() < 2 {
@@ -56,7 +61,8 @@ fn main() {
     let mut app = App::new();
     app.init_resource::<Lobby>();
 
-    app.add_plugins((DefaultPlugins, MusicPlugins, UiPlugins));
+    app.add_plugins((DefaultPlugins, MusicPlugins, UiPlugins, LobbyDefaultPlugins));
+    app.add_plugins(WorldInspectorPlugin::default());
     app.add_plugins(RenetClientPlugin);
     app.add_plugins(NetcodeClientPlugin);
     app.init_resource::<PlayerInput>();
@@ -69,7 +75,6 @@ fn main() {
         (player_input, client_send_input, client_sync_players)
             .run_if(bevy_renet::transport::client_connected()),
     );
-    app.add_systems(Startup, setup);
 
     app.add_systems(Update, panic_on_error_system);
 
@@ -97,69 +102,43 @@ fn client_sync_players(
     mut client: ResMut<RenetClient>,
     mut lobby: ResMut<Lobby>,
 ) {
-    while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
-        let server_message = bincode::deserialize(&message).unwrap();
-        match server_message {
-            ServerMessages::PlayerConnected { id } => {
-                println!("Player {} connected.", id);
-                let player_entity = commands
-                    .spawn(PbrBundle {
-                        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-                        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-                        transform: Transform::from_xyz(0.0, 0.5, 0.0),
-                        ..Default::default()
-                    })
-                    .id();
+  // player existence manager
+  while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
+      let server_message = bincode::deserialize(&message).unwrap();
+      match server_message {
+          ServerMessages::PlayerConnected { id } => {
+              log::info!("Player {} connected.", id);
+              let player_entity = commands
+                  .spawn(PbrBundle {
+                      mesh: meshes.add(Mesh::from(shape::Cube { size: PLAYER_SIZE })),
+                      material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
+                      transform: Transform::from_translation(PLAYER_SPAWN_POINT),
+                      ..Default::default()
+                  })
+                  .id();
 
-                lobby.players.insert(id, player_entity);
-            }
-            ServerMessages::PlayerDisconnected { id } => {
-                println!("Player {} disconnected.", id);
-                if let Some(player_entity) = lobby.players.remove(&id) {
-                    commands.entity(player_entity).despawn();
-                }
-            }
-        }
-    }
-
-    while let Some(message) = client.receive_message(DefaultChannel::Unreliable) {
-        let players: HashMap<ClientId, [f32; 3]> = bincode::deserialize(&message).unwrap();
-        for (player_id, translation) in players.iter() {
-            if let Some(player_entity) = lobby.players.get(player_id) {
-                let transform = Transform {
-                    translation: (*translation).into(),
-                    ..Default::default()
-                };
-                commands.entity(*player_entity).insert(transform);
-            }
-        }
-    }
-}
-
-fn setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    // plane
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(Plane::from_size(5.0))),
-        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
-        ..Default::default()
-    });
-    // light
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
-            ..Default::default()
-        },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
-        ..Default::default()
-    });
-    // camera
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..Default::default()
-    });
+              lobby.players.insert(id, player_entity);
+          }
+          ServerMessages::PlayerDisconnected { id } => {
+              println!("Player {} disconnected.", id);
+              if let Some(player_entity) = lobby.players.remove(&id) {
+                  commands.entity(player_entity).despawn();
+              }
+          }
+      }
+  }
+  
+  // 
+  while let Some(message) = client.receive_message(DefaultChannel::Unreliable) {
+      let players: HashMap<ClientId, [f32; 3]> = bincode::deserialize(&message).unwrap();
+      for (player_id, translation) in players.iter() {
+          if let Some(player_entity) = lobby.players.get(player_id) {
+              let transform = Transform {
+                  translation: (*translation).into(),
+                  ..Default::default()
+              };
+              commands.entity(*player_entity).insert(transform);
+          }
+      }
+  }
 }
