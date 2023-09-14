@@ -1,10 +1,12 @@
-pub mod lobby;
+pub mod feature;
+
+/// Pure reusable library modules, except for ui ones go here. Things like physics calculation or little helpers or traits or macros, etc
 pub mod lib {
-    pub mod music;
-    pub mod ui;
-    pub mod utils;
+    pub mod netutils;
     pub mod extend_commands;
 
+    // TODO: move all this crap where it belongs as per the new architecture
+    // Look at corresponding mod.rs for explanation
     use bevy::prelude::*;
     use renet::transport::NetcodeTransportError;
 

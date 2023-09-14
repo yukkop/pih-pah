@@ -1,5 +1,4 @@
-pub mod hud;
-use self::hud::HudPlugins;
+use crate::feature::ui::HudPlugins;
 
 use bevy::prelude::*;
 

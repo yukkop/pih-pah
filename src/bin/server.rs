@@ -1,12 +1,12 @@
 use bevy::prelude::*;
 use bevy_xpbd_3d::prelude::*;
-use pih_pah::lib::utils::net::{is_http_address, is_ip_with_port};
+use pih_pah::lib::netutils::{is_http_address, is_ip_with_port};
 use pih_pah::lib::{
     panic_on_error_system, Lobby, Player, PlayerInput, ServerMessages,
     PROTOCOL_ID,
 };
-use pih_pah::lobby::player::spawn_player;
-use pih_pah::lobby::LobbyMinimalPlugins;
+use pih_pah::feature::lobby::spawn_player;
+use pih_pah::feature::lobby::LobbyMinimalPlugins;
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
