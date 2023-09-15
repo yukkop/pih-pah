@@ -13,15 +13,15 @@ impl Plugin for PlayerPlugins {
     }
 }
 
-fn move_players_system(mut query: Query<(&mut LinearVelocity, &PlayerInput)>, time: Res<Time>) {
-  for (mut linear_velocity, input) in query.iter_mut() {
-      let x = (input.right as i8 - input.left as i8) as f32;
-      let y = (input.down as i8 - input.up as i8) as f32;
-      // transform.translation.x += x * PLAYER_MOVE_SPEED * time.delta().as_secs_f32();
-      // transform.translation.z += y * PLAYER_MOVE_SPEED * time.delta().as_secs_f32();
-      linear_velocity.0.x += x * PLAYER_MOVE_SPEED * time.delta().as_secs_f32();
-      linear_velocity.0.z += y * PLAYER_MOVE_SPEED * time.delta().as_secs_f32();
-  }
+fn move_players_system(mut query: Query<(&mut LinearVelocity, &PlayerInput)>/* , time: Res<Time> */) {
+  // for (mut linear_velocity, input) in query.iter_mut() {
+  //     let x = (input.right as i8 - input.left as i8) as f32;
+  //     let y = (input.down as i8 - input.up as i8) as f32;
+  //     // transform.translation.x += x * PLAYER_MOVE_SPEED * time.delta().as_secs_f32();
+  //     // transform.translation.z += y * PLAYER_MOVE_SPEED * time.delta().as_secs_f32();
+  //     linear_velocity.x += x * PLAYER_MOVE_SPEED; // * time.delta().as_secs_f32();
+  //     linear_velocity.z += y * PLAYER_MOVE_SPEED; // * time.delta().as_secs_f32();
+  // }
 }
 
 extend_commands!(
