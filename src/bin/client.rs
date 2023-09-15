@@ -2,14 +2,15 @@ use bevy::{
   prelude::*,
   diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
 };
+use bevy_egui::EguiPlugin;
 use pih_pah::feature::music::MusicPlugins;
 use pih_pah::feature::ui::{UiPlugins, FpsPlugins};
 use pih_pah::lib::netutils::{is_http_address, is_ip_with_port};
 use pih_pah::lib::{panic_on_error_system, TransportData, Lobby, PlayerInput, ServerMessages, PROTOCOL_ID};
 use pih_pah::feature::lobby::LobbyDefaultPlugins;
 use pih_pah::lib::{PLAYER_SIZE, PLAYER_SPAWN_POINT};
-
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy::window::WindowResolution;
 
 use bevy_renet::{
     renet::{transport::ClientAuthentication, ConnectionConfig, DefaultChannel, RenetClient},
@@ -49,10 +50,10 @@ fn main() {
     env_logger::init();
     let args: Vec<String> = std::env::args().collect();
 
-    if args.len() < 2 {
+    if args.len() < 3 {
         println!("Usage: ");
-        println!("\tclient.rs '<ip>:<port>'");
-        println!("\tclient.rs 'http::\\\\my\\server\\address'");
+        println!("\tclient.rs '<ip>:<port> debu'");
+        println!("\tclient.rs 'http::\\\\my\\server\\address' debug");
 
         panic!("Not enough arguments.");
     }
@@ -64,22 +65,55 @@ fn main() {
         _ => panic!("Invalid argument, must be an HTTP address or an IP with port."),
     };
 
+    let mut is_not_debug = true;
+    if args.len() > 2 {
+      is_not_debug = match args[2].as_str() {
+        "terminal" => true,
+        "debug" => false,
+        _ => panic!("Invalid argument, must be an HTTP address or an IP with port."),
+      }
+    }
+
     let mut app = App::new();
     app.init_resource::<Lobby>();
 
-    app.add_plugins((
+
+    if is_not_debug {
+      app.add_plugins((
         DefaultPlugins,
+        EguiPlugin,
+      ));
+    } else {
+      app.add_plugins((
+         DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "I am a window!".into(),
+                    resolution: WindowResolution::default(),
+                    position: WindowPosition::new(IVec2::new(960, 0)), 
+                    // Tells wasm to resize the window according to the available canvas
+                    fit_canvas_to_parent: true,
+                    // Tells wasm not to override default event handling, like F5, Ctrl+R etc.
+                    prevent_default_event_handling: false,
+                    ..default()
+                }),
+                ..default()
+            }),
+         EguiPlugin,
+         FpsPlugins,
+         LogDiagnosticsPlugin::default(),
+         FrameTimeDiagnosticsPlugin::default(),
+         WorldInspectorPlugin::default(),
+      ));
+    }
+
+    app.add_plugins((
         MusicPlugins,
         UiPlugins,
-        FpsPlugins,
         LobbyDefaultPlugins,
-        LogDiagnosticsPlugin::default(),
-        FrameTimeDiagnosticsPlugin::default(),
       ));
     // some for connection 
     app.init_resource::<TransportData>();
     //
-    app.add_plugins(WorldInspectorPlugin::default());
     app.add_plugins(RenetClientPlugin);
     app.add_plugins(NetcodeClientPlugin);
     app.init_resource::<PlayerInput>();

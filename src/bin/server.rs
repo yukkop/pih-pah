@@ -53,9 +53,9 @@ fn main() {
         _ => panic!("Invalid argument, must be an HTTP address or an IP with port."),
     };
 
-    let mut is_minimal = true;
+    let mut is_not_debug = true;
     if args.len() > 2 {
-      is_minimal = match args[2].as_str() {
+      is_not_debug = match args[2].as_str() {
         "terminal" => true,
         "debug" => false,
         _ => panic!("Invalid argument, must be an HTTP address or an IP with port."),
@@ -67,7 +67,7 @@ fn main() {
 
 
 
-    if is_minimal {
+    if is_not_debug {
       app.add_plugins((
          MinimalPlugins,
        ));
