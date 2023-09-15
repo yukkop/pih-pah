@@ -1,5 +1,6 @@
 mod extend_commands;
 use bevy::render::mesh::shape::Plane;
+use bevy::window::*;
 
 use bevy_egui::{egui::{self, Color32}, EguiContexts, EguiPlugin, EguiSettings };
 
@@ -14,7 +15,15 @@ fn main() {
 
     let mut app = App::new();
     app.add_plugins((
-        DefaultPlugins,
+        DefaultPlugins.set(WindowPlugin {
+          primary_window: Window { 
+            title: "Game of Life".to_string(),
+            // this is need's for stable fps
+            present_mode: PresentMode::AutoNoVsync,
+            ..default()
+          }.into(),
+        ..default()
+        }),
         EguiPlugin,
         PhysicsPlugins::default(),
         WorldInspectorPlugin::default(),
@@ -90,12 +99,12 @@ fn setup_scene(
          PbrBundle {
             mesh: cube_mesh.clone(),
             material: materials.add(Color::rgb(0.7, 0.7, 0.8).into()),
-            transform: Transform::from_scale(Vec3::new(100.0, 1.0, 100.0)),
+            transform: Transform::from_scale(Vec3::new(10.0, 1.0, 10.0)),
             ..default()
         },
         RigidBody::Static,
         Position(Vec3::ZERO),
-        Collider::cuboid(5.0, 1.0, 5.0),
+        Collider::cuboid(10.0, 1.0, 10.0),
     ));
 
     commands.spawn_player();
