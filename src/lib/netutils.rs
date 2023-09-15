@@ -20,7 +20,7 @@ pub fn is_ip_with_port(input: &str) -> bool {
 }
 
 // fn main() {
-//     let test_string1 = "http://example.com";
+//     let test_string1 = "http://example.com";104.248.254.204:5000
 //     let test_string2 = "https://example.com";
 //     let test_string3 = "127.0.0.1:8080";
 //     let test_string4 = "ftp://example.com";
@@ -31,4 +31,4 @@ pub fn is_ip_with_port(input: &str) -> bool {
 //     println!("Is {} an IP with port? {}", test_string3, is_ip_with_port(test_string3));
 //     println!("Is {} an HTTP address? {}", test_string4, is_http_address(test_string4));
 //     println!("Is {} an IP with port? {}", test_string5, is_ip_with_port(test_string5));
-// }
+// }104.248.254.204:5000

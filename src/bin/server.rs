@@ -1,12 +1,15 @@
 use bevy::prelude::*;
+use bevy_egui::EguiPlugin;
 use bevy_xpbd_3d::prelude::*;
 use pih_pah::lib::netutils::{is_http_address, is_ip_with_port};
 use pih_pah::lib::{
-    panic_on_error_system, Lobby, Player, PlayerInput, ServerMessages,
+    panic_on_error_system, Lobby, Player, PlayerInput, ServerMessages, TransportData,
     PROTOCOL_ID,
 };
 use pih_pah::feature::lobby::spawn_player;
 use pih_pah::feature::lobby::LobbyMinimalPlugins;
+use pih_pah::feature::ui::FpsPlugins;
+use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
@@ -23,12 +26,18 @@ use renet::{transport::NetcodeServerTransport, ClientId};
 use std::time::SystemTime;
 use std::{collections::HashMap, net::UdpSocket};
 
+struct Data {
+  // let mut players: HashMap<ClientId, ([f32; 3], [f32; 4])> = HashMap::new();
+  data: HashMap<ClientId, ([f32; 3], [f32; 4])>
+}
+
 fn main() {
     std::env::set_var("RUST_LOG", "info");
     env_logger::init();
 
     let args: Vec<String> = std::env::args().collect();
 
+    log::info!("{}", args.len());
     if args.len() < 2 {
         println!("Usage: ");
         println!("\tserver.rs '<ip>:<port>'");
@@ -44,20 +53,46 @@ fn main() {
         _ => panic!("Invalid argument, must be an HTTP address or an IP with port."),
     };
 
-    let mut app = App::new();
-    app.init_resource::<Lobby>();
+    let mut is_minimal = true;
+    if args.len() > 2 {
+      is_minimal = match args[2].as_str() {
+        "terminal" => true,
+        "debug" => false,
+        _ => panic!("Invalid argument, must be an HTTP address or an IP with port."),
+      }
+    }
 
-    app.add_plugins((// MinimalPlugins,
-                     DefaultPlugins,
+    let mut app = App::new();
+      app.init_resource::<Lobby>();
+
+
+
+    if is_minimal {
+      app.add_plugins((
+         MinimalPlugins,
+       ));
+    } else {
+      app.add_plugins((
+         DefaultPlugins,
+         EguiPlugin,
+         FpsPlugins,
+         LogDiagnosticsPlugin::default(),
+         FrameTimeDiagnosticsPlugin::default()
+       ));
+      app.add_plugins(WorldInspectorPlugin::default());
+    }
+
+    app.add_plugins((
                      LobbyMinimalPlugins,
                      PhysicsPlugins::default(),
                      RenetServerPlugin,
                      NetcodeServerPlugin));
-    app.add_plugins(WorldInspectorPlugin::default());
     let (server, transport) = new_renet_server(server_addr.to_string());
     app.insert_resource(server);
     app.insert_resource(transport);
-
+    //some about connection
+    app.init_resource::<TransportData>();
+  
     app.add_systems(
         Update,
         (
@@ -71,6 +106,10 @@ fn main() {
 
     app.run();
 }
+
+// fn print_time(time: Res<Time>) {
+//     println!("Current time: {:?}", time.seconds_since_startup());
+// }
 
 fn new_renet_server(addr: String) -> (RenetServer, NetcodeServerTransport) {
     let server = RenetServer::new(ConnectionConfig::default());
@@ -149,13 +188,14 @@ fn server_update_system(
     }
 }
 
-fn server_sync_players(mut server: ResMut<RenetServer>, query: Query<(&Position, &Rotation, &Player)>) {
+fn server_sync_players(mut server: ResMut<RenetServer>, mut data: ResMut<TransportData>, query: Query<(&Position, &Rotation, &Player)>) {
     // let mut players: HashMap<ClientId, [[f32; 3]; 2]> = HashMap::new();
-    let mut players: HashMap<ClientId, ([f32; 3], [f32; 4])> = HashMap::new();
     for (position, rotation, player) in query.iter() {
-        players.insert(player.id, (position.0.into(), rotation.0.into()));
+        data.data.insert(player.id, (position.0.into(), rotation.0.into()));
     }
 
-    let sync_message = bincode::serialize(&players).unwrap();
+    let sync_message = bincode::serialize(&data.data).unwrap();
     server.broadcast_message(DefaultChannel::Unreliable, sync_message);
+
+    data.data.clear();
 }

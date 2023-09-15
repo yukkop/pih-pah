@@ -1,8 +1,11 @@
-use bevy::prelude::{shape::Plane, *};
+use bevy::{
+  prelude::*,
+  diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
+};
 use pih_pah::feature::music::MusicPlugins;
-use pih_pah::feature::ui::UiPlugins;
+use pih_pah::feature::ui::{UiPlugins, FpsPlugins};
 use pih_pah::lib::netutils::{is_http_address, is_ip_with_port};
-use pih_pah::lib::{panic_on_error_system, Lobby, PlayerInput, ServerMessages, PROTOCOL_ID};
+use pih_pah::lib::{panic_on_error_system, TransportData, Lobby, PlayerInput, ServerMessages, PROTOCOL_ID};
 use pih_pah::feature::lobby::LobbyDefaultPlugins;
 use pih_pah::lib::{PLAYER_SIZE, PLAYER_SPAWN_POINT};
 
@@ -64,7 +67,18 @@ fn main() {
     let mut app = App::new();
     app.init_resource::<Lobby>();
 
-    app.add_plugins((DefaultPlugins, MusicPlugins, UiPlugins, LobbyDefaultPlugins));
+    app.add_plugins((
+        DefaultPlugins,
+        MusicPlugins,
+        UiPlugins,
+        FpsPlugins,
+        LobbyDefaultPlugins,
+        LogDiagnosticsPlugin::default(),
+        FrameTimeDiagnosticsPlugin::default(),
+      ));
+    // some for connection 
+    app.init_resource::<TransportData>();
+    //
     app.add_plugins(WorldInspectorPlugin::default());
     app.add_plugins(RenetClientPlugin);
     app.add_plugins(NetcodeClientPlugin);
@@ -87,7 +101,7 @@ fn main() {
 fn player_input(keyboard_input: Res<Input<KeyCode>>, mut player_input: ResMut<PlayerInput>) {
     player_input.left = keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::Left);
     player_input.right =
-        keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right);
+    keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right);
     player_input.up = keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
     player_input.down = keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
 }
@@ -103,6 +117,7 @@ fn client_sync_players(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut client: ResMut<RenetClient>,
+    mut transport_data: ResMut<TransportData>,
     mut lobby: ResMut<Lobby>,
 ) {
   // player existence manager
@@ -133,8 +148,8 @@ fn client_sync_players(
   
   // 
   while let Some(message) = client.receive_message(DefaultChannel::Unreliable) {
-      let players: HashMap<ClientId, ([f32; 3], [f32; 4])> = bincode::deserialize(&message).unwrap();
-      for (player_id, data) in players.iter() {
+      transport_data.data = bincode::deserialize(&message).unwrap();
+      for (player_id, data) in transport_data.data.iter() {
           if let Some(player_entity) = lobby.players.get(player_id) {
               let transform = Transform {
                   translation: (data.0).into(),
