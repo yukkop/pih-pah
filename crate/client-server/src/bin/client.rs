@@ -1,16 +1,18 @@
+use bevy::window::WindowResolution;
 use bevy::{
-  prelude::*,
-  diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
+    diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
+    prelude::*,
 };
 use bevy_egui::EguiPlugin;
-use pih_pah::feature::music::MusicPlugins;
-use pih_pah::feature::ui::{UiPlugins, FpsPlugins};
-use pih_pah::lib::netutils::{is_http_address, is_ip_with_port};
-use pih_pah::lib::{panic_on_error_system, TransportData, Lobby, PlayerInput, ServerMessages, PROTOCOL_ID};
-use pih_pah::feature::lobby::LobbyDefaultPlugins;
-use pih_pah::lib::{PLAYER_SIZE, PLAYER_SPAWN_POINT};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy::window::WindowResolution;
+use pih_pah::feature::lobby::LobbyDefaultPlugins;
+use pih_pah::feature::multiplayer::{
+    panic_on_error_system, Lobby, PlayerInput, ServerMessages, TransportData, PLAYER_SIZE,
+    PLAYER_SPAWN_POINT, PROTOCOL_ID,
+};
+use pih_pah::feature::music::MusicPlugins;
+use pih_pah::feature::ui::{FpsPlugins, UiPlugins};
+use pih_pah::lib::netutils::{is_http_address, is_ip_with_port};
 
 use bevy_renet::{
     renet::{transport::ClientAuthentication, ConnectionConfig, DefaultChannel, RenetClient},
@@ -67,29 +69,25 @@ fn main() {
 
     let mut is_not_debug = true;
     if args.len() > 2 {
-      is_not_debug = match args[2].as_str() {
-        "terminal" => true,
-        "debug" => false,
-        _ => panic!("Invalid argument, must be an HTTP address or an IP with port."),
-      }
+        is_not_debug = match args[2].as_str() {
+            "terminal" => true,
+            "debug" => false,
+            _ => panic!("Invalid argument, must be an HTTP address or an IP with port."),
+        }
     }
 
     let mut app = App::new();
     app.init_resource::<Lobby>();
 
-
     if is_not_debug {
-      app.add_plugins((
-        DefaultPlugins,
-        EguiPlugin,
-      ));
+        app.add_plugins((DefaultPlugins, EguiPlugin));
     } else {
-      app.add_plugins((
-         DefaultPlugins.set(WindowPlugin {
+        app.add_plugins((
+            DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
                     title: "I am a window!".into(),
                     resolution: WindowResolution::default(),
-                    position: WindowPosition::new(IVec2::new(960, 0)), 
+                    position: WindowPosition::new(IVec2::new(960, 0)),
                     // Tells wasm to resize the window according to the available canvas
                     fit_canvas_to_parent: true,
                     // Tells wasm not to override default event handling, like F5, Ctrl+R etc.
@@ -98,20 +96,16 @@ fn main() {
                 }),
                 ..default()
             }),
-         EguiPlugin,
-         FpsPlugins,
-         LogDiagnosticsPlugin::default(),
-         FrameTimeDiagnosticsPlugin::default(),
-         WorldInspectorPlugin::default(),
-      ));
+            EguiPlugin,
+            FpsPlugins,
+            LogDiagnosticsPlugin::default(),
+            FrameTimeDiagnosticsPlugin::default(),
+            WorldInspectorPlugin::default(),
+        ));
     }
 
-    app.add_plugins((
-        MusicPlugins,
-        UiPlugins,
-        LobbyDefaultPlugins,
-      ));
-    // some for connection 
+    app.add_plugins((MusicPlugins, UiPlugins, LobbyDefaultPlugins));
+    // some for connection
     app.init_resource::<TransportData>();
     //
     app.add_plugins(RenetClientPlugin);
@@ -135,7 +129,7 @@ fn main() {
 fn player_input(keyboard_input: Res<Input<KeyCode>>, mut player_input: ResMut<PlayerInput>) {
     player_input.left = keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::Left);
     player_input.right =
-    keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right);
+        keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right);
     player_input.up = keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
     player_input.down = keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
 }
@@ -154,44 +148,44 @@ fn client_sync_players(
     mut transport_data: ResMut<TransportData>,
     mut lobby: ResMut<Lobby>,
 ) {
-  // player existence manager
-  while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
-      let server_message = bincode::deserialize(&message).unwrap();
-      match server_message {
-          ServerMessages::PlayerConnected { id } => {
-              log::info!("Player {} connected.", id);
-              let player_entity = commands
-                  .spawn(PbrBundle {
-                      mesh: meshes.add(Mesh::from(shape::Cube { size: PLAYER_SIZE })),
-                      material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-                      transform: Transform::from_translation(PLAYER_SPAWN_POINT),
-                      ..Default::default()
-                  })
-                  .id();
+    // player existence manager
+    while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
+        let server_message = bincode::deserialize(&message).unwrap();
+        match server_message {
+            ServerMessages::PlayerConnected { id } => {
+                log::info!("Player {} connected.", id);
+                let player_entity = commands
+                    .spawn(PbrBundle {
+                        mesh: meshes.add(Mesh::from(shape::Cube { size: PLAYER_SIZE })),
+                        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
+                        transform: Transform::from_translation(PLAYER_SPAWN_POINT),
+                        ..Default::default()
+                    })
+                    .id();
 
-              lobby.players.insert(id, player_entity);
-          }
-          ServerMessages::PlayerDisconnected { id } => {
-              println!("Player {} disconnected.", id);
-              if let Some(player_entity) = lobby.players.remove(&id) {
-                  commands.entity(player_entity).despawn();
-              }
-          }
-      }
-  }
-  
-  // 
-  while let Some(message) = client.receive_message(DefaultChannel::Unreliable) {
-      transport_data.data = bincode::deserialize(&message).unwrap();
-      for (player_id, data) in transport_data.data.iter() {
-          if let Some(player_entity) = lobby.players.get(player_id) {
-              let transform = Transform {
-                  translation: (data.0).into(),
-                  rotation: Quat::from_array(data.1), 
-                  ..Default::default()
-              };
-              commands.entity(*player_entity).insert(transform);
-          }
-      }
-  }
+                lobby.players.insert(id, player_entity);
+            }
+            ServerMessages::PlayerDisconnected { id } => {
+                println!("Player {} disconnected.", id);
+                if let Some(player_entity) = lobby.players.remove(&id) {
+                    commands.entity(player_entity).despawn();
+                }
+            }
+        }
+    }
+
+    //
+    while let Some(message) = client.receive_message(DefaultChannel::Unreliable) {
+        transport_data.data = bincode::deserialize(&message).unwrap();
+        for (player_id, data) in transport_data.data.iter() {
+            if let Some(player_entity) = lobby.players.get(player_id) {
+                let transform = Transform {
+                    translation: (data.0).into(),
+                    rotation: Quat::from_array(data.1),
+                    ..Default::default()
+                };
+                commands.entity(*player_entity).insert(transform);
+            }
+        }
+    }
 }
