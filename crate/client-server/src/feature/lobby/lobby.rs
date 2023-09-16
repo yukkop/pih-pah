@@ -7,16 +7,16 @@ use bevy::prelude::*;
 pub struct LobbyMinimalPlugins;
 
 impl Plugin for LobbyMinimalPlugins {
-    fn build(&self, app: &mut App) {
-        log::info!("please");
-        app.add_plugins((PlayerPlugins, SceneMinimalPlugins));
-    }
+  fn build(&self, app: &mut App) {
+    log::info!("please");
+    app.add_plugins((PlayerPlugins, SceneMinimalPlugins));
+  }
 }
 
 pub struct LobbyDefaultPlugins;
 
 impl Plugin for LobbyDefaultPlugins {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(SceneDefaultPlugins);
-    }
+  fn build(&self, app: &mut App) {
+    app.add_plugins(SceneDefaultPlugins);
+  }
 }
