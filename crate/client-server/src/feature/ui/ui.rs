@@ -1,5 +1,8 @@
 use crate::feature::ui::HudPlugins;
-use bevy_egui::{egui::{self, Color32}, EguiContexts, EguiPlugin, EguiSettings };
+use bevy_egui::{
+    egui::{self, Color32},
+    EguiContexts, EguiPlugin, EguiSettings,
+};
 
 use bevy::prelude::*;
 
@@ -23,10 +26,9 @@ impl Plugin for FpsPlugins {
 
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 
-fn ui(mut contexts: EguiContexts,
-  diagnostics: Res<DiagnosticsStore>,
-      ) {
-    let (mut raw, mut sma, mut ema): (String, String, String) = ("raw: ".into(), "sma: ".into(), "ema:".into());
+fn ui(mut contexts: EguiContexts, diagnostics: Res<DiagnosticsStore>) {
+    let (mut raw, mut sma, mut ema): (String, String, String) =
+        ("raw: ".into(), "sma: ".into(), "ema:".into());
     if let Some(fps) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
         if let Some(raw_value) = fps.value() {
             raw = format!("raw: {raw_value:.2}");
@@ -41,14 +43,16 @@ fn ui(mut contexts: EguiContexts,
 
     let ctx = contexts.ctx_mut();
 
-      let my_frame = egui::containers::Frame {
-                fill: Color32::TRANSPARENT,
-                ..default()
-            };
+    let my_frame = egui::containers::Frame {
+        fill: Color32::TRANSPARENT,
+        ..default()
+    };
 
-    egui::CentralPanel::default().frame(my_frame).show(ctx, |ui| {
-        ui.label(raw);
-        ui.label(sma);
-        ui.label(ema);
-    });
+    egui::CentralPanel::default()
+        .frame(my_frame)
+        .show(ctx, |ui| {
+            ui.label(raw);
+            ui.label(sma);
+            ui.label(ema);
+        });
 }

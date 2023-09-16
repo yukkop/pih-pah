@@ -1,5 +1,5 @@
 use crate::feature::lobby::player::PlayerPlugins;
-use crate::feature::lobby::scene::{SceneMinimalPlugins, SceneDefaultPlugins};
+use crate::feature::lobby::scene::{SceneDefaultPlugins, SceneMinimalPlugins};
 
 use bevy::prelude::*;
 
@@ -17,7 +17,6 @@ pub struct LobbyDefaultPlugins;
 
 impl Plugin for LobbyDefaultPlugins {
     fn build(&self, app: &mut App) {
-        app
-          .add_plugins(SceneDefaultPlugins);
+        app.add_plugins(SceneDefaultPlugins);
     }
 }
