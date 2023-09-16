@@ -10,7 +10,8 @@ use pih_pah::feature::multiplayer::{
   new_renet_client, panic_on_error_system, Lobby, PlayerInput, ServerMessages, TransportData,
   
 };
-use pih_pah::feature::lobby::spawn_client_side_player;
+use renet::ClientId;
+use pih_pah::feature::lobby::{spawn_client_side_player, spawn_camera};
 use pih_pah::feature::music::MusicPlugins;
 use pih_pah::feature::ui::{FpsPlugins, UiPlugins};
 use pih_pah::lib::netutils::{is_http_address, is_ip_with_port};
@@ -23,6 +24,9 @@ use bevy_renet::{
 
 #[cfg(not(any(feature = "wayland", feature = "x11")))]
 compile_error!("Either 'wayland' or 'x11' feature must be enabled flag.");
+
+#[derive(Default, Debug, Resource)]
+struct OwnId(Option<ClientId>);
 
 fn main() {
   env_logger::init();
@@ -79,6 +83,7 @@ fn main() {
   app.add_plugins(RenetClientPlugin);
   app.add_plugins(NetcodeClientPlugin);
   app.init_resource::<PlayerInput>();
+  app.init_resource::<OwnId>();
   let (client, transport) = new_renet_client(server_addr.to_string());
   app.insert_resource(client);
   app.insert_resource(transport);
@@ -114,14 +119,30 @@ fn client_sync_players(
   mut client: ResMut<RenetClient>,
   mut transport_data: ResMut<TransportData>,
   mut lobby: ResMut<Lobby>,
+  mut own_id: ResMut<OwnId>,
 ) {
   // player existence manager
   while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
     let server_message = bincode::deserialize(&message).unwrap();
     match server_message {
+      ServerMessages::InitConnection { id } => {
+        if let Some(_) = own_id.0 {
+          panic!("Yeah, I knew it. The server only had to initialize me once. Redo it, you idiot.");
+        } else {
+          *own_id = OwnId(Some(id));
+        }
+      }
       ServerMessages::PlayerConnected { id } => {
         log::info!("Player {} connected.", id);
-        let player_entity = commands.spawn_client_side_player().id();
+
+        // TODO podumai
+        let mut player_entity;
+        if Some(id) != own_id.0 {
+          player_entity = commands.spawn_client_side_player().id();
+        } else {
+          let camera_entity = commands.spawn_camera().id();
+          player_entity = commands.spawn_client_side_player().push_children(&[camera_entity]).id();
+        }
 
         lobby.players.insert(id, player_entity);
       }

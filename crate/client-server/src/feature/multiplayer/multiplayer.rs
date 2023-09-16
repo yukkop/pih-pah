@@ -45,6 +45,7 @@ pub struct Lobby {
 
 #[derive(Debug, Serialize, Deserialize, Component)]
 pub enum ServerMessages {
+  InitConnection { id: ClientId},
   PlayerConnected { id: ClientId },
   PlayerDisconnected { id: ClientId },
 }
@@ -91,6 +92,10 @@ pub fn server_update_system(
         log::info!("Player {} connected.", client_id);
         // Spawn player cube
         let player_entity = commands.spawn_server_side_player(*client_id).id();
+
+        let message =
+          bincode::serialize(&ServerMessages::InitConnection { id: *client_id }).unwrap();
+        server.send_message(*client_id, DefaultChannel::ReliableOrdered, message);
 
         // We could send an InitState with all the players id and positions for the client
         // but this is easier to do.

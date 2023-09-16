@@ -1,6 +1,8 @@
 use bevy::prelude::{shape::Plane, *};
 use bevy_xpbd_3d::prelude::*;
 
+const PLANE_SIZE: f32 = 10.;
+
 pub struct SceneMinimalPlugins;
 
 impl Plugin for SceneMinimalPlugins {
@@ -18,7 +20,7 @@ fn setup_minimal_scene(mut commands: Commands) {
         ..Default::default()
       },
       RigidBody::Static,
-      Collider::cuboid(5.0, 0.002, 5.0),
+      Collider::cuboid(PLANE_SIZE, 0.002, PLANE_SIZE),
     ),
   );
 }
@@ -38,23 +40,27 @@ fn setup_default_scene(
 ) {
   // plane
   commands.spawn(PbrBundle {
-    mesh: meshes.add(Mesh::from(Plane::from_size(5.0))),
+    mesh: meshes.add(Mesh::from(Plane::from_size(PLANE_SIZE))),
     material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
-    ..Default::default()
+    ..default()
   });
   // light
   commands.spawn(PointLightBundle {
     point_light: PointLight {
       intensity: 1500.0,
       shadows_enabled: true,
-      ..Default::default()
+      ..default()
     },
     transform: Transform::from_xyz(4.0, 8.0, 4.0),
-    ..Default::default()
+    ..default()
   });
   // camera
   commands.spawn(Camera3dBundle {
     transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-    ..Default::default()
+    camera: Camera {
+      order: 2,
+      ..default()
+    },
+    ..default()
   });
 }
