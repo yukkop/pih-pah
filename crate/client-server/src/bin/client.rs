@@ -8,7 +8,6 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use pih_pah::feature::lobby::LobbyDefaultPlugins;
 use pih_pah::feature::multiplayer::{
   new_renet_client, panic_on_error_system, Lobby, PlayerInput, ServerMessages, TransportData,
-  
 };
 use renet::ClientId;
 use pih_pah::feature::lobby::{spawn_client_side_player, spawn_camera};
@@ -90,7 +89,7 @@ fn main() {
 
   app.add_systems(
     Update,
-    (player_input, client_send_input, client_sync_players)
+    (player_input, camera_switch, client_send_input, client_sync_players)
       .run_if(bevy_renet::transport::client_connected()),
   );
 
@@ -104,6 +103,22 @@ fn player_input(keyboard_input: Res<Input<KeyCode>>, mut player_input: ResMut<Pl
   player_input.right = keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right);
   player_input.up = keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
   player_input.down = keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
+}
+
+fn camera_switch(
+  keyboard_input: Res<Input<KeyCode>>,
+  mut camera_query: Query<&mut Camera>, /* , time: Res<Time> */
+) {
+    if keyboard_input.just_pressed(KeyCode::Space) {
+        for mut camera in camera_query.iter_mut() {
+            // Switch the camera order
+            if camera.order == 3 {
+                camera.order = 2;
+            } else if camera.order == 2 {
+                camera.order = 3;
+            }
+        }
+    }
 }
 
 fn client_send_input(player_input: Res<PlayerInput>, mut client: ResMut<RenetClient>) {
