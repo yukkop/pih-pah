@@ -2,5 +2,6 @@
 //! Primary semantic of these modules is that each one is a single 'feature' of the game.
 
 pub mod lobby;
+pub mod multiplayer;
 pub mod music;
 pub mod ui;

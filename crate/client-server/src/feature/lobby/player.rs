@@ -1,37 +1,39 @@
-use bevy::{prelude::*, ecs::system::EntityCommands};
-use crate::lib::{PLAYER_MOVE_SPEED, PlayerInput, Player};
 use crate::extend_commands;
-use renet::ClientId;
+use crate::feature::multiplayer::{
+  Player, PlayerInput, PLAYER_MOVE_SPEED, PLAYER_SIZE, PLAYER_SPAWN_POINT,
+};
+use bevy::{ecs::system::EntityCommands, prelude::*};
 use bevy_xpbd_3d::prelude::*;
-use crate::lib::PLAYER_SPAWN_POINT;
+use renet::ClientId;
 
 pub struct PlayerPlugins;
 
 impl Plugin for PlayerPlugins {
-    fn build(&self, app: &mut App) {
-        app
-          .add_systems(FixedUpdate, (move_players_system, player_respawn));
-    }
+  fn build(&self, app: &mut App) {
+    app.add_systems(FixedUpdate, (move_players_system, player_respawn));
+  }
 }
 
-fn move_players_system(mut query: Query<(&mut LinearVelocity, &PlayerInput)>/* , time: Res<Time> */) {
+fn move_players_system(
+  mut query: Query<(&mut LinearVelocity, &PlayerInput)>, /* , time: Res<Time> */
+) {
   for (mut linear_velocity, input) in query.iter_mut() {
-      let x = (input.right as i8 - input.left as i8) as f32;
-      let y = (input.down as i8 - input.up as i8) as f32;
+    let x = (input.right as i8 - input.left as i8) as f32;
+    let y = (input.down as i8 - input.up as i8) as f32;
 
-      // never use delta time in fixed update !!!
-      linear_velocity.x += x * PLAYER_MOVE_SPEED; // * time.delta().as_secs_f32();
-      linear_velocity.z += y * PLAYER_MOVE_SPEED; // * time.delta().as_secs_f32();
+    // never use delta time in fixed update !!!
+    linear_velocity.x += x * PLAYER_MOVE_SPEED; // * time.delta().as_secs_f32();
+    linear_velocity.z += y * PLAYER_MOVE_SPEED; // * time.delta().as_secs_f32();
   }
 }
 
 fn player_respawn(
-  mut commands: Commands,
-  mut query: Query<(&mut Position, &mut LinearVelocity, &Player)>
+  _commands: Commands,
+  mut query: Query<(&mut Position, &mut LinearVelocity, &Player)>,
 ) {
-  for (mut position, mut linear_velocity, player) in query.iter_mut() {
+  for (mut position, mut linear_velocity, _player) in query.iter_mut() {
     if position.y < -5. {
-      position.x = PLAYER_SPAWN_POINT.x; 
+      position.x = PLAYER_SPAWN_POINT.x;
       position.y = PLAYER_SPAWN_POINT.y;
       position.z = PLAYER_SPAWN_POINT.z;
 
@@ -45,9 +47,6 @@ fn player_respawn(
 extend_commands!(
   spawn_player(client_id: ClientId),
   |world: &mut World, entity_id: Entity, client_id: ClientId| {
-    use crate::lib::Player;
-    use crate::lib::{PLAYER_SIZE, PLAYER_SPAWN_POINT};
-
     world
      .entity_mut(entity_id)
      .insert((

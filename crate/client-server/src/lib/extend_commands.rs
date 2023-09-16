@@ -18,6 +18,7 @@ macro_rules! extend_commands {
         let entity_id = entity.id();
 
         self.add(move |world: &mut World| {
+          #[allow(clippy::redundant_closure_call)]
           $command_fn(world, entity_id, $($arg),*);
         });
 
