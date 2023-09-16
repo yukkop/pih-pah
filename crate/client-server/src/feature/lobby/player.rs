@@ -28,10 +28,10 @@ fn move_players_system(
 }
 
 fn player_respawn(
-    mut commands: Commands,
+    _commands: Commands,
     mut query: Query<(&mut Position, &mut LinearVelocity, &Player)>,
 ) {
-    for (mut position, mut linear_velocity, player) in query.iter_mut() {
+    for (mut position, mut linear_velocity, _player) in query.iter_mut() {
         if position.y < -5. {
             position.x = PLAYER_SPAWN_POINT.x;
             position.y = PLAYER_SPAWN_POINT.y;

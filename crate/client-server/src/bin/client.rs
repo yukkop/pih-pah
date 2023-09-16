@@ -1,6 +1,6 @@
 use bevy::window::WindowResolution;
 use bevy::{
-    diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
+    diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
     prelude::*,
 };
 use bevy_egui::EguiPlugin;
@@ -8,21 +8,21 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use pih_pah::feature::lobby::LobbyDefaultPlugins;
 use pih_pah::feature::multiplayer::{
     panic_on_error_system, Lobby, PlayerInput, ServerMessages, TransportData, PLAYER_SIZE,
-    PLAYER_SPAWN_POINT, PROTOCOL_ID, new_renet_client
+    PLAYER_SPAWN_POINT, new_renet_client
 };
 use pih_pah::feature::music::MusicPlugins;
 use pih_pah::feature::ui::{FpsPlugins, UiPlugins};
 use pih_pah::lib::netutils::{is_http_address, is_ip_with_port};
 
 use bevy_renet::{
-    renet::{transport::ClientAuthentication, ConnectionConfig, DefaultChannel, RenetClient},
+    renet::{DefaultChannel, RenetClient},
     transport::NetcodeClientPlugin,
     RenetClientPlugin,
 };
-use renet::{transport::NetcodeClientTransport, ClientId};
 
-use std::time::SystemTime;
-use std::{collections::HashMap, net::UdpSocket};
+
+
+
 
 #[cfg(not(any(feature = "wayland", feature = "x11")))]
 compile_error!("Either 'wayland' or 'x11' feature must be enabled flag.");
@@ -71,7 +71,7 @@ fn main() {
         app.add_plugins(EguiPlugin);
         app.add_plugins(FpsPlugins);
         app.add_plugins(LogDiagnosticsPlugin::default());
-        app.add_plugins(FrameTimeDiagnosticsPlugin::default());
+        app.add_plugins(FrameTimeDiagnosticsPlugin);
         app.add_plugins(WorldInspectorPlugin::default());
     }
 

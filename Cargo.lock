@@ -2782,23 +2782,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pih_pah"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "bevy-inspector-egui",
- "bevy_egui",
- "bevy_kira_audio",
- "bevy_xpbd_3d",
- "bincode",
- "env_logger",
- "log",
- "regex",
- "serde",
- "url",
-]
-
-[[package]]
 name = "pin-project-lite"
 version = "0.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -38,14 +38,11 @@ fn setup_default_scene(
 ) {
     // plane
     commands.spawn(
-        (
-            // client plane got a mesh & matetials
-            PbrBundle {
+        PbrBundle {
                 mesh: meshes.add(Mesh::from(Plane::from_size(5.0))),
                 material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
                 ..Default::default()
-            }
-        ),
+            },
     );
     // light
     commands.spawn(PointLightBundle {

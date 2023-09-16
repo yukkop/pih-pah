@@ -3,11 +3,10 @@ use bevy::prelude::*;
 use bevy::window::{PresentMode, Window, WindowPlugin};
 use bevy_egui::EguiPlugin;
 use bevy_xpbd_3d::prelude::*;
-use pih_pah::feature::lobby::spawn_player;
+
 use pih_pah::feature::lobby::LobbyMinimalPlugins;
 use pih_pah::feature::multiplayer::{
-    new_renet_server, panic_on_error_system, server_sync_players, server_update_system, Lobby,
-    Player, PlayerInput, ServerMessages, TransportData, PROTOCOL_ID,
+    new_renet_server, panic_on_error_system, server_sync_players, server_update_system, Lobby, TransportData,
 };
 use pih_pah::feature::ui::FpsPlugins;
 use pih_pah::lib::netutils;
@@ -16,16 +15,15 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use bevy_renet::{
     renet::{
-        transport::{ServerAuthentication, ServerConfig},
-        ConnectionConfig, DefaultChannel, RenetServer, ServerEvent,
+        RenetServer,
     },
     transport::NetcodeServerPlugin,
     RenetServerPlugin,
 };
-use renet::{transport::NetcodeServerTransport, ClientId};
 
-use std::time::SystemTime;
-use std::{collections::HashMap, net::UdpSocket};
+
+
+
 
 fn main() {
     std::env::set_var(

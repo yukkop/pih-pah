@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_egui::{
     egui::{self, Color32},
-    EguiContexts, EguiPlugin, EguiSettings,
+    EguiContexts,
 };
 
 pub struct HudPlugins;

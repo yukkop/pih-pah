@@ -8,9 +8,7 @@ use bevy_renet::{
     renet::{
         transport::{ServerAuthentication,ClientAuthentication, ServerConfig},
         ConnectionConfig, DefaultChannel, RenetServer, RenetClient, ServerEvent,
-    },
-    transport::{NetcodeServerPlugin, NetcodeClientPlugin},
-    RenetServerPlugin, RenetClientPlugin
+    }
 };
 use bevy_xpbd_3d::prelude::*;
 use renet::{transport::{NetcodeServerTransport, NetcodeClientTransport}, ClientId};

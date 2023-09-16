@@ -1,7 +1,7 @@
 use crate::feature::ui::HudPlugins;
 use bevy_egui::{
     egui::{self, Color32},
-    EguiContexts, EguiPlugin, EguiSettings,
+    EguiContexts,
 };
 
 use bevy::prelude::*;
