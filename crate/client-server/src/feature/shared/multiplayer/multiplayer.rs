@@ -1,15 +1,11 @@
 use bevy::prelude::*;
 use renet::transport::NetcodeTransportError;
-
 use serde::{Deserialize, Serialize};
-
-use crate::feature::lobby::server::spawn_server_side_player;
 use bevy_renet::renet::{
   transport::{ClientAuthentication, ServerAuthentication, ServerConfig},
   ConnectionConfig, DefaultChannel, RenetClient, RenetServer, ServerEvent,
 };
-use bevy_xpbd_3d::prelude::*;
-use renet::{
+use bevy_xpbd_3d::prelude::*; use renet::{
   transport::{NetcodeClientTransport, NetcodeServerTransport},
   ClientId,
 };
@@ -45,7 +41,7 @@ pub struct Lobby {
 
 #[derive(Debug, Serialize, Deserialize, Component)]
 pub enum ServerMessages {
-  InitConnection { id: ClientId },
+  InitConnection { id: ClientId},
   PlayerConnected { id: ClientId },
   PlayerDisconnected { id: ClientId },
 }

@@ -5,15 +5,16 @@ use bevy::{
 };
 use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use pih_pah::feature::lobby::LobbyDefaultPlugins;
+use pih_pah::feature::lobby::client::spawn_camera;
+use pih_pah::feature::lobby::client::spawn_client_side_player;
+use pih_pah::feature::lobby::client::LobbyPlugins;
 use pih_pah::feature::multiplayer::{
   new_renet_client, panic_on_error_system, Lobby, PlayerInput, ServerMessages, TransportData,
 };
-use renet::ClientId;
-use pih_pah::feature::lobby::{spawn_client_side_player, spawn_camera};
 use pih_pah::feature::music::MusicPlugins;
 use pih_pah::feature::ui::{FpsPlugins, UiPlugins};
 use pih_pah::lib::netutils::{is_http_address, is_ip_with_port};
+use renet::ClientId;
 
 use bevy_renet::{
   renet::{DefaultChannel, RenetClient},
@@ -75,7 +76,7 @@ fn main() {
     app.add_plugins(WorldInspectorPlugin::default());
   }
 
-  app.add_plugins((MusicPlugins, UiPlugins, LobbyDefaultPlugins));
+  app.add_plugins((MusicPlugins, UiPlugins, LobbyPlugins));
   // some for connection
   app.init_resource::<TransportData>();
   //
@@ -89,7 +90,12 @@ fn main() {
 
   app.add_systems(
     Update,
-    (player_input, camera_switch, client_send_input, client_sync_players)
+    (
+      player_input,
+      camera_switch,
+      client_send_input,
+      client_sync_players,
+    )
       .run_if(bevy_renet::transport::client_connected()),
   );
 
@@ -109,16 +115,16 @@ fn camera_switch(
   keyboard_input: Res<Input<KeyCode>>,
   mut camera_query: Query<&mut Camera>, /* , time: Res<Time> */
 ) {
-    if keyboard_input.just_pressed(KeyCode::Space) {
-        for mut camera in camera_query.iter_mut() {
-            // Switch the camera order
-            if camera.order == 3 {
-                camera.order = 2;
-            } else if camera.order == 2 {
-                camera.order = 3;
-            }
-        }
+  if keyboard_input.just_pressed(KeyCode::Space) {
+    for mut camera in camera_query.iter_mut() {
+      // Switch the camera order
+      if camera.order == 3 {
+        camera.order = 2;
+      } else if camera.order == 2 {
+        camera.order = 3;
+      }
     }
+  }
 }
 
 fn client_send_input(player_input: Res<PlayerInput>, mut client: ResMut<RenetClient>) {
@@ -129,8 +135,8 @@ fn client_send_input(player_input: Res<PlayerInput>, mut client: ResMut<RenetCli
 
 fn client_sync_players(
   mut commands: Commands,
-  mut meshes: ResMut<Assets<Mesh>>,
-  mut materials: ResMut<Assets<StandardMaterial>>,
+  _meshes: ResMut<Assets<Mesh>>,
+  _materials: ResMut<Assets<StandardMaterial>>,
   mut client: ResMut<RenetClient>,
   mut transport_data: ResMut<TransportData>,
   mut lobby: ResMut<Lobby>,
@@ -141,7 +147,7 @@ fn client_sync_players(
     let server_message = bincode::deserialize(&message).unwrap();
     match server_message {
       ServerMessages::InitConnection { id } => {
-        if let Some(_) = own_id.0 {
+        if own_id.0.is_some() {
           panic!("Yeah, I knew it. The server only had to initialize me once. Redo it, you idiot.");
         } else {
           *own_id = OwnId(Some(id));
@@ -151,12 +157,15 @@ fn client_sync_players(
         log::info!("Player {} connected.", id);
 
         // TODO podumai
-        let mut player_entity;
+        let player_entity;
         if Some(id) != own_id.0 {
           player_entity = commands.spawn_client_side_player().id();
         } else {
           let camera_entity = commands.spawn_camera().id();
-          player_entity = commands.spawn_client_side_player().push_children(&[camera_entity]).id();
+          player_entity = commands
+            .spawn_client_side_player()
+            .push_children(&[camera_entity])
+            .id();
         }
 
         lobby.players.insert(id, player_entity);

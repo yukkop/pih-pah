@@ -1,13 +1,12 @@
-/// TODO: Module that defines ... (players in the lobby?)
+/// Module that defines a lobby.
+pub mod lobby;
+pub use lobby::*;
+
 mod player;
 pub use player::*;
 
-/// TODO: Module that defines ... (a scene of the lobby?)
 mod scene;
 pub use scene::*;
-
-pub mod client;
-pub mod server;
 
 // Reexport stuff from `feature::lobby` module...
 // pub use player::PlayerPlugins; // or...

@@ -4,7 +4,7 @@ use bevy::window::{PresentMode, Window, WindowPlugin};
 use bevy_egui::EguiPlugin;
 use bevy_xpbd_3d::prelude::*;
 
-use pih_pah::feature::lobby::LobbyMinimalPlugins;
+use pih_pah::feature::lobby::server::LobbyPlugins;
 use pih_pah::feature::multiplayer::{
   new_renet_server, panic_on_error_system, server_sync_players, server_update_system, Lobby,
   TransportData,
@@ -68,7 +68,7 @@ fn main() {
   }
 
   // Plugins that's always there
-  app.add_plugins(LobbyMinimalPlugins);
+  app.add_plugins(LobbyPlugins);
   app.add_plugins(PhysicsPlugins::default());
   app.add_plugins(RenetServerPlugin);
   app.add_plugins(NetcodeServerPlugin);
