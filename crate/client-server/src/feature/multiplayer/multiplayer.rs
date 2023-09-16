@@ -6,14 +6,14 @@ use serde::{Deserialize, Serialize};
 use crate::feature::lobby::spawn_player;
 use bevy_renet::{
     renet::{
-        transport::{ServerAuthentication, ServerConfig},
-        ConnectionConfig, DefaultChannel, RenetServer, ServerEvent,
+        transport::{ServerAuthentication,ClientAuthentication, ServerConfig},
+        ConnectionConfig, DefaultChannel, RenetServer, RenetClient, ServerEvent,
     },
-    transport::NetcodeServerPlugin,
-    RenetServerPlugin,
+    transport::{NetcodeServerPlugin, NetcodeClientPlugin},
+    RenetServerPlugin, RenetClientPlugin
 };
 use bevy_xpbd_3d::prelude::*;
-use renet::{transport::NetcodeServerTransport, ClientId};
+use renet::{transport::{NetcodeServerTransport, NetcodeClientTransport}, ClientId};
 
 use std::time::SystemTime;
 use std::{collections::HashMap, net::UdpSocket};
@@ -153,4 +153,25 @@ pub fn server_sync_players(
     server.broadcast_message(DefaultChannel::Unreliable, sync_message);
 
     data.data.clear();
+}
+
+pub fn new_renet_client(addr: String) -> (RenetClient, NetcodeClientTransport) {
+    let client = RenetClient::new(ConnectionConfig::default());
+    log::info!("{}", addr);
+    let server_addr = addr.parse().unwrap();
+    let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
+    let current_time = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap();
+    let client_id = current_time.as_millis() as u64;
+    let authentication = ClientAuthentication::Unsecure {
+        client_id,
+        protocol_id: PROTOCOL_ID,
+        server_addr,
+        user_data: None,
+    };
+
+    let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
+
+    (client, transport)
 }

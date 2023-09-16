@@ -8,7 +8,7 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use pih_pah::feature::lobby::LobbyDefaultPlugins;
 use pih_pah::feature::multiplayer::{
     panic_on_error_system, Lobby, PlayerInput, ServerMessages, TransportData, PLAYER_SIZE,
-    PLAYER_SPAWN_POINT, PROTOCOL_ID,
+    PLAYER_SPAWN_POINT, PROTOCOL_ID, new_renet_client
 };
 use pih_pah::feature::music::MusicPlugins;
 use pih_pah::feature::ui::{FpsPlugins, UiPlugins};
@@ -27,35 +27,14 @@ use std::{collections::HashMap, net::UdpSocket};
 #[cfg(not(any(feature = "wayland", feature = "x11")))]
 compile_error!("Either 'wayland' or 'x11' feature must be enabled flag.");
 
-fn new_renet_client(addr: String) -> (RenetClient, NetcodeClientTransport) {
-    let client = RenetClient::new(ConnectionConfig::default());
-    log::info!("{}", addr);
-    let server_addr = addr.parse().unwrap();
-    let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
-    let current_time = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap();
-    let client_id = current_time.as_millis() as u64;
-    let authentication = ClientAuthentication::Unsecure {
-        client_id,
-        protocol_id: PROTOCOL_ID,
-        server_addr,
-        user_data: None,
-    };
-
-    let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
-
-    (client, transport)
-}
-
 fn main() {
     env_logger::init();
     let args: Vec<String> = std::env::args().collect();
 
-    if args.len() < 3 {
+    if args.len() < 2 {
         println!("Usage: ");
-        println!("\tclient.rs '<ip>:<port> debu'");
-        println!("\tclient.rs 'http::\\\\my\\server\\address' debug");
+        println!("  client '<ip>:<port>'");
+        println!("  client 'example.com'");
 
         panic!("Not enough arguments.");
     }
@@ -67,41 +46,33 @@ fn main() {
         _ => panic!("Invalid argument, must be an HTTP address or an IP with port."),
     };
 
-    let mut is_not_debug = true;
-    if args.len() > 2 {
-        is_not_debug = match args[2].as_str() {
-            "terminal" => true,
-            "debug" => false,
-            _ => panic!("Invalid argument, must be an HTTP address or an IP with port."),
-        }
-    }
+    let is_debug = std::env::var("DEBUG").is_ok();
 
     let mut app = App::new();
     app.init_resource::<Lobby>();
 
-    if is_not_debug {
+    if !is_debug {
         app.add_plugins((DefaultPlugins, EguiPlugin));
     } else {
-        app.add_plugins((
-            DefaultPlugins.set(WindowPlugin {
-                primary_window: Some(Window {
-                    title: "I am a window!".into(),
-                    resolution: WindowResolution::default(),
-                    position: WindowPosition::new(IVec2::new(960, 0)),
-                    // Tells wasm to resize the window according to the available canvas
-                    fit_canvas_to_parent: true,
-                    // Tells wasm not to override default event handling, like F5, Ctrl+R etc.
-                    prevent_default_event_handling: false,
-                    ..default()
-                }),
+        let window_plugin_override = WindowPlugin {
+            primary_window: Some(Window {
+                title: "pih-pah".into(),
+                resolution: WindowResolution::default(),
+                position: WindowPosition::new(IVec2::new(960, 0)),
+                // Tells wasm to resize the window according to the available canvas
+                fit_canvas_to_parent: true,
+                // Tells wasm not to override default event handling, like F5, Ctrl+R etc.
+                prevent_default_event_handling: false,
                 ..default()
             }),
-            EguiPlugin,
-            FpsPlugins,
-            LogDiagnosticsPlugin::default(),
-            FrameTimeDiagnosticsPlugin::default(),
-            WorldInspectorPlugin::default(),
-        ));
+            ..default()
+        };
+        app.add_plugins(DefaultPlugins.set(window_plugin_override));
+        app.add_plugins(EguiPlugin);
+        app.add_plugins(FpsPlugins);
+        app.add_plugins(LogDiagnosticsPlugin::default());
+        app.add_plugins(FrameTimeDiagnosticsPlugin::default());
+        app.add_plugins(WorldInspectorPlugin::default());
     }
 
     app.add_plugins((MusicPlugins, UiPlugins, LobbyDefaultPlugins));
@@ -174,7 +145,6 @@ fn client_sync_players(
         }
     }
 
-    //
     while let Some(message) = client.receive_message(DefaultChannel::Unreliable) {
         transport_data.data = bincode::deserialize(&message).unwrap();
         for (player_id, data) in transport_data.data.iter() {
