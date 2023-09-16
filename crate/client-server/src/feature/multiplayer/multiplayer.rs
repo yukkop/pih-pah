@@ -3,7 +3,7 @@ use renet::transport::NetcodeTransportError;
 
 use serde::{Deserialize, Serialize};
 
-use crate::feature::lobby::spawn_player;
+use crate::feature::lobby::spawn_server_side_player;
 use bevy_renet::renet::{
   transport::{ClientAuthentication, ServerAuthentication, ServerConfig},
   ConnectionConfig, DefaultChannel, RenetClient, RenetServer, ServerEvent,
@@ -18,10 +18,6 @@ use std::time::SystemTime;
 use std::{collections::HashMap, net::UdpSocket};
 
 pub const PROTOCOL_ID: u64 = 7;
-pub const PLAYER_MOVE_SPEED: f32 = 0.07;
-
-pub const PLAYER_SIZE: f32 = 1.0;
-pub const PLAYER_SPAWN_POINT: Vec3 = Vec3::new(0., 10., 0.);
 
 #[derive(Resource, Default, Debug)]
 pub struct TransportData {
@@ -94,7 +90,7 @@ pub fn server_update_system(
       ServerEvent::ClientConnected { client_id } => {
         log::info!("Player {} connected.", client_id);
         // Spawn player cube
-        let player_entity = commands.spawn_player(*client_id).id();
+        let player_entity = commands.spawn_server_side_player(*client_id).id();
 
         // We could send an InitState with all the players id and positions for the client
         // but this is easier to do.

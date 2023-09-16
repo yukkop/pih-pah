@@ -1,10 +1,15 @@
 use crate::extend_commands;
 use crate::feature::multiplayer::{
-  Player, PlayerInput, PLAYER_MOVE_SPEED, PLAYER_SIZE, PLAYER_SPAWN_POINT,
+  Player, PlayerInput,
 };
 use bevy::{ecs::system::EntityCommands, prelude::*};
 use bevy_xpbd_3d::prelude::*;
 use renet::ClientId;
+
+pub const PLAYER_MOVE_SPEED: f32 = 0.07;
+
+pub const PLAYER_SIZE: f32 = 1.0;
+pub const PLAYER_SPAWN_POINT: Vec3 = Vec3::new(0., 10., 0.);
 
 pub struct PlayerPlugins;
 
@@ -45,7 +50,7 @@ fn player_respawn(
 }
 
 extend_commands!(
-  spawn_player(client_id: ClientId),
+  spawn_server_side_player(client_id: ClientId),
   |world: &mut World, entity_id: Entity, client_id: ClientId| {
     world
      .entity_mut(entity_id)
@@ -56,5 +61,22 @@ extend_commands!(
      ))
      .insert(PlayerInput::default())
      .insert(Player { id: client_id });
+  }
+);
+
+extend_commands!(
+  spawn_client_side_player(),
+  |world: &mut World, entity_id: Entity| {
+    let mesh = world.resource_mut::<Assets<Mesh>>().add(Mesh::from(shape::Cube { size: PLAYER_SIZE }));
+    let material = world.resource_mut::<Assets<StandardMaterial>>().add(Color::rgb(0.8, 0.7, 0.6).into());
+
+    world
+      .entity_mut(entity_id)
+      .insert(PbrBundle {
+        mesh: mesh,
+        material: material,            
+        transform: Transform::from_translation(PLAYER_SPAWN_POINT),
+        ..Default::default()
+      });
   }
 );

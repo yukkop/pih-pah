@@ -8,8 +8,9 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use pih_pah::feature::lobby::LobbyDefaultPlugins;
 use pih_pah::feature::multiplayer::{
   new_renet_client, panic_on_error_system, Lobby, PlayerInput, ServerMessages, TransportData,
-  PLAYER_SIZE, PLAYER_SPAWN_POINT,
+  
 };
+use pih_pah::feature::lobby::spawn_client_side_player;
 use pih_pah::feature::music::MusicPlugins;
 use pih_pah::feature::ui::{FpsPlugins, UiPlugins};
 use pih_pah::lib::netutils::{is_http_address, is_ip_with_port};
@@ -120,14 +121,7 @@ fn client_sync_players(
     match server_message {
       ServerMessages::PlayerConnected { id } => {
         log::info!("Player {} connected.", id);
-        let player_entity = commands
-          .spawn(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: PLAYER_SIZE })),
-            material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-            transform: Transform::from_translation(PLAYER_SPAWN_POINT),
-            ..Default::default()
-          })
-          .id();
+        let player_entity = commands.spawn_client_side_player().id();
 
         lobby.players.insert(id, player_entity);
       }
