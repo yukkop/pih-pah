@@ -41,14 +41,27 @@ fn main() {
     ));
 
     app.add_systems(Startup, setup_scene);
-    app.add_systems(FixedUpdate, (move_players,  player_respawn));
-    app.add_systems(Update, (ui, stabilize_camera));
+
+    // TODO need more test
+    // This system is need be not depend on delta_seconds
+    app.add_systems(FixedUpdate, move_players);
+    // but this system is need be more smooth, 
+    // else camera will be not stable when player move
+    // but some times camera will be not stable anyway... need more test
+    app.add_systems(Update, stabilize_camera);
+    // it can be fixed on client server architecture
+    // becosue client will be not have physics
+    // so render camera pivot and player will be same
+
+    app.add_systems(FixedUpdate, player_respawn);
+    app.add_systems(Update, ui);
 
 
     app.run();
 }
 
 const PLAYER_MOVE_SPEED: f32 = 0.07;
+const PLAYER_CAMERA_ROTATION_SPEED: f32 = 0.01;
 const PLAYER_SPAWN_POINT: Vec3 = Vec3::new(0., 10., 0.);
 
 fn player_respawn(
@@ -72,6 +85,7 @@ fn move_players(
   keyboard_input: Res<Input<KeyCode>>,
   mut query: Query<&mut LinearVelocity, With<Player>>,
   mut camera_query: Query<&mut Camera>,
+  mut camera_pivot_query: Query<&mut Transform, With<PlayerCamera>>,
 ) {
     if let Ok(mut lin_vel) = query.get_single_mut() {
       if keyboard_input.pressed(KeyCode::Up) || keyboard_input.pressed(KeyCode::W) {
@@ -86,9 +100,24 @@ fn move_players(
       if keyboard_input.pressed(KeyCode::Right) || keyboard_input.pressed(KeyCode::D) {
           lin_vel.x += PLAYER_MOVE_SPEED;
       }
+
+      // camera rotation
+      if keyboard_input.pressed(KeyCode::E) {
+        if let Ok(mut transform) = camera_pivot_query.get_single_mut() {
+          let rotation = Quat::from_rotation_y(PI * PLAYER_CAMERA_ROTATION_SPEED /* * delta_seconds */);
+          transform.rotation *= rotation;
+        }
+      }
+      if keyboard_input.pressed(KeyCode::Q) {
+        if let Ok(mut transform) = camera_pivot_query.get_single_mut() {
+          let rotation = Quat::from_rotation_y(PI * PLAYER_CAMERA_ROTATION_SPEED * -1. /* * delta_seconds */);
+          transform.rotation *= rotation;
+        }
+      }
+
       
       // Switch the camera order
-      if keyboard_input.just_pressed(KeyCode::Space) {
+      if keyboard_input.just_pressed(KeyCode::C) {
         for mut camera in camera_query.iter_mut() {
           if camera.order == SECONDARY_CAMERA_ORDER {
             camera.order = PRIMARY_CAMERA_ORDER;
@@ -132,10 +161,10 @@ fn ui(mut contexts: EguiContexts,
 
 // system for camera follow player
 fn stabilize_camera(
-mut camera_query: Query<&mut Transform, With<PlayerCamera>>,
+mut camera_pivot_query: Query<&mut Transform, With<PlayerCamera>>,
 palyer_query: Query<&Position, With<Player>>,
 ) {
-  if let Ok(mut camera_transform) = camera_query.get_single_mut() {
+  if let Ok(mut camera_transform) = camera_pivot_query.get_single_mut() {
     if let Ok(player_position) = palyer_query.get_single() {
       println!("stabilize_camera: {:?}", player_position.0);
       camera_transform.translation = player_position.0;
