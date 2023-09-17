@@ -1,10 +1,11 @@
 mod extend_commands;
 use bevy::window::*;
+use bevy::app::AppExit;
 
-use bevy_egui::{egui::{self, Color32}, EguiContexts, EguiPlugin, EguiSettings };
+use bevy_egui::{egui::{self, Color32}, EguiContexts, EguiPlugin};
 
 use bevy::{prelude::*, ecs::system::EntityCommands, 
-  diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
+  diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_xpbd_3d::{math::*, prelude::*};
@@ -60,7 +61,7 @@ fn main() {
     app.run();
 }
 
-const PLAYER_MOVE_SPEED: f32 = 0.07;
+const PLAYER_MOVE_SPEED: f32 = 0.15;
 const PLAYER_CAMERA_ROTATION_SPEED: f32 = 0.01;
 const PLAYER_SPAWN_POINT: Vec3 = Vec3::new(0., 10., 0.);
 
@@ -86,19 +87,31 @@ fn move_players(
   mut query: Query<&mut LinearVelocity, With<Player>>,
   mut camera_query: Query<&mut Camera>,
   mut camera_pivot_query: Query<&mut Transform, With<PlayerCamera>>,
+  playe_global_transform_query: Query<&GlobalTransform, With<PlayerCamera>>,
+  mut exit: EventWriter<AppExit>,
 ) {
     if let Ok(mut lin_vel) = query.get_single_mut() {
+
+      let global_transform = playe_global_transform_query.single();
       if keyboard_input.pressed(KeyCode::Up) || keyboard_input.pressed(KeyCode::W) {
-          lin_vel.z -= PLAYER_MOVE_SPEED;
+        let global_forward_4d = global_transform.compute_matrix() * Vec3::NEG_Z.extend(0.0);
+        lin_vel.x += global_forward_4d.x * PLAYER_MOVE_SPEED;
+        lin_vel.z += global_forward_4d.z * PLAYER_MOVE_SPEED;
       }
       if keyboard_input.pressed(KeyCode::Down) || keyboard_input.pressed(KeyCode::S) {
-          lin_vel.z += PLAYER_MOVE_SPEED;
+        let global_forward_4d = global_transform.compute_matrix() * Vec3::Z.extend(0.0);
+        lin_vel.x += global_forward_4d.x * PLAYER_MOVE_SPEED;
+        lin_vel.z += global_forward_4d.z * PLAYER_MOVE_SPEED;
       }
       if keyboard_input.pressed(KeyCode::Left) || keyboard_input.pressed(KeyCode::A) {
-          lin_vel.x -= PLAYER_MOVE_SPEED;
+        let global_forward_4d = global_transform.compute_matrix() * Vec3::NEG_X.extend(0.0);
+        lin_vel.x += global_forward_4d.x * PLAYER_MOVE_SPEED;
+        lin_vel.z += global_forward_4d.z * PLAYER_MOVE_SPEED;
       }
       if keyboard_input.pressed(KeyCode::Right) || keyboard_input.pressed(KeyCode::D) {
-          lin_vel.x += PLAYER_MOVE_SPEED;
+        let global_forward_4d = global_transform.compute_matrix() * Vec3::X.extend(0.0);
+        lin_vel.x += global_forward_4d.x * PLAYER_MOVE_SPEED;
+        lin_vel.z += global_forward_4d.z * PLAYER_MOVE_SPEED;
       }
 
       // camera rotation
@@ -115,6 +128,11 @@ fn move_players(
         }
       }
 
+      if keyboard_input.just_pressed(KeyCode::Escape)
+        || keyboard_input.pressed(KeyCode::ControlLeft)
+        && keyboard_input.just_pressed(KeyCode::C)  {
+        exit.send(AppExit);
+      }
       
       // Switch the camera order
       if keyboard_input.just_pressed(KeyCode::C) {
