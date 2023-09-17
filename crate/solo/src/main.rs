@@ -12,6 +12,13 @@ use bevy_xpbd_3d::{math::*, prelude::*};
 const PRIMARY_CAMERA_ORDER: isize = 3;
 const SECONDARY_CAMERA_ORDER: isize = 2;
 
+#[derive(Resource)]
+pub struct CameraAngle(Quat);
+
+// parent point where camera look at
+#[derive(Component)]
+struct PlayerCamera;
+
 fn main() {
     env_logger::init();
 
@@ -21,7 +28,7 @@ fn main() {
           primary_window: Window { 
             title: "Game of Life".to_string(),
             // this is need's for stable fps
-            present_mode: PresentMode::AutoNoVsync,
+            // present_mode: PresentMode::AutoNoVsync,
             ..default()
           }.into(),
         ..default()
@@ -29,18 +36,19 @@ fn main() {
         EguiPlugin,
         PhysicsPlugins::default(),
         WorldInspectorPlugin::default(),
-        LogDiagnosticsPlugin::default(),
+        // LogDiagnosticsPlugin::default(),
         FrameTimeDiagnosticsPlugin::default(),
     ));
 
     app.add_systems(Startup, setup_scene);
-    app.add_systems(Update, move_players);
-    app.add_systems(Update, (ui,  player_respawn));
+    app.add_systems(FixedUpdate, (move_players,  player_respawn));
+    app.add_systems(Update, (ui, stabilize_camera));
+
 
     app.run();
 }
 
-const PLAYER_MOVE_SPEED: f32 = 0.03;
+const PLAYER_MOVE_SPEED: f32 = 0.07;
 const PLAYER_SPAWN_POINT: Vec3 = Vec3::new(0., 10., 0.);
 
 fn player_respawn(
@@ -122,6 +130,24 @@ fn ui(mut contexts: EguiContexts,
     });
 }
 
+// system for camera follow player
+fn stabilize_camera(
+mut camera_query: Query<&mut Transform, With<PlayerCamera>>,
+palyer_query: Query<&Position, With<Player>>,
+) {
+  if let Ok(mut camera_transform) = camera_query.get_single_mut() {
+    if let Ok(player_position) = palyer_query.get_single() {
+      println!("stabilize_camera: {:?}", player_position.0);
+      camera_transform.translation = player_position.0;
+    }
+    else {
+      println!("stabilize_camera: player not found");
+    }
+  } else {
+    println!("stabilize_camera: camera not found");
+  }
+}
+
 fn setup_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -133,7 +159,7 @@ fn setup_scene(
     commands.spawn((
          PbrBundle {
             mesh: cube_mesh.clone(),
-            material: materials.add(Color::rgb(0.7, 0.7, 0.8).into()),
+            material: materials.add(Color::rgba(0.7, 0.7, 0.8, 1.).into()),
             transform: Transform::from_scale(Vec3::new(10.0, 1.0, 10.0)),
             ..default()
         },
@@ -142,8 +168,29 @@ fn setup_scene(
         Collider::cuboid(10.0, 1.0, 10.0),
     ));
 
-    let camera_entity = commands.spawn_camera(PRIMARY_CAMERA_ORDER).id();
-    commands.spawn_player().push_children(&[camera_entity]);
+    let camera_entity = commands.spawn((
+      Camera3dBundle {
+        transform: Transform::from_xyz(0., 10., 15.).looking_at(Vec3::ZERO, Vec3::Y),
+        camera: Camera {
+          order: PRIMARY_CAMERA_ORDER,
+          ..default()
+        },
+        ..Default::default()
+      },
+    )).id();
+
+    commands.spawn((
+      PlayerCamera,
+      // it is need for camera render correct, do not understand why
+      PbrBundle {
+        mesh: cube_mesh,
+        material: materials.add(Color::rgba(0.7, 0.1, 0.2, 0.).into()),
+        transform: Transform::from_scale(Vec3::new(0.3, 0.3, 0.3)),
+        ..Default::default()
+      },
+    )).push_children(&[camera_entity]);
+
+    commands.spawn_player();
 
     // light
     commands.spawn(PointLightBundle {
@@ -157,28 +204,19 @@ fn setup_scene(
     });
 
     // camera
-    commands.spawn_camera(SECONDARY_CAMERA_ORDER);
-}
-
-#[derive(Component)]
-pub struct Player;
-
-extend_commands!(
-  spawn_camera(order: isize),
-  |world: &mut World, entity_id: Entity, order: isize| {
-    world
-     .entity_mut(entity_id)
-     .insert(
-    Camera3dBundle {
+    commands.spawn(
+      Camera3dBundle {
         transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
         camera: Camera {
-          order: order,
+          order: SECONDARY_CAMERA_ORDER,
           ..default()
         },
         ..Default::default()
     });
-  }
-);
+}
+
+#[derive(Component)]
+pub struct Player;
 
 extend_commands!(
   spawn_player(),
@@ -186,7 +224,7 @@ extend_commands!(
     let pos = Vec3::new(0., 3., 0.);
 
     let mesh = world.resource_mut::<Assets<Mesh>>().add(Mesh::from(shape::Cube { size: 1. }));
-    let material = world.resource_mut::<Assets<StandardMaterial>>().add(Color::rgb(0.8, 0.7, 0.6).into());
+    let material = world.resource_mut::<Assets<StandardMaterial>>().add(Color::rgba(0.8, 0.7, 0.6, 1.).into());
 
     world
       .entity_mut(entity_id)
