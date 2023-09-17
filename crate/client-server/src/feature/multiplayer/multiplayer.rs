@@ -3,6 +3,8 @@ use renet::transport::NetcodeTransportError;
 
 use serde::{Deserialize, Serialize};
 
+use crate::feature::lobby::client::spawn_client_side_player;
+use crate::feature::lobby::client::{spawn_tied_camera, TiedCamera};
 use crate::feature::lobby::server::spawn_server_side_player;
 use bevy_renet::renet::{
   transport::{ClientAuthentication, ServerAuthentication, ServerConfig},
@@ -13,8 +15,6 @@ use renet::{
   transport::{NetcodeClientTransport, NetcodeServerTransport},
   ClientId,
 };
-use crate::feature::lobby::client::spawn_client_side_player;
-use crate::feature::lobby::client::spawn_camera;
 
 use std::time::SystemTime;
 use std::{collections::HashMap, net::UdpSocket};
@@ -42,7 +42,24 @@ pub struct Player {
 
 #[derive(Debug, Default, Resource)]
 pub struct Lobby {
-  pub players: HashMap<ClientId, Entity>,
+  pub players: HashMap<ClientId, PlayerData>,
+}
+
+#[derive(Debug)]
+pub struct PlayerData {
+  pub entity: Entity,
+  pub view_dirrection: PlayerViewDirrection,
+}
+
+/// player view direction in global spase
+#[derive(Debug, Default, Component)]
+pub struct PlayerViewDirrection(Vec3);
+
+impl PlayerViewDirrection {
+  fn default() -> Self {
+    // forward
+    Self(Vec3::NEG_Z)
+  }
 }
 
 #[derive(Debug, Serialize, Deserialize, Component)]
@@ -107,7 +124,13 @@ pub fn server_update_system(
           server.send_message(*client_id, DefaultChannel::ReliableOrdered, message);
         }
 
-        lobby.players.insert(*client_id, player_entity);
+        lobby.players.insert(
+          *client_id,
+          PlayerData {
+            entity: player_entity,
+            view_dirrection: PlayerViewDirrection::default(),
+          },
+        );
 
         let message =
           bincode::serialize(&ServerMessages::PlayerConnected { id: *client_id }).unwrap();
@@ -115,8 +138,8 @@ pub fn server_update_system(
       }
       ServerEvent::ClientDisconnected { client_id, reason } => {
         log::info!("Player {} disconnected: {}", client_id, reason);
-        if let Some(player_entity) = lobby.players.remove(client_id) {
-          commands.entity(player_entity).despawn();
+        if let Some(player_data) = lobby.players.remove(client_id) {
+          commands.entity(player_data.entity).despawn();
         }
 
         let message =
@@ -129,8 +152,8 @@ pub fn server_update_system(
   for client_id in server.clients_id().into_iter() {
     while let Some(message) = server.receive_message(client_id, DefaultChannel::ReliableOrdered) {
       let player_input: PlayerInput = bincode::deserialize(&message).unwrap();
-      if let Some(player_entity) = lobby.players.get(&client_id) {
-        commands.entity(*player_entity).insert(player_input);
+      if let Some(player_data) = lobby.players.get(&client_id) {
+        commands.entity(player_data.entity).insert(player_input);
       }
     }
   }
@@ -192,6 +215,7 @@ pub fn client_sync_players(
   mut transport_data: ResMut<TransportData>,
   mut lobby: ResMut<Lobby>,
   mut own_id: ResMut<OwnId>,
+  mut tied_camera_query: Query<&mut Transform, With<TiedCamera>>
 ) {
   // player existence manager
   while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
@@ -208,38 +232,44 @@ pub fn client_sync_players(
         log::info!("Player {} connected.", id);
 
         // TODO podumai
-        let player_entity;
-        if Some(id) != own_id.0 {
-          player_entity = commands.spawn_client_side_player().id();
-        } else {
-          let camera_entity = commands.spawn_camera().id();
-          player_entity = commands
-            .spawn_client_side_player()
-            .push_children(&[camera_entity])
-            .id();
+        let player_entity = commands.spawn_client_side_player().id();
+        if Some(id) == own_id.0 {
+          commands.spawn_tied_camera();
         }
 
-        lobby.players.insert(id, player_entity);
+        lobby.players.insert(
+          id,
+          PlayerData {
+            entity: player_entity,
+            view_dirrection: PlayerViewDirrection::default(), // TODO get from server for ather players
+          },
+        );
       }
       ServerMessages::PlayerDisconnected { id } => {
         println!("Player {} disconnected.", id);
-        if let Some(player_entity) = lobby.players.remove(&id) {
-          commands.entity(player_entity).despawn();
+        if let Some(player_data) = lobby.players.remove(&id) {
+          commands.entity(player_data.entity).despawn();
         }
       }
     }
   }
 
+  // players movements
   while let Some(message) = client.receive_message(DefaultChannel::Unreliable) {
     transport_data.data = bincode::deserialize(&message).unwrap();
     for (player_id, data) in transport_data.data.iter() {
-      if let Some(player_entity) = lobby.players.get(player_id) {
+      if let Some(player_data) = lobby.players.get(player_id) {
         let transform = Transform {
           translation: (data.0).into(),
           rotation: Quat::from_array(data.1),
           ..Default::default()
         };
-        commands.entity(*player_entity).insert(transform);
+        commands.entity(player_data.entity).insert(transform);
+        if Some(player_id) == own_id.0.as_ref() {
+          if let Ok(mut camera_transform) = tied_camera_query.get_single_mut() {   
+            camera_transform.translation = transform.translation;
+          }
+        }
       }
     }
   }
@@ -251,4 +281,3 @@ pub fn player_input(keyboard_input: Res<Input<KeyCode>>, mut player_input: ResMu
   player_input.up = keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
   player_input.down = keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
 }
-

@@ -5,9 +5,16 @@ use bevy::{
 };
 use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use pih_pah::feature::lobby::client::spawn_camera;
+use bevy_renet::{
+  renet::{DefaultChannel, RenetClient},
+  transport::NetcodeClientPlugin,
+  RenetClientPlugin,
+};
+use pih_pah::feature::lobby::client::camera_switch;
 use pih_pah::feature::lobby::client::spawn_client_side_player;
+use pih_pah::feature::lobby::client::spawn_spectator_camera;
 use pih_pah::feature::lobby::client::LobbyPlugins;
+use pih_pah::feature::multiplayer::{client_send_input, client_sync_players, player_input, OwnId};
 use pih_pah::feature::multiplayer::{
   new_renet_client, panic_on_error_system, Lobby, PlayerInput, ServerMessages, TransportData,
 };
@@ -15,15 +22,6 @@ use pih_pah::feature::music::MusicPlugins;
 use pih_pah::feature::ui::{FpsPlugins, UiPlugins};
 use pih_pah::lib::netutils::{is_http_address, is_ip_with_port};
 use renet::ClientId;
-
-use pih_pah::feature::lobby::client::camera_switch;
-use pih_pah::feature::multiplayer::{OwnId, player_input, client_send_input, client_sync_players};
-
-use bevy_renet::{
-  renet::{DefaultChannel, RenetClient},
-  transport::NetcodeClientPlugin,
-  RenetClientPlugin,
-};
 
 #[cfg(not(any(feature = "wayland", feature = "x11")))]
 compile_error!("Either 'wayland' or 'x11' feature must be enabled flag.");
