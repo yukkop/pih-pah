@@ -118,7 +118,6 @@ pub fn client_sync_players(
           id,
           PlayerData {
             entity: player_entity,
-            view_dirrection: PlayerViewDirrection::default(), // TODO get from server for ather players
           },
         );
       }
@@ -145,6 +144,7 @@ pub fn client_sync_players(
         if Some(player_id) == own_id.0.as_ref() {
           if let Ok(mut camera_transform) = tied_camera_query.get_single_mut() {
             camera_transform.translation = transform.translation;
+            camera_transform.rotation = Quat::from_array(data.2);
           }
         }
       }
@@ -157,4 +157,6 @@ pub fn player_input(keyboard_input: Res<Input<KeyCode>>, mut player_input: ResMu
   player_input.right = keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right);
   player_input.up = keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
   player_input.down = keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
+  player_input.turn_left = keyboard_input.pressed(KeyCode::Q);
+  player_input.turn_right = keyboard_input.pressed(KeyCode::E);
 }

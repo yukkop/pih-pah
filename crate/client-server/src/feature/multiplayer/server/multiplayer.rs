@@ -102,7 +102,6 @@ pub fn server_update_system(
           *client_id,
           PlayerData {
             entity: player_entity,
-            view_dirrection: PlayerViewDirrection::default(),
           },
         );
 
@@ -136,13 +135,12 @@ pub fn server_update_system(
 pub fn server_sync_players(
   mut server: ResMut<RenetServer>,
   mut data: ResMut<TransportData>,
-  query: Query<(&Position, &Rotation, &Player)>,
+  query: Query<(&Position, &Rotation, &PlayerViewDirrection, &Player)>,
 ) {
-  // let mut players: HashMap<ClientId, [[f32; 3]; 2]> = HashMap::new();
-  for (position, rotation, player) in query.iter() {
+  for (position, rotation, view_dirrection, player) in query.iter() {
     data
       .data
-      .insert(player.id, (position.0.into(), rotation.0.into()));
+      .insert(player.id, (position.0.into(), rotation.0.into(), view_dirrection.0.into()));
   }
 
   let sync_message = bincode::serialize(&data.data).unwrap();

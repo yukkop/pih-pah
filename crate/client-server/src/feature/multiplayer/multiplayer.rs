@@ -12,7 +12,11 @@ pub const PROTOCOL_ID: u64 = 7;
 #[derive(Resource, Default, Debug)]
 pub struct TransportData {
   // let mut players: HashMap<ClientId, ([f32; 3], [f32; 4])> = HashMap::new();
-  pub data: HashMap<ClientId, ([f32; 3], [f32; 4])>,
+  pub data: HashMap<ClientId, (
+    [f32; 3], // position
+    [f32; 4], // rotation
+    [f32; 4], // tied camera rotation
+  )>,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, Component, Resource)]
@@ -21,6 +25,8 @@ pub struct PlayerInput {
   pub down: bool,
   pub left: bool,
   pub right: bool,
+  pub turn_left: bool,
+  pub turn_right: bool,
 }
 
 #[derive(Debug, Component)]
@@ -36,17 +42,16 @@ pub struct Lobby {
 #[derive(Debug)]
 pub struct PlayerData {
   pub entity: Entity,
-  pub view_dirrection: PlayerViewDirrection,
 }
 
 /// player view direction in global spase
 #[derive(Debug, Component)]
-pub struct PlayerViewDirrection(Vec3);
+pub struct PlayerViewDirrection(pub Quat);
 
 impl Default for PlayerViewDirrection {
   fn default() -> Self {
     // forward
-    Self(Vec3::NEG_Z)
+    Self(Quat::default())
   }
 }
 
