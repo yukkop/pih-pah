@@ -13,6 +13,8 @@ use renet::{
   transport::{NetcodeClientTransport, NetcodeServerTransport},
   ClientId,
 };
+use crate::feature::lobby::client::spawn_client_side_player;
+use crate::feature::lobby::client::spawn_camera;
 
 use std::time::SystemTime;
 use std::{collections::HashMap, net::UdpSocket};
@@ -152,6 +154,9 @@ pub fn server_sync_players(
   data.data.clear();
 }
 
+#[derive(Default, Debug, Resource)]
+pub struct OwnId(Option<ClientId>);
+
 pub fn new_renet_client(addr: String) -> (RenetClient, NetcodeClientTransport) {
   let client = RenetClient::new(ConnectionConfig::default());
   log::info!("{}", addr);
@@ -172,3 +177,78 @@ pub fn new_renet_client(addr: String) -> (RenetClient, NetcodeClientTransport) {
 
   (client, transport)
 }
+
+pub fn client_send_input(player_input: Res<PlayerInput>, mut client: ResMut<RenetClient>) {
+  let input_message = bincode::serialize(&*player_input).unwrap();
+
+  client.send_message(DefaultChannel::ReliableOrdered, input_message);
+}
+
+pub fn client_sync_players(
+  mut commands: Commands,
+  _meshes: ResMut<Assets<Mesh>>,
+  _materials: ResMut<Assets<StandardMaterial>>,
+  mut client: ResMut<RenetClient>,
+  mut transport_data: ResMut<TransportData>,
+  mut lobby: ResMut<Lobby>,
+  mut own_id: ResMut<OwnId>,
+) {
+  // player existence manager
+  while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
+    let server_message = bincode::deserialize(&message).unwrap();
+    match server_message {
+      ServerMessages::InitConnection { id } => {
+        if own_id.0.is_some() {
+          panic!("Yeah, I knew it. The server only had to initialize me once. Redo it, you idiot.");
+        } else {
+          *own_id = OwnId(Some(id));
+        }
+      }
+      ServerMessages::PlayerConnected { id } => {
+        log::info!("Player {} connected.", id);
+
+        // TODO podumai
+        let player_entity;
+        if Some(id) != own_id.0 {
+          player_entity = commands.spawn_client_side_player().id();
+        } else {
+          let camera_entity = commands.spawn_camera().id();
+          player_entity = commands
+            .spawn_client_side_player()
+            .push_children(&[camera_entity])
+            .id();
+        }
+
+        lobby.players.insert(id, player_entity);
+      }
+      ServerMessages::PlayerDisconnected { id } => {
+        println!("Player {} disconnected.", id);
+        if let Some(player_entity) = lobby.players.remove(&id) {
+          commands.entity(player_entity).despawn();
+        }
+      }
+    }
+  }
+
+  while let Some(message) = client.receive_message(DefaultChannel::Unreliable) {
+    transport_data.data = bincode::deserialize(&message).unwrap();
+    for (player_id, data) in transport_data.data.iter() {
+      if let Some(player_entity) = lobby.players.get(player_id) {
+        let transform = Transform {
+          translation: (data.0).into(),
+          rotation: Quat::from_array(data.1),
+          ..Default::default()
+        };
+        commands.entity(*player_entity).insert(transform);
+      }
+    }
+  }
+}
+
+pub fn player_input(keyboard_input: Res<Input<KeyCode>>, mut player_input: ResMut<PlayerInput>) {
+  player_input.left = keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::Left);
+  player_input.right = keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right);
+  player_input.up = keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
+  player_input.down = keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
+}
+
