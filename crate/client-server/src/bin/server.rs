@@ -5,16 +5,13 @@ use bevy_egui::EguiPlugin;
 use bevy_xpbd_3d::prelude::*;
 
 use pih_pah::feature::lobby::server::LobbyPlugins;
-use pih_pah::feature::multiplayer::{
-  new_renet_server, panic_on_error_system, server_sync_players, server_update_system, Lobby,
-  TransportData,
-};
+use pih_pah::feature::multiplayer::server::MultiplayerPlugins;
 use pih_pah::feature::ui::FpsPlugins;
 use pih_pah::lib::netutils;
+use pih_pah::feature::multiplayer::panic_on_error_system;
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
-use bevy_renet::{renet::RenetServer, transport::NetcodeServerPlugin, RenetServerPlugin};
 
 fn main() {
   std::env::set_var(
@@ -42,7 +39,6 @@ fn main() {
   let is_debug = std::env::var("DEBUG").is_ok();
 
   let mut app = App::new();
-  app.init_resource::<Lobby>();
 
   let window_plugin_override = WindowPlugin {
     primary_window: Some(Window {
@@ -70,19 +66,7 @@ fn main() {
   // Plugins that's always there
   app.add_plugins(LobbyPlugins);
   app.add_plugins(PhysicsPlugins::default());
-  app.add_plugins(RenetServerPlugin);
-  app.add_plugins(NetcodeServerPlugin);
-
-  let (server, transport) = new_renet_server(server_addr);
-  app.insert_resource(server);
-  app.insert_resource(transport);
-  //some about connection
-  app.init_resource::<TransportData>();
-
-  app.add_systems(
-    Update,
-    (server_update_system, server_sync_players).run_if(resource_exists::<RenetServer>()),
-  );
+  app.add_plugins(MultiplayerPlugins::by_string(server_addr.to_string()));
 
   app.add_systems(Update, panic_on_error_system);
 

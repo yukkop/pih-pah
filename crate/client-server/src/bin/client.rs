@@ -5,23 +5,12 @@ use bevy::{
 };
 use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_renet::{
-  renet::{DefaultChannel, RenetClient},
-  transport::NetcodeClientPlugin,
-  RenetClientPlugin,
-};
-use pih_pah::feature::lobby::client::camera_switch;
-use pih_pah::feature::lobby::client::spawn_client_side_player;
-use pih_pah::feature::lobby::client::spawn_spectator_camera;
 use pih_pah::feature::lobby::client::LobbyPlugins;
-use pih_pah::feature::multiplayer::{client_send_input, client_sync_players, player_input, OwnId};
-use pih_pah::feature::multiplayer::{
-  new_renet_client, panic_on_error_system, Lobby, PlayerInput, ServerMessages, TransportData,
-};
+use pih_pah::feature::multiplayer::client::MultiplayerPlugins;
 use pih_pah::feature::music::MusicPlugins;
 use pih_pah::feature::ui::{FpsPlugins, UiPlugins};
 use pih_pah::lib::netutils::{is_http_address, is_ip_with_port};
-use renet::ClientId;
+use pih_pah::feature::multiplayer::panic_on_error_system;
 
 #[cfg(not(any(feature = "wayland", feature = "x11")))]
 compile_error!("Either 'wayland' or 'x11' feature must be enabled flag.");
@@ -48,7 +37,6 @@ fn main() {
   let is_debug = std::env::var("DEBUG").is_ok();
 
   let mut app = App::new();
-  app.init_resource::<Lobby>();
 
   if !is_debug {
     app.add_plugins((DefaultPlugins, EguiPlugin));
@@ -74,28 +62,12 @@ fn main() {
     app.add_plugins(WorldInspectorPlugin::default());
   }
 
-  app.add_plugins((MusicPlugins, UiPlugins, LobbyPlugins));
-  // some for connection
-  app.init_resource::<TransportData>();
-  //
-  app.add_plugins(RenetClientPlugin);
-  app.add_plugins(NetcodeClientPlugin);
-  app.init_resource::<PlayerInput>();
-  app.init_resource::<OwnId>();
-  let (client, transport) = new_renet_client(server_addr.to_string());
-  app.insert_resource(client);
-  app.insert_resource(transport);
-
-  app.add_systems(
-    Update,
-    (
-      player_input,
-      camera_switch,
-      client_send_input,
-      client_sync_players,
-    )
-      .run_if(bevy_renet::transport::client_connected()),
-  );
+  app.add_plugins((
+    MusicPlugins,
+    UiPlugins,
+    LobbyPlugins,
+    MultiplayerPlugins::by_string(server_addr.to_string())
+  ));
 
   app.add_systems(Update, panic_on_error_system);
 

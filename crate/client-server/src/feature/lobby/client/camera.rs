@@ -1,3 +1,4 @@
+#![allow(unused_doc_comments)]
 use bevy::{ecs::system::EntityCommands, prelude::*};
 
 use crate::extend_commands;

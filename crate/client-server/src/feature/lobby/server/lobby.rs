@@ -8,7 +8,6 @@ pub struct LobbyPlugins;
 
 impl Plugin for LobbyPlugins {
   fn build(&self, app: &mut App) {
-    log::info!("please");
     app.add_plugins(PlayerPlugins).add_plugins(ScenePlugins);
   }
 }

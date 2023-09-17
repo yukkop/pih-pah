@@ -3,21 +3,9 @@ use renet::transport::NetcodeTransportError;
 
 use serde::{Deserialize, Serialize};
 
-use crate::feature::lobby::client::spawn_client_side_player;
-use crate::feature::lobby::client::{spawn_tied_camera, TiedCamera};
-use crate::feature::lobby::server::spawn_server_side_player;
-use bevy_renet::renet::{
-  transport::{ClientAuthentication, ServerAuthentication, ServerConfig},
-  ConnectionConfig, DefaultChannel, RenetClient, RenetServer, ServerEvent,
-};
-use bevy_xpbd_3d::prelude::*;
-use renet::{
-  transport::{NetcodeClientTransport, NetcodeServerTransport},
-  ClientId,
-};
+use renet::ClientId;
 
-use std::time::SystemTime;
-use std::{collections::HashMap, net::UdpSocket};
+use std::collections::HashMap;
 
 pub const PROTOCOL_ID: u64 = 7;
 
@@ -52,10 +40,10 @@ pub struct PlayerData {
 }
 
 /// player view direction in global spase
-#[derive(Debug, Default, Component)]
+#[derive(Debug, Component)]
 pub struct PlayerViewDirrection(Vec3);
 
-impl PlayerViewDirrection {
+impl Default for PlayerViewDirrection {
   fn default() -> Self {
     // forward
     Self(Vec3::NEG_Z)
@@ -74,210 +62,4 @@ pub fn panic_on_error_system(mut renet_errors: EventReader<NetcodeTransportError
     log::error!("ERROR: {error:?}");
     panic!();
   }
-}
-
-pub fn new_renet_server(addr: &str) -> (RenetServer, NetcodeServerTransport) {
-  let server = RenetServer::new(ConnectionConfig::default());
-
-  let public_addr = addr.parse().unwrap();
-  let socket = UdpSocket::bind(public_addr).unwrap();
-  let current_time = SystemTime::now()
-    .duration_since(SystemTime::UNIX_EPOCH)
-    .unwrap();
-  let server_config = ServerConfig {
-    current_time,
-    max_clients: 64,
-    protocol_id: PROTOCOL_ID,
-    public_addresses: vec![public_addr],
-    authentication: ServerAuthentication::Unsecure,
-  };
-
-  let transport = NetcodeServerTransport::new(server_config, socket).unwrap();
-
-  (server, transport)
-}
-
-pub fn server_update_system(
-  mut server_events: EventReader<ServerEvent>,
-  mut commands: Commands,
-  // mut meshes: ResMut<Assets<Mesh>>,
-  // mut materials: ResMut<Assets<StandardMaterial>>,
-  mut lobby: ResMut<Lobby>,
-  mut server: ResMut<RenetServer>,
-) {
-  for event in server_events.iter() {
-    match event {
-      ServerEvent::ClientConnected { client_id } => {
-        log::info!("Player {} connected.", client_id);
-        // Spawn player cube
-        let player_entity = commands.spawn_server_side_player(*client_id).id();
-
-        let message =
-          bincode::serialize(&ServerMessages::InitConnection { id: *client_id }).unwrap();
-        server.send_message(*client_id, DefaultChannel::ReliableOrdered, message);
-
-        // We could send an InitState with all the players id and positions for the client
-        // but this is easier to do.
-        for &player_id in lobby.players.keys() {
-          let message =
-            bincode::serialize(&ServerMessages::PlayerConnected { id: player_id }).unwrap();
-          server.send_message(*client_id, DefaultChannel::ReliableOrdered, message);
-        }
-
-        lobby.players.insert(
-          *client_id,
-          PlayerData {
-            entity: player_entity,
-            view_dirrection: PlayerViewDirrection::default(),
-          },
-        );
-
-        let message =
-          bincode::serialize(&ServerMessages::PlayerConnected { id: *client_id }).unwrap();
-        server.broadcast_message(DefaultChannel::ReliableOrdered, message);
-      }
-      ServerEvent::ClientDisconnected { client_id, reason } => {
-        log::info!("Player {} disconnected: {}", client_id, reason);
-        if let Some(player_data) = lobby.players.remove(client_id) {
-          commands.entity(player_data.entity).despawn();
-        }
-
-        let message =
-          bincode::serialize(&ServerMessages::PlayerDisconnected { id: *client_id }).unwrap();
-        server.broadcast_message(DefaultChannel::ReliableOrdered, message);
-      }
-    }
-  }
-
-  for client_id in server.clients_id().into_iter() {
-    while let Some(message) = server.receive_message(client_id, DefaultChannel::ReliableOrdered) {
-      let player_input: PlayerInput = bincode::deserialize(&message).unwrap();
-      if let Some(player_data) = lobby.players.get(&client_id) {
-        commands.entity(player_data.entity).insert(player_input);
-      }
-    }
-  }
-}
-
-pub fn server_sync_players(
-  mut server: ResMut<RenetServer>,
-  mut data: ResMut<TransportData>,
-  query: Query<(&Position, &Rotation, &Player)>,
-) {
-  // let mut players: HashMap<ClientId, [[f32; 3]; 2]> = HashMap::new();
-  for (position, rotation, player) in query.iter() {
-    data
-      .data
-      .insert(player.id, (position.0.into(), rotation.0.into()));
-  }
-
-  let sync_message = bincode::serialize(&data.data).unwrap();
-  server.broadcast_message(DefaultChannel::Unreliable, sync_message);
-
-  data.data.clear();
-}
-
-#[derive(Default, Debug, Resource)]
-pub struct OwnId(Option<ClientId>);
-
-pub fn new_renet_client(addr: String) -> (RenetClient, NetcodeClientTransport) {
-  let client = RenetClient::new(ConnectionConfig::default());
-  log::info!("{}", addr);
-  let server_addr = addr.parse().unwrap();
-  let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
-  let current_time = SystemTime::now()
-    .duration_since(SystemTime::UNIX_EPOCH)
-    .unwrap();
-  let client_id = current_time.as_millis() as u64;
-  let authentication = ClientAuthentication::Unsecure {
-    client_id,
-    protocol_id: PROTOCOL_ID,
-    server_addr,
-    user_data: None,
-  };
-
-  let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
-
-  (client, transport)
-}
-
-pub fn client_send_input(player_input: Res<PlayerInput>, mut client: ResMut<RenetClient>) {
-  let input_message = bincode::serialize(&*player_input).unwrap();
-
-  client.send_message(DefaultChannel::ReliableOrdered, input_message);
-}
-
-pub fn client_sync_players(
-  mut commands: Commands,
-  _meshes: ResMut<Assets<Mesh>>,
-  _materials: ResMut<Assets<StandardMaterial>>,
-  mut client: ResMut<RenetClient>,
-  mut transport_data: ResMut<TransportData>,
-  mut lobby: ResMut<Lobby>,
-  mut own_id: ResMut<OwnId>,
-  mut tied_camera_query: Query<&mut Transform, With<TiedCamera>>
-) {
-  // player existence manager
-  while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
-    let server_message = bincode::deserialize(&message).unwrap();
-    match server_message {
-      ServerMessages::InitConnection { id } => {
-        if own_id.0.is_some() {
-          panic!("Yeah, I knew it. The server only had to initialize me once. Redo it, you idiot.");
-        } else {
-          *own_id = OwnId(Some(id));
-        }
-      }
-      ServerMessages::PlayerConnected { id } => {
-        log::info!("Player {} connected.", id);
-
-        // TODO podumai
-        let player_entity = commands.spawn_client_side_player().id();
-        if Some(id) == own_id.0 {
-          commands.spawn_tied_camera();
-        }
-
-        lobby.players.insert(
-          id,
-          PlayerData {
-            entity: player_entity,
-            view_dirrection: PlayerViewDirrection::default(), // TODO get from server for ather players
-          },
-        );
-      }
-      ServerMessages::PlayerDisconnected { id } => {
-        println!("Player {} disconnected.", id);
-        if let Some(player_data) = lobby.players.remove(&id) {
-          commands.entity(player_data.entity).despawn();
-        }
-      }
-    }
-  }
-
-  // players movements
-  while let Some(message) = client.receive_message(DefaultChannel::Unreliable) {
-    transport_data.data = bincode::deserialize(&message).unwrap();
-    for (player_id, data) in transport_data.data.iter() {
-      if let Some(player_data) = lobby.players.get(player_id) {
-        let transform = Transform {
-          translation: (data.0).into(),
-          rotation: Quat::from_array(data.1),
-          ..Default::default()
-        };
-        commands.entity(player_data.entity).insert(transform);
-        if Some(player_id) == own_id.0.as_ref() {
-          if let Ok(mut camera_transform) = tied_camera_query.get_single_mut() {   
-            camera_transform.translation = transform.translation;
-          }
-        }
-      }
-    }
-  }
-}
-
-pub fn player_input(keyboard_input: Res<Input<KeyCode>>, mut player_input: ResMut<PlayerInput>) {
-  player_input.left = keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::Left);
-  player_input.right = keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right);
-  player_input.up = keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
-  player_input.down = keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
 }
