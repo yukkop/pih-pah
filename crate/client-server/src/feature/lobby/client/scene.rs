@@ -1,7 +1,6 @@
 use crate::feature::lobby::PLANE_SIZE;
 use bevy::prelude::{shape::Plane, *};
 
-
 pub struct ScenePlugins;
 
 impl Plugin for ScenePlugins {

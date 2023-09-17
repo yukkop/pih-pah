@@ -1,6 +1,5 @@
-
 use crate::feature::lobby::PLANE_SIZE;
-use bevy::prelude::{*};
+use bevy::prelude::*;
 use bevy_xpbd_3d::prelude::*;
 
 pub struct ScenePlugins;
