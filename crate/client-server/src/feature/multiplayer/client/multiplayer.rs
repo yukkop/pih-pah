@@ -4,7 +4,7 @@ use crate::feature::lobby::client::camera_switch;
 use crate::feature::lobby::client::spawn_client_side_player;
 use crate::feature::lobby::client::{spawn_tied_camera, TiedCamera};
 use crate::feature::multiplayer::{
-  Lobby, PlayerData, PlayerInput, PlayerViewDirrection, ServerMessages, TransportData, PROTOCOL_ID,
+  Lobby, PlayerData, PlayerInput, ServerMessages, TransportData, PROTOCOL_ID,
 };
 use bevy_renet::{
   renet::{transport::ClientAuthentication, ConnectionConfig, DefaultChannel, RenetClient},

@@ -2,7 +2,6 @@ use crate::extend_commands;
 use crate::feature::multiplayer::{Player, PlayerInput, PlayerViewDirrection};
 use bevy::{ecs::system::EntityCommands, prelude::*};
 use bevy_xpbd_3d::prelude::*;
-use bevy_xpbd_3d::math::PI;
 use renet::ClientId;
 
 use crate::feature::lobby::{PLAYER_MOVE_SPEED, PLAYER_SIZE, PLAYER_SPAWN_POINT, PLAYER_CAMERA_ROTATION_SPEED};
@@ -22,13 +21,22 @@ fn move_players_system(
     let x = (input.right as i8 - input.left as i8) as f32;
     let y = (input.down as i8 - input.up as i8) as f32;
 
+    // convert axises to global
+    let global_x = view_dirrection.0.mul_vec3(Vec3::X);
+    let global_y = view_dirrection.0.mul_vec3(Vec3::Z);
+
     // never use delta time in fixed update !!!
-    linear_velocity.x += x * PLAYER_MOVE_SPEED; // * time.delta().as_secs_f32();
-    linear_velocity.z += y * PLAYER_MOVE_SPEED; // * time.delta().as_secs_f32();
+
+    // move by x axis
+    linear_velocity.x += x * PLAYER_MOVE_SPEED * global_x.x; // * time.delta().as_secs_f32();
+    linear_velocity.z += x * PLAYER_MOVE_SPEED * global_x.z; // * time.delta().as_secs_f32();
+
+    // move by y axis
+    linear_velocity.x += y * PLAYER_MOVE_SPEED * global_y.x; // * time.delta().as_secs_f32();
+    linear_velocity.z += y * PLAYER_MOVE_SPEED * global_y.z; // * time.delta().as_secs_f32();
 
     // camera turn
     let turn = (input.turn_right as i8 - input.turn_left as i8) as f32;
-    println!("{}", turn);
 
     let rotation = Quat::from_rotation_y(PLAYER_CAMERA_ROTATION_SPEED * turn /* * delta_seconds */);
     view_dirrection.0 *= rotation;
