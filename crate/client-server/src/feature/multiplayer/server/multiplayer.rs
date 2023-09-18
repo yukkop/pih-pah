@@ -106,7 +106,8 @@ pub fn server_update_system(
           bincode::serialize(&ServerMessages::InitConnection { id: *client_id }).unwrap();
         server.send_message(*client_id, DefaultChannel::ReliableOrdered, message);
 
-        let color = generate_player_color((lobby.players.len() + 1) as u32);
+        lobby.players_seq += 1;
+        let color = generate_player_color(lobby.players_seq as u32);
 
         // We could send an InitState with all the players id and positions for the client
         // but this is easier to do.

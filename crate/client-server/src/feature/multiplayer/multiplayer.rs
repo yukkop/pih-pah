@@ -37,6 +37,7 @@ pub struct Player {
 #[derive(Debug, Default, Resource)]
 pub struct Lobby {
   pub players: HashMap<ClientId, PlayerData>,
+  pub players_seq: usize,
 }
 
 #[derive(Debug)]
