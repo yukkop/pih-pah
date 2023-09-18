@@ -105,24 +105,31 @@ pub fn client_sync_players(
           *own_id = OwnId(Some(id));
         }
       }
-      ServerMessages::PlayerConnected { id } => {
-        log::info!("Player {} connected.", id);
+      ServerMessages::PlayerConnected { id, color } => {
+        let name = "noname";
 
-        // TODO podumai
-        let player_entity = commands.spawn_client_side_player().id();
+        let player_entity = commands.spawn_client_side_player(color).id();
         if Some(id) == own_id.0 {
           commands.spawn_tied_camera();
+          log::info!("{name} ({id}), welcome.");
         }
+        else {
+          log::info!("Player {} ({}) connected.", name, id);
+        }
+
 
         lobby.players.insert(
           id,
           PlayerData {
             entity: player_entity,
+            color,
           },
         );
       }
       ServerMessages::PlayerDisconnected { id } => {
-        println!("Player {} disconnected.", id);
+        let name = "noname";
+
+        log::info!("Player {} ({}) disconnected.", name, id);
         if let Some(player_data) = lobby.players.remove(&id) {
           commands.entity(player_data.entity).despawn();
         }

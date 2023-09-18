@@ -2774,6 +2774,7 @@ dependencies = [
  "bevy_xpbd_3d",
  "bincode",
  "env_logger",
+ "epaint",
  "log",
  "regex",
  "renet",

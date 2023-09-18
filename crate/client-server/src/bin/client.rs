@@ -4,11 +4,11 @@ use bevy::{
   prelude::*,
 };
 use bevy_egui::EguiPlugin;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+// use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use pih_pah::feature::lobby::client::LobbyPlugins;
 use pih_pah::feature::multiplayer::client::MultiplayerPlugins;
 use pih_pah::feature::music::MusicPlugins;
-use pih_pah::feature::ui::{FpsPlugins, UiPlugins};
+use pih_pah::feature::ui::{UiDebugPlugins, UiPlugins};
 use pih_pah::lib::netutils::{is_http_address, is_ip_with_port};
 use pih_pah::feature::multiplayer::panic_on_error_system;
 
@@ -56,10 +56,10 @@ fn main() {
     };
     app.add_plugins(DefaultPlugins.set(window_plugin_override));
     app.add_plugins(EguiPlugin);
-    app.add_plugins(FpsPlugins);
+    app.add_plugins(UiDebugPlugins);
     app.add_plugins(LogDiagnosticsPlugin::default());
     app.add_plugins(FrameTimeDiagnosticsPlugin);
-    app.add_plugins(WorldInspectorPlugin::default());
+    // app.add_plugins(WorldInspectorPlugin::default());
   }
 
   app.add_plugins((

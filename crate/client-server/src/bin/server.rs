@@ -6,7 +6,7 @@ use bevy_xpbd_3d::prelude::*;
 
 use pih_pah::feature::lobby::server::LobbyPlugins;
 use pih_pah::feature::multiplayer::server::MultiplayerPlugins;
-use pih_pah::feature::ui::FpsPlugins;
+use pih_pah::feature::ui::UiDebugPlugins;
 use pih_pah::lib::netutils;
 use pih_pah::feature::multiplayer::panic_on_error_system;
 
@@ -57,7 +57,7 @@ fn main() {
     // Debug plugins
     app.add_plugins(DefaultPlugins.set(window_plugin_override));
     app.add_plugins(EguiPlugin);
-    app.add_plugins(FpsPlugins);
+    app.add_plugins(UiDebugPlugins);
     app.add_plugins(LogDiagnosticsPlugin::default());
     app.add_plugins(FrameTimeDiagnosticsPlugin);
     app.add_plugins(WorldInspectorPlugin::default());

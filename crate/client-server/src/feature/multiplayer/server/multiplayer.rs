@@ -71,6 +71,22 @@ pub fn new_renet_server(addr: &str) -> (RenetServer, NetcodeServerTransport) {
   (server, transport)
 }
 
+pub fn generate_player_color(player_number: u32) -> Color {
+  let golden_angle = 137.5;
+  // let mut colors = Vec::new();
+
+  // for i in 0..n {
+  let hue = (golden_angle * player_number as f32) % 360.0;
+  let color = Color::hsl(hue, 1.0, 0.5);
+  // colors.push(hex);
+  // }
+  // colors
+
+  // netral: rgb(0.8, 0.7, 0.6)
+  // Color::default()
+  color
+}
+
 pub fn server_update_system(
   mut server_events: EventReader<ServerEvent>,
   mut commands: Commands,
@@ -90,11 +106,14 @@ pub fn server_update_system(
           bincode::serialize(&ServerMessages::InitConnection { id: *client_id }).unwrap();
         server.send_message(*client_id, DefaultChannel::ReliableOrdered, message);
 
+        lobby.players_seq += 1;
+        let color = generate_player_color(lobby.players_seq as u32);
+
         // We could send an InitState with all the players id and positions for the client
         // but this is easier to do.
-        for &player_id in lobby.players.keys() {
+        for (player_id, player_data) in &lobby.players {
           let message =
-            bincode::serialize(&ServerMessages::PlayerConnected { id: player_id }).unwrap();
+            bincode::serialize(&ServerMessages::PlayerConnected { id: *player_id, color: player_data.color }).unwrap();
           server.send_message(*client_id, DefaultChannel::ReliableOrdered, message);
         }
 
@@ -102,11 +121,12 @@ pub fn server_update_system(
           *client_id,
           PlayerData {
             entity: player_entity,
+            color,
           },
         );
 
         let message =
-          bincode::serialize(&ServerMessages::PlayerConnected { id: *client_id }).unwrap();
+          bincode::serialize(&ServerMessages::PlayerConnected { id: *client_id, color }).unwrap();
         server.broadcast_message(DefaultChannel::ReliableOrdered, message);
       }
       ServerEvent::ClientDisconnected { client_id, reason } => {

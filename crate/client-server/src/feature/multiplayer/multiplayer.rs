@@ -37,11 +37,13 @@ pub struct Player {
 #[derive(Debug, Default, Resource)]
 pub struct Lobby {
   pub players: HashMap<ClientId, PlayerData>,
+  pub players_seq: usize,
 }
 
 #[derive(Debug)]
 pub struct PlayerData {
   pub entity: Entity,
+  pub color: Color,
 }
 
 /// player view direction in global spase
@@ -58,7 +60,7 @@ impl Default for PlayerViewDirrection {
 #[derive(Debug, Serialize, Deserialize, Component)]
 pub enum ServerMessages {
   InitConnection { id: ClientId },
-  PlayerConnected { id: ClientId },
+  PlayerConnected { id: ClientId, color: Color },
   PlayerDisconnected { id: ClientId },
 }
 
