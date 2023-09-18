@@ -8,7 +8,7 @@ pub struct HudPlugins;
 
 impl Plugin for HudPlugins {
   fn build(&self, app: &mut App) {
-    app.add_systems(FixedUpdate, ui);
+    app.add_systems(Update, ui);
   }
 }
 
