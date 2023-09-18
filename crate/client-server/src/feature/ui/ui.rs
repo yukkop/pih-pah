@@ -5,7 +5,7 @@ use bevy_egui::{
 };
 
 use bevy::prelude::*;
-
+use epaint::Shadow;    
 pub struct UiPlugins;
 
 /// EguiPlugin nessesarly
@@ -51,7 +51,13 @@ fn ui_debug_update(
   let ctx = contexts.ctx_mut();
 
   // preferences 
+  let no_shadow_frame = egui::containers::Frame {
+    shadow: Shadow::NONE,
+    ..default()
+  };
+
   egui::Window::new("Preferences")
+    .frame(no_shadow_frame)
     .vscroll(true)
     .show(ctx, |ui| {
       ui.checkbox(&mut ui_state.is_fps_window_open, "FPS");
