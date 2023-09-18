@@ -42,6 +42,7 @@ pub struct Lobby {
 #[derive(Debug)]
 pub struct PlayerData {
   pub entity: Entity,
+  pub color: Color,
 }
 
 /// player view direction in global spase
@@ -58,7 +59,7 @@ impl Default for PlayerViewDirrection {
 #[derive(Debug, Serialize, Deserialize, Component)]
 pub enum ServerMessages {
   InitConnection { id: ClientId },
-  PlayerConnected { id: ClientId },
+  PlayerConnected { id: ClientId, color: Color },
   PlayerDisconnected { id: ClientId },
 }
 
