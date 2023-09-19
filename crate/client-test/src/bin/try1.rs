@@ -18,7 +18,7 @@ fn main() {
       server_addr: SERVER_ADDR,
       client_id,
       user_data: None,
-      protocol_id: 0,
+      protocol_id: 7,
   };
 
   let mut transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
@@ -28,20 +28,20 @@ fn main() {
       let delta_time = Duration::from_millis(16);
       // Receive new messages and update client
       client.update(delta_time);
-      transport.update(delta_time, &mut client).unwrap();
-      
-      if transport.is_connected() {
-          // Receive message from server
-          while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
-            println!("{:#?}", message);
-          }
-          
-          // Send message
-          client.send_message(DefaultChannel::ReliableOrdered, "client text".as_bytes().to_vec());
+      if let Ok(_) = transport.update(delta_time, &mut client) {
+        if transport.is_connected() {
+            // Receive message from server
+            while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
+              println!("{:#?}", message);
+            }
+            
+            // Send message
+            client.send_message(DefaultChannel::ReliableOrdered, "client text".as_bytes().to_vec());
+        }
+     
+        // Send packets to server
+        let _ = transport.send_packets(&mut client);
       }
-   
-      // Send packets to server
-      let _ = transport.send_packets(&mut client);
   }
 }
 

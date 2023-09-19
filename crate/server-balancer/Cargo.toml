@@ -1,5 +1,5 @@
 [package]
-name = "client-test"
+name = "server-balancer"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 env_logger = "0.10.0"
 renet = { git = "https://github.com/lucaspoffo/renet.git", package = "renet", version = "0.0.13", features = ["bevy", "serde", "transport" ] }
+

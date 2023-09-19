@@ -13,8 +13,10 @@ use bevy_renet::{
 };
 use renet::{transport::NetcodeClientTransport, ClientId};
 
-use std::net::UdpSocket;
-use std::time::SystemTime;
+use std::{
+  net::UdpSocket,
+  time::SystemTime
+};
 
 #[derive(Default, Debug, Resource)]
 pub struct OwnId(Option<ClientId>);
@@ -59,7 +61,6 @@ impl Plugin for MultiplayerPlugins {
 
 pub fn new_renet_client(addr: String) -> (RenetClient, NetcodeClientTransport) {
   let client = RenetClient::new(ConnectionConfig::default());
-  log::info!("{}", addr);
   let server_addr = addr.parse().unwrap();
   let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
   let current_time = SystemTime::now()

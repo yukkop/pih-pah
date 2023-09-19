@@ -159,3 +159,4 @@ pub fn server_sync_players(
 
   data.data.clear();
 }
+

@@ -12,7 +12,7 @@ use pih_pah::feature::ui::{UiDebugPlugins, UiPlugins};
 use pih_pah::lib::netutils::{is_http_address, is_ip_with_port};
 use pih_pah::feature::multiplayer::panic_on_error_system;
 
-#[cfg(not(any(feature = "wayland", feature = "x11")))]
+#[cfg(not(any(feature = "wayland", feature = "x11", feature = "windows")))]
 compile_error!("Either 'wayland' or 'x11' feature must be enabled flag.");
 
 fn main() {
