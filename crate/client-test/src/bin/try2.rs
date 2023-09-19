@@ -8,7 +8,7 @@ use std::{
 const PROTOCOL_ID: u64 = 7;
 use renet::{
     transport::{
-        ClientAuthentication, NetcodeClientTransport, NetcodeServerTransport, ServerAuthentication, ServerConfig, NETCODE_USER_DATA_BYTES,
+        ClientAuthentication, NetcodeClientTransport, NetcodeServerTransport, ServerAuthentication, ServerConfig, NETCODE_USER_DATA_BYTES as NETCODE_CLENT_DATA_BYTES,
     },
     ClientId, ConnectionConfig, DefaultChannel, RenetClient, RenetServer, ServerEvent,
 };
@@ -27,25 +27,15 @@ fn spawn_stdin_channel() -> Receiver<String> {
 struct Username(String);
 
 impl Username {
-    fn to_netcode_user_data(&self) -> [u8; NETCODE_USER_DATA_BYTES] {
-        let mut user_data = [0u8; NETCODE_USER_DATA_BYTES];
-        if self.0.len() > NETCODE_USER_DATA_BYTES - 8 {
+    fn to_netcode(&self) -> [u8; NETCODE_CLENT_DATA_BYTES] {
+        let mut user_data = [0u8; NETCODE_CLENT_DATA_BYTES];
+        if self.0.len() > NETCODE_CLENT_DATA_BYTES - 8 {
             panic!("Username is too big");
         }
         user_data[0..8].copy_from_slice(&(self.0.len() as u64).to_le_bytes());
         user_data[8..self.0.len() + 8].copy_from_slice(self.0.as_bytes());
 
         user_data
-    }
-
-    fn from_user_data(user_data: &[u8; NETCODE_USER_DATA_BYTES]) -> Self {
-        let mut buffer = [0u8; 8];
-        buffer.copy_from_slice(&user_data[0..8]);
-        let mut len = u64::from_le_bytes(buffer) as usize;
-        len = len.min(NETCODE_USER_DATA_BYTES - 8);
-        let data = user_data[8..len + 8].to_vec();
-        let username = String::from_utf8(data).unwrap();
-        Self(username)
     }
 }
 
@@ -63,13 +53,13 @@ fn client(server_addr: SocketAddr, username: Username) {
     let connection_config = ConnectionConfig::default();
     let mut client = RenetClient::new(connection_config);
 
-    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
     let current_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
     let client_id = current_time.as_millis() as u64;
     let authentication = ClientAuthentication::Unsecure {
         server_addr,
         client_id,
-        user_data: Some(username.to_netcode_user_data()),
+        user_data: Some(username.to_netcode()),
         protocol_id: PROTOCOL_ID,
     };
 

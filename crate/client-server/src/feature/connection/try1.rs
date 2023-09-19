@@ -25,81 +25,53 @@ impl Plugin for ConnectionPlugins {
   }
 }
 
-fn init_connection() -> (RenetClient, NetcodeClientTransport) {
-   let mut client = RenetClient::new(ConnectionConfig::default());
- 
-   // Setup transport layer
-   const SERVER_ADDR: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 2007);
-   let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
-   let current_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
-   let client_id: u64 = 0;
-   let authentication = ClientAuthentication::Unsecure {
-       server_addr: SERVER_ADDR,
-       client_id,
-       user_data: None,
-       protocol_id: 7,
-   };
- 
-   let mut transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
-
-   (client, transport)
-}
-
-fn report_server_status(mut transport: ResMut<ConnectionTransport>, mut client: ResMut<ConnectionClient>) {
-  let delta_time = Duration::from_millis(16);
-  // Receive new messages and update client
-  client.0.update(delta_time);
-  transport.0.update(delta_time, &mut client.0).unwrap();
-  
-  if transport.0.is_connected() {
-      // Receive message from server
-      while let Some(message) = client.0.receive_message(DefaultChannel::ReliableOrdered) {
-        println!("{:#?}", message);
-      }
-      
-      // Send message
-      client.0.send_message(DefaultChannel::ReliableOrdered, "client text".as_bytes().to_vec());
-  }
-
-  // Send packets to server
-  let _ = transport.0.send_packets(&mut client.0);
-}
-
-// fn update() -> Result<(), NetcodeTransportError> {
-//   let mut client = RenetClient::new(ConnectionConfig::default());
-// 
-//   // Setup transport layer
-//   const SERVER_ADDR: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), 2007);
-//   let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
-//   let current_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
-//   let client_id: u64 = 0;
-//   let authentication = ClientAuthentication::Unsecure {
-//       server_addr: SERVER_ADDR,
-//       client_id,
-//       user_data: None,
-//       protocol_id: 0,
-//   };
-// 
-//   let mut transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
-// 
-//   // Your gameplay loop
-//   loop {
-//       let delta_time = Duration::from_millis(16);
-//       // Receive new messages and update client
-//       client.update(delta_time);
-//       transport.update(delta_time, &mut client).unwrap();
-//       
-//       if transport.is_connected() {
-//           // Receive message from server
-//           while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
-//             println!("{:#?}", message);
-//           }
-//           
-//           // Send message
-//           client.send_message(DefaultChannel::ReliableOrdered, "client text".as_bytes().to_vec());
-//       }
-//    
-//       // Send packets to server
-//       transport.send_packets(&mut client)?;
+// impl Plugin for MultiplayerPlugins {
+//   fn build(&self, app: &mut App) {
+//     app.init_resource::<Lobby>();
+//     app.init_resource::<TransportData>();
+//     app.add_plugins(RenetClientPlugin);
+//     app.add_plugins(NetcodeClientPlugin);
+//     app.init_resource::<PlayerInput>();
+//     app.init_resource::<OwnId>();
+//
+//     let (client, transport) = new_renet_client(self.server_addr.to_string());
+//     app.insert_resource(client);
+//     app.insert_resource(transport);
+//
+//     app.add_systems(
+//       Update,
+//       (
+//         player_input,
+//         camera_switch, // TODO maybe separate
+//         client_send_input,
+//         client_sync_players,
+//       )
+//         .run_if(bevy_renet::transport::client_connected()),
+//     );
 //   }
 // }
+
+pub fn new_renet_client(addr: String) -> (RenetClient, NetcodeClientTransport) {
+  let client = RenetClient::new(ConnectionConfig::default());
+  let server_addr = addr.parse().unwrap();
+  let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
+  let current_time = SystemTime::now()
+    .duration_since(SystemTime::UNIX_EPOCH)
+    .unwrap();
+  let client_id = current_time.as_millis() as u64;
+  let authentication = ClientAuthentication::Unsecure {
+    client_id,
+    protocol_id: PROTOCOL_ID,
+    server_addr,
+    user_data: None,
+  };
+
+  let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
+
+  (client, transport)
+}
+
+pub fn client_sync_players(
+  mut client: ResMut<RenetClient>,
+) {
+}

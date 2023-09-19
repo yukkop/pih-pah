@@ -68,7 +68,7 @@ fn main() {
   app.add_plugins(LobbyPlugins);
   app.add_plugins(PhysicsPlugins::default());
   app.add_plugins(MultiplayerPlugins::by_string(server_addr.to_string()));
-  app.add_plugins(ConnectionPlugins);
+  app.add_plugins(ConnectionPlugins::by_string(server_addr.to_string()));
 
   app.add_systems(Update, panic_on_error_system);
 
