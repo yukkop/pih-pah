@@ -3,6 +3,6 @@
 
 pub mod lobby;
 pub mod multiplayer;
-pub mod connection;
+pub mod heartbeat;
 pub mod music;
 pub mod ui;

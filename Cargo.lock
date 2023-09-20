@@ -1210,14 +1210,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "client-test"
-version = "0.1.0"
-dependencies = [
- "env_logger",
- "renet",
-]
-
-[[package]]
 name = "clipboard-win"
 version = "4.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

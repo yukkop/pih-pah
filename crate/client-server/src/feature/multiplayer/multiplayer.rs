@@ -48,14 +48,10 @@ pub struct PlayerData {
 
 /// player view direction in global spase
 #[derive(Debug, Component)]
+#[derive(Default)]
 pub struct PlayerViewDirrection(pub Quat);
 
-impl Default for PlayerViewDirrection {
-  fn default() -> Self {
-    // forward
-    Self(Quat::default())
-  }
-}
+
 
 #[derive(Debug, Serialize, Deserialize, Component)]
 pub enum ServerMessages {

@@ -57,6 +57,6 @@ fn ui(
 
   egui::CentralPanel::default()
     .frame(transparent_frame)
-    .show(ctx, |ui| {
+    .show(ctx, |_ui| {
     });
 }
