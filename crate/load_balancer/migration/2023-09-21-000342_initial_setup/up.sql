@@ -21,10 +21,10 @@ CREATE TABLE public.country (
 	latitude numeric(10, 8) NULL,
 	longitude numeric(11, 8) NULL,
 	emoji varchar(191) NULL,
-	emojiu varchar(191) NULL,
+	emoji_u varchar(191) NULL,
 	created_at timestamp NULL,
 	updated_at timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-	wikidataid varchar(255) NULL,
+	wiki_data_id varchar(255) NULL,
 	CONSTRAINT country_pkey PRIMARY KEY (id)
 );
 

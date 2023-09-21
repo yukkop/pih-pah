@@ -1,4 +1,4 @@
-COMMENT ON COLUMN "country".wikiDataId IS 'Rapid API GeoDB Cities';
+COMMENT ON COLUMN "country".wiki_data_id IS 'Rapid API GeoDB Cities';
 
 INSERT INTO "country" VALUES 
 (1,'Afghanistan','AFG','004','AF','93','Kabul','AFN','Afghan afghani','؋','.af','افغانستان','Asia',3,'Southern Asia',14,'Afghan','[{"zoneName":"Asia/Kabul","gmtOffset":16200,"gmtOffsetName":"UTC+04:30","abbreviation":"AFT","tzName":"Afghanistan Time"}]','{"kr":"아프가니스탄","pt-BR":"Afeganistão","pt":"Afeganistão","nl":"Afghanistan","hr":"Afganistan","fa":"افغانستان","de":"Afghanistan","es":"Afganistán","fr":"Afghanistan","ja":"アフガニスタン","it":"Afghanistan","cn":"阿富汗","tr":"Afganistan"}',33.00000000,65.00000000,'🇦🇫','U+1F1E6 U+1F1EB','2018-07-21 09:11:03','2023-08-08 23:04:58','Q889'),
