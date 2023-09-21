@@ -1,54 +1,3 @@
-CREATE TABLE "user" (
-  id UUID PRIMARY KEY NOT NULL UNIQUE,
-  name TEXT NOT NULL,
-  password_hash TEXT NOT NULL,
-  accout_name TEXT NOT NULL UNIQUE,
-  language_id INTEGER NOT NULL
-);
-
-CREATE TABLE "server" (
-  id UUID PRIMARY KEY NOT NULL UNIQUE,
-  name TEXT NOT NULL UNIQUE,
-  country_id INTEGER NOT NULL UNIQUE
-);
-
-CREATE TABLE "language" (
-  id INTEGER PRIMARY KEY NOT NULL UNIQUE,
-  name TEXT NOT NULL UNIQUE
-);
-
-CREATE TABLE "country" (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  iso3 CHAR(3),
-  numeric_code CHAR(3),
-  iso2 CHAR(2),
-  phonecode VARCHAR(255),
-  capital VARCHAR(255),
-  currency VARCHAR(255),
-  currency_name VARCHAR(255),
-  currency_symbol VARCHAR(255),
-  tld VARCHAR(255),
-  "native" VARCHAR(255),
-  region VARCHAR(255),
-  region_id INTEGER,
-  subregion VARCHAR(255),
-  subregion_id INTEGER,
-  nationality VARCHAR(255),
-  timezones TEXT,
-  translations TEXT,
-  latitude NUMERIC(10,8),
-  longitude NUMERIC(11,8),
-  emoji VARCHAR(191),
-  emojiU VARCHAR(191),
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  wikiDataId VARCHAR(255)
-);
-
-ALTER TABLE "user" ADD CONSTRAINT user_language_id_language_id FOREIGN KEY (language_id) REFERENCES language(id) ON DELETE SET DEFAULT ON UPDATE NO ACTION;
-ALTER TABLE "server" ADD CONSTRAINT server_country_id_coutry_id FOREIGN KEY (country_id) REFERENCES coutry(id) ON DELETE RESTRICT ON UPDATE NO ACTION;
-
 COMMENT ON COLUMN "country".wikiDataId IS 'Rapid API GeoDB Cities';
 
 INSERT INTO "country" VALUES 
@@ -301,4 +250,3 @@ INSERT INTO "country" VALUES
 (248,'Kosovo','XKX','926','XK','383','Pristina','EUR','Euro','€','.xk','Republika e Kosovës','Europe',4,'Eastern Europe',15,'Kosovar, Kosovan','[{"zoneName":"Europe/Belgrade","gmtOffset":3600,"gmtOffsetName":"UTC+01:00","abbreviation":"CET","tzName":"Central European Time"}]','{"kr":"코소보","cn":"科索沃","tr":"Kosova"}',42.56129090,20.34030350,'🇽🇰','U+1F1FD U+1F1F0','2020-08-16 04:33:50','2023-08-11 17:46:28','Q1246'),
 (249,'Curaçao','CUW','531','CW','599','Willemstad','ANG','Netherlands Antillean guilder','ƒ','.cw','Curaçao','Americas',2,'Caribbean',7,'Curacaoan','[{"zoneName":"America/Curacao","gmtOffset":-14400,"gmtOffsetName":"UTC-04:00","abbreviation":"AST","tzName":"Atlantic Standard Time"}]','{"kr":"퀴라소","pt-BR":"Curaçao","pt":"Curaçao","nl":"Curaçao","fa":"کوراسائو","de":"Curaçao","fr":"Curaçao","it":"Curaçao","cn":"库拉索","tr":"Curaçao"}',12.11666700,-68.93333300,'🇨🇼','U+1F1E8 U+1F1FC','2020-10-26 02:54:20','2023-08-11 17:45:55','Q25279'),
 (250,'Sint Maarten (Dutch part)','SXM','534','SX','1721','Philipsburg','ANG','Netherlands Antillean guilder','ƒ','.sx','Sint Maarten','Americas',2,'Caribbean',7,'Sint Maarten','[{"zoneName":"America/Anguilla","gmtOffset":-14400,"gmtOffsetName":"UTC-04:00","abbreviation":"AST","tzName":"Atlantic Standard Time"}]','{"kr":"신트마르턴","pt-BR":"Sint Maarten","pt":"São Martinho","nl":"Sint Maarten","fa":"سینت مارتن","de":"Sint Maarten (niederl. Teil)","fr":"Saint Martin (partie néerlandaise)","it":"Saint Martin (parte olandese)","cn":"圣马丁岛（荷兰部分）","tr":"Sint Maarten"}',18.03333300,-63.05000000,'🇸🇽','U+1F1F8 U+1F1FD','2020-12-06 01:03:39','2023-08-09 21:23:19','Q26273');
-
