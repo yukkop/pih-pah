@@ -1,5 +1,6 @@
-mod model;
-mod schema;
+pub mod model;
+pub mod schema;
+pub mod controller;
 
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
