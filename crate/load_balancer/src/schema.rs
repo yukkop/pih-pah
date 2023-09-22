@@ -68,8 +68,9 @@ diesel::table! {
         id -> Uuid,
         name -> Text,
         password_hash -> Text,
-        accout_name -> Text,
+        account_name -> Text,
         language_id -> Int4,
+        password_salt -> Bytea,
     }
 }
 

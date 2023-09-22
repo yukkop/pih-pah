@@ -1,11 +1,11 @@
 use rocket::post;
 use rocket::routes;
 use rocket::Route;
-use crate::controller::tool::api_error::ApiError;
-use crate::controller::tool::shared::to_json;
+use crate::controller::tool::{ApiError, to_json};
 use crate::establish_connection;
 use crate::model::Country;
 use diesel::prelude::*;
+use crate::dto::res::ResCountry;
 
 pub fn coutry() -> Vec<Route> {
     routes![get_all]
@@ -21,7 +21,13 @@ fn get_all() -> Result<String, ApiError> {
         .load(connection)
         .map_err(|err| ApiError::conflict(err.to_string()))?;
 
-
-    Ok(to_json(&result))
+    Ok(to_json(
+        &result
+          .iter()
+          .map(|e| {
+            ResCountry::from(e)
+          })
+          .collect::<Vec<ResCountry>>())
+      )
 }
 
