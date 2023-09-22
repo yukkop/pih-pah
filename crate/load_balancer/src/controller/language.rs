@@ -1,6 +1,6 @@
 use rocket::{get, routes, Route, State, http::Status, Request};
 use crate::{
-  controller::tool::{ApiError, to_json, Token},
+  controller::tool::{ApiError, to_json, TokenHeader},
   establish_connection, 
   dto::res::ResLanguage,
   model::Language,
@@ -12,7 +12,7 @@ pub fn language() -> Vec<Route> {
 }
 
 #[get("/get")]
-fn get_all(_token: Token) -> Result<String, ApiError> {
+async fn get_all(_token: TokenHeader) -> Result<String, ApiError> {
     use crate::schema::language::dsl::*;
 
     let connection = &mut establish_connection();

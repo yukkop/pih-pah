@@ -1,4 +1,5 @@
 // @generated automatically by Diesel CLI.
+use diesel::associations::HasTable;
 
 diesel::table! {
     country (id) {
@@ -49,6 +50,14 @@ diesel::table! {
 }
 
 diesel::table! {
+    jwt_token (id) {
+        id -> Uuid,
+        token -> Text,
+        active -> Bool,
+    }
+}
+
+diesel::table! {
     language (id) {
         id -> Int4,
         name -> Text,
@@ -79,6 +88,7 @@ diesel::joinable!(user -> country (language_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     country,
+    jwt_token,
     language,
     server,
     user,

@@ -14,3 +14,4 @@ serde = { version = "1.0.169", features = ["derive"] }
 uuid = { version = "1.4.1", features = ["v4"] }
 rust-argon2 = "2.0"
 rand = "0.8.5"
+jsonwebtoken = { git = "https://github.com/Keats/jsonwebtoken.git" }

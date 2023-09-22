@@ -12,7 +12,7 @@ pub fn coutry() -> Vec<Route> {
 }
 
 #[get("/get")]
-fn get_all() -> Result<String, ApiError> {
+async fn get_all() -> Result<String, ApiError> {
     use crate::schema::country::dsl::*;
 
     let connection = &mut establish_connection();

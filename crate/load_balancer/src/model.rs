@@ -12,17 +12,6 @@ pub struct Country {
     pub iso3: Option<String>,
 }
 
-#[derive(Insertable)]
-#[diesel(table_name = crate::schema::user)]
-pub struct NewUser<'a> {
-    pub id: Uuid,
-    pub name: &'a str,
-    pub password_hash: String,
-    pub password_salt: Vec<u8>,
-    pub account_name: &'a str,
-    pub language_id: i32,
-}
-
 #[derive(Queryable, Selectable)]
 #[diesel(table_name = crate::schema::language)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -40,4 +29,32 @@ pub struct User {
     pub password_hash: String,
     pub password_salt: Vec<u8>,
     pub account_name: String,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = crate::schema::user)]
+pub struct NewUser<'a> {
+    pub id: Uuid,
+    pub name: &'a str,
+    pub password_hash: String,
+    pub password_salt: Vec<u8>,
+    pub account_name: &'a str,
+    pub language_id: i32,
+}
+
+#[derive(Queryable, Selectable)]
+#[diesel(table_name = crate::schema::jwt_token)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct JwtToken {
+    pub id: Uuid,
+    pub token: String,
+    pub active: bool,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = crate::schema::jwt_token)]
+pub struct NewJwtToken<'a> {
+    pub id: Uuid,
+    pub token: &'a str,
+    pub active: bool,
 }

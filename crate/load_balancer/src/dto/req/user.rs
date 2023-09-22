@@ -51,6 +51,12 @@ fn generate_hash(password: &str) -> (String, Vec<u8>) {
   (password_hash, password_salt)
 }
 
+#[derive(Deserialize)]
+pub struct ReqLogin<'a> {
+    pub account_name: &'a str,
+    pub password: &'a str,
+}
+
 // impl<'a> From<ReqNewUser<'_>> for NewUser<'_> {
 //     fn from(req: ReqNewUser) -> Self {
 //         let salt: [u8; 16] = rand::thread_rng().gen();
