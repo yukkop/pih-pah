@@ -17,6 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       .mount("/country", controller::coutry())
       .mount("/user", controller::user())
       .mount("/language", controller::language())
+      .mount("/server", controller::server())
       .launch()
       .await?;
 

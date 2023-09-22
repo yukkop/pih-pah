@@ -12,7 +12,7 @@ pub struct ResUser {
 
 impl From<User> for ResUser {
     fn from(model: User) -> Self {
-        ResUser {
+        Self {
             id: model.id,
             name: model.name,
             account_name: model.account_name,

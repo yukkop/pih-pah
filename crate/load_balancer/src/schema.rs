@@ -1,5 +1,4 @@
 // @generated automatically by Diesel CLI.
-use diesel::associations::HasTable;
 
 diesel::table! {
     country (id) {
@@ -69,6 +68,8 @@ diesel::table! {
         id -> Uuid,
         name -> Text,
         country_id -> Int4,
+        online -> Bool,
+        address -> Text,
     }
 }
 
