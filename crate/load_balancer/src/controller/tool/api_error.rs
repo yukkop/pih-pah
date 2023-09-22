@@ -7,7 +7,7 @@ pub struct ApiError(pub String, pub Status);
 
 impl ApiError {
     #[allow(dead_code)]
-    pub fn condlict_str(message: &str) -> Self {
+    pub fn conflict_str(message: &str) -> Self {
         Self(message.into(), Status::Conflict)
     }
 

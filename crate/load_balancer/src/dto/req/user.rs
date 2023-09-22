@@ -13,7 +13,6 @@ pub struct ReqNewUser<'a> {
     pub language_id: i32,
 }
 
-// TODO make it faster
 impl<'a> From<ReqNewUser<'a>> for NewUser<'a> {
     fn from(req: ReqNewUser<'a>) -> Self {
         let (password_hash, password_salt) = generate_hash(req.password);
@@ -44,6 +43,7 @@ impl<'a> From<&ReqNewUser<'a>> for NewUser<'a> {
     }
 }
 
+// TODO make it faster
 fn generate_hash(password: &str) -> (String, Vec<u8>) {
   let password_salt: Vec<u8> = rand::thread_rng().gen::<[u8; 32]>().to_vec();
   let config = get_argon2_config();
