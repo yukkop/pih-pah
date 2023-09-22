@@ -1,1 +1,4 @@
--- This file should undo anything in `up.sql`
+DROP TABLE "country";
+DROP TABLE "language";
+DROP TABLE "server";
+DROP TABLE "user";

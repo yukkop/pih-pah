@@ -1,5 +1,4 @@
 use serde::Serialize;
-use uuid::Uuid;
 
 use crate::model::Server;
 

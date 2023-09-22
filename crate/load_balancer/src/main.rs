@@ -1,9 +1,5 @@
 #[macro_use] extern crate rocket;
 use load_balancer::controller;
-use rocket::http::Status;
-use rocket::request::{FromRequest, self, Outcome};
-use rocket::{Request, Data};
-use rocket::fairing::{Fairing, Info, Kind};
 
 #[get("/")]
 fn index() -> &'static str {

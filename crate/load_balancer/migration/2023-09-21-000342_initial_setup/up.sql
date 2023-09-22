@@ -1,4 +1,4 @@
-CREATE TABLE public.country (
+CREATE TABLE public."country" (
 	id serial4 NOT NULL,
 	"name" varchar(100) NOT NULL,
 	iso3 bpchar(3) NULL,
@@ -36,6 +36,7 @@ CREATE TABLE public."language" (
 );
 
 CREATE TABLE public."user" (
+  -- 
 	id uuid NOT NULL,
 	"name" text NOT NULL,
 	password_hash text NOT NULL,
