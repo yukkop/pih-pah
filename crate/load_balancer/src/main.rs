@@ -40,4 +40,6 @@ fn rocket() -> _ {
     rocket::build()
       // .attach(AuthFairing)
       .mount("/country", controller::coutry())
+      .mount("/user", controller::user())
+      .mount("/language", controller::language())
 }

@@ -3,23 +3,28 @@ use serde::Deserialize;
 use crate::model::NewUser;
 use crate::tool::get_argon2_config;
 use rand::Rng;
+use uuid::Uuid;
 
 #[derive(Deserialize)]
 pub struct ReqNewUser<'a> {
     pub name: &'a str,
     pub password: &'a str,
     pub account_name: &'a str,
+    pub language_id: i32,
 }
 
+// TODO make it faster
 impl<'a> From<ReqNewUser<'a>> for NewUser<'a> {
     fn from(req: ReqNewUser<'a>) -> Self {
         let (password_hash, password_salt) = generate_hash(req.password);
 
         NewUser {
+            id: Uuid::new_v4(), 
             name: req.name,
             password_hash,
             password_salt,
             account_name: req.account_name,
+            language_id: req.language_id,
         }
     }
 }
@@ -29,10 +34,12 @@ impl<'a> From<&ReqNewUser<'a>> for NewUser<'a> {
         let (password_hash, password_salt) = generate_hash(req.password);
 
         NewUser {
+            id: Uuid::new_v4(), 
             name: req.name,
             password_hash,
             password_salt,
             account_name: req.account_name,
+            language_id: req.language_id,
         }
     }
 }

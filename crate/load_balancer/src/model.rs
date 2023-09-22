@@ -15,10 +15,12 @@ pub struct Country {
 #[derive(Insertable)]
 #[diesel(table_name = crate::schema::user)]
 pub struct NewUser<'a> {
+    pub id: Uuid,
     pub name: &'a str,
     pub password_hash: String,
     pub password_salt: Vec<u8>,
     pub account_name: &'a str,
+    pub language_id: i32,
 }
 
 #[derive(Queryable, Selectable)]

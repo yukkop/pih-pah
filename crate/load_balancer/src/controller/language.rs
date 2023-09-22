@@ -2,22 +2,22 @@ use rocket::{get, routes, Route};
 use crate::{
   controller::tool::{ApiError, to_json},
   establish_connection, 
-  dto::res::ResCountry,
-  model::Country,
+  dto::res::ResLanguage,
+  model::Language,
 };
 use diesel::prelude::*;
 
-pub fn coutry() -> Vec<Route> {
+pub fn language() -> Vec<Route> {
     routes![get_all]
 }
 
 #[get("/get")]
 fn get_all() -> Result<String, ApiError> {
-    use crate::schema::country::dsl::*;
+    use crate::schema::language::dsl::*;
 
     let connection = &mut establish_connection();
-    let result = country
-        .select(Country::as_select())
+    let result = language
+        .select(Language::as_select())
         .load(connection)
         .map_err(|err| ApiError::conflict(err.to_string()))?;
 
@@ -25,9 +25,9 @@ fn get_all() -> Result<String, ApiError> {
         &result
           .iter()
           .map(|e| {
-            ResCountry::from(e)
+            ResLanguage::from(e)
           })
-          .collect::<Vec<ResCountry>>())
+          .collect::<Vec<ResLanguage>>())
       )
 }
 
