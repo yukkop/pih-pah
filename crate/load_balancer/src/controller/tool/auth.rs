@@ -25,15 +25,21 @@ impl<'r> FromRequest<'r> for TokenHeader {
 
       match token {
           Some(token) => {
-              // check validity
+            // check validity
+            if let Ok(_claims) = verify_token(token) {
               Box::pin(async {
                 Outcome::Success(TokenHeader(token.to_string()))
               })
+            } else {
+              Box::pin(async {
+                Outcome::Failure((Status::Unauthorized, ApiTokenError::Invalid))
+              })
+            }
           }
           None => 
-              Box::pin(async {
-                Outcome::Failure((Status::Unauthorized, ApiTokenError::Missing))
-              }),
+            Box::pin(async {
+              Outcome::Failure((Status::Unauthorized, ApiTokenError::Missing))
+            }),
       }
     }
 }

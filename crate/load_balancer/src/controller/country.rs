@@ -1,6 +1,6 @@
 use rocket::{get, routes, Route};
 use crate::{
-  controller::tool::{ApiError, to_json},
+  controller::tool::{ApiError, to_json, TokenHeader},
   establish_connection, 
   dto::res::ResCountry,
   model::Country,
@@ -12,7 +12,7 @@ pub fn coutry() -> Vec<Route> {
 }
 
 #[get("/get")]
-async fn get_all() -> Result<String, ApiError> {
+async fn get_all(_token: TokenHeader) -> Result<String, ApiError> {
     use crate::schema::country::dsl::*;
 
     let connection = &mut establish_connection();
