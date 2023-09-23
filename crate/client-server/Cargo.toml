@@ -8,6 +8,7 @@ edition = "2021"
 [features]
 wayland = ["bevy/wayland"]
 x11 = ["bevy/x11"]
+windows = []
 
 [dependencies]
 bevy = { version = "0.11.2", default-features = false, features = ["bevy_core_pipeline", "bevy_render", "dynamic_linking", "bevy_asset", "bevy_pbr", "tonemapping_luts", "ktx2", "zstd", "bevy_winit", "multi-threaded" ] }

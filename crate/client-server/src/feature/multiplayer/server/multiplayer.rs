@@ -33,6 +33,8 @@ impl MultiplayerPlugins {
 impl Plugin for MultiplayerPlugins {
   fn build(&self, app: &mut App) {
     app.init_resource::<Lobby>();
+    app.init_resource::<TransportData>();
+
     app.add_plugins(RenetServerPlugin);
     app.add_plugins(NetcodeServerPlugin);
 
@@ -40,8 +42,6 @@ impl Plugin for MultiplayerPlugins {
 
     app.insert_resource(server);
     app.insert_resource(transport);
-    //some about connection
-    app.init_resource::<TransportData>();
 
     app.add_systems(
       Update,
@@ -73,18 +73,8 @@ pub fn new_renet_server(addr: &str) -> (RenetServer, NetcodeServerTransport) {
 
 pub fn generate_player_color(player_number: u32) -> Color {
   let golden_angle = 137.5;
-  // let mut colors = Vec::new();
-
-  // for i in 0..n {
   let hue = (golden_angle * player_number as f32) % 360.0;
-  let color = Color::hsl(hue, 1.0, 0.5);
-  // colors.push(hex);
-  // }
-  // colors
-
-  // netral: rgb(0.8, 0.7, 0.6)
-  // Color::default()
-  color
+  Color::hsl(hue, 1.0, 0.5)
 }
 
 pub fn server_update_system(
@@ -99,6 +89,7 @@ pub fn server_update_system(
     match event {
       ServerEvent::ClientConnected { client_id } => {
         log::info!("Player {} connected.", client_id);
+
         // Spawn player cube
         let player_entity = commands.spawn_server_side_player(*client_id).id();
 

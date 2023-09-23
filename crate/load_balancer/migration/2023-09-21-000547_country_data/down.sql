@@ -1,0 +1,3 @@
+ALTER TABLE "country" ALTER COLUMN wiki_data_id DROP COMMENT;
+
+DELETE FROM "country" CASCADE;
