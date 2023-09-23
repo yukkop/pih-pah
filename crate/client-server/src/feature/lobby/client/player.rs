@@ -10,6 +10,7 @@ extend_commands!(
   |world: &mut World, entity_id: Entity, color: Color| {
     let mesh = world
       .resource_mut::<Assets<Mesh>>()
+      // TODO: Have a resource with shared mesh list instead of adding meshes each time
       .add(Mesh::from(shape::Cube { size: PLAYER_SIZE }));
     let material = world
       .resource_mut::<Assets<StandardMaterial>>()

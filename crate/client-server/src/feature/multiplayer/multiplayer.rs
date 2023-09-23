@@ -62,7 +62,7 @@ pub enum ServerMessages {
 
 pub fn panic_on_error_system(mut renet_errors: EventReader<NetcodeTransportError>) {
   for error in renet_errors.iter() {
-    log::error!("ERROR: {error:?}");
+    log::error!("{error:?}");
     panic!();
   }
 }
