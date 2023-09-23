@@ -6,23 +6,37 @@ use std::{
 };
 use renet::{
   transport::{
-    NetcodeServerTransport, ServerAuthentication, ServerConfig,
+    NetcodeServerTransport, ServerAuthentication, ServerConfig, NETCODE_USER_DATA_BYTES,
   },
   ClientId, ConnectionConfig, DefaultChannel, RenetServer, ServerEvent,
 };
+use sqlx::postgres::PgPool;
+use sqlx::Row;
+use dotenv::dotenv;
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), sqlx::Error> {
   env_logger::init();
   println!("Usage: load-balancer.rs [SERVER_PORT] ");
+
+  // db
+  dotenv().ok();
+
+  let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+  let pool = PgPool::connect(&database_url).await?;
+
+  // get port
   let args: Vec<String> = std::env::args().collect();
 
   let server_addr: SocketAddr = format!("0.0.0.0:{}", args[1]).parse().unwrap();
-  server(server_addr);
+  server(server_addr, pool).await?;
+
+  Ok(())
 }
 
 const PROTOCOL_ID: u64 = 7;
 
-fn server(public_addr: SocketAddr) {
+async fn server(public_addr: SocketAddr, pool: PgPool) -> Result<(), sqlx::Error> {
   let connection_config = ConnectionConfig::default();
   let mut server: RenetServer = RenetServer::new(connection_config);
 
@@ -38,7 +52,7 @@ fn server(public_addr: SocketAddr) {
 
   let mut transport = NetcodeServerTransport::new(server_config, socket).unwrap();
 
-  let mut usernames: HashMap<ClientId, String> = HashMap::new();
+  let mut addresses: HashMap<ClientId, String> = HashMap::new();
   let mut last_updated = Instant::now();
 
   loop {
@@ -52,11 +66,27 @@ fn server(public_addr: SocketAddr) {
     while let Some(event) = server.get_event() {
       match event {
         ServerEvent::ClientConnected { client_id } => {
+          let data = transport.user_data(client_id).unwrap();
+          let addr = from_user_data(&data);
+          addresses.insert(client_id, addr.clone());
+
+          println!("{}", addr);
+          sqlx::query("UPDATE server SET online = true WHERE address = $1;")
+            .bind(addr)
+            .execute(&pool)
+            .await?;
+
           println!("Client {} connected.", client_id)
         }
         ServerEvent::ClientDisconnected { client_id, reason } => {
           println!("Client {} disconnected: {}", client_id, reason);
-          usernames.remove_entry(&client_id);
+
+          sqlx::query("UPDATE server SET online = false WHERE address = $1")
+            .bind(addresses.get(&client_id))
+            .execute(&pool)
+            .await?;
+
+          addresses.remove_entry(&client_id);
         }
       }
     }
@@ -72,4 +102,14 @@ fn server(public_addr: SocketAddr) {
     transport.send_packets(&mut server);
     thread::sleep(Duration::from_millis(50));
   }
+}
+
+fn from_user_data(user_data: &[u8; NETCODE_USER_DATA_BYTES]) -> String {
+  let mut buffer = [0u8; 8];
+  buffer.copy_from_slice(&user_data[0..8]);
+  let mut len = u64::from_le_bytes(buffer) as usize;
+  len = len.min(NETCODE_USER_DATA_BYTES - 8);
+  let data = user_data[8..len + 8].to_vec();
+  let addr = String::from_utf8(data).unwrap();
+  addr
 }
