@@ -35,7 +35,7 @@ fn ui(
     .frame(transparent_frame)
     .show(ctx, |ui| 
   {
-    ui.heading("My Butiful Game 0.1.0");
+    ui.heading("Pih-Pah 0.1.0")
   });
 
   egui::SidePanel::right("Users")
@@ -57,6 +57,10 @@ fn ui(
 
   egui::CentralPanel::default()
     .frame(transparent_frame)
-    .show(ctx, |_ui| {
+    .show(ctx, |ui| {
+      ui.with_layout(egui::Layout::bottom_up(egui::Align::TOP), |ui| {
+        ui.heading("Shield: ");
+        ui.heading("Health: ");
+      });
     });
 }
