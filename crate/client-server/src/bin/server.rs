@@ -25,11 +25,14 @@ fn main() {
 
   if args.len() < 2 {
     println!("Usage: ");
-    println!("  server '<ip>'");
+    println!("  server '<server address>' '<load-balanser address>'");
     panic!("Not enough arguments.");
   }
 
-  let server_id = &args[1];
+  // to listen clients
+  let listen_addr = &args[1];
+  // to send online reports to main server
+  let send_addr = &args[2];
 
   let is_debug = std::env::var("DEBUG").is_ok();
 
@@ -57,11 +60,6 @@ fn main() {
     app.add_plugins(FrameTimeDiagnosticsPlugin);
     app.add_plugins(WorldInspectorPlugin::default());
   }
-
-  // to listen clients
-  let listen_addr = format!("{}:{}", server_id, 5000);
-  // to send online reports to main server
-  let send_addr = format!("{}:{}", server_id, 2007);
 
   // Plugins that's always there
   app.add_plugins(LobbyPlugins);
