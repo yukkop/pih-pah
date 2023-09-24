@@ -5,16 +5,21 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   # echo "Can start only from project folder"
   printf "Usage: $0 [-h]"
   printf "Environment Variables:"
-  printf "  USER_AT_SERVER_ENV\tSet the SSH destination as user@server\n"
+  printf "  USER\tSet the SSH destination as user\n"
+  printf "  SERVER\tSet the SSH destination as server addres\n"
   printf "  SERVER_PASSWORD\tpassword for user in remote host, I hope you do not use root\n"
   printf "  DATABASE_URL\tpostgresql link\n"
   printf "  \tdefault: %s" "${default_db_link}"
   exit 0
 fi
 
-# Ensure the env variable is set
-if [ -z "${USER_AT_SERVER_ENV}" ]; then
-  echo "USER_AT_SERVER_ENV must be set. Exiting."
+if [ -z "${USER}" ]; then
+  echo "USER must be set. Exiting."
+  exit 1
+fi
+
+if [ -z "${SERVER}" ]; then
+  echo "SERVER must be set. Exiting."
   exit 1
 fi
 
@@ -30,10 +35,10 @@ fi
 PASSWORD="${SERVER_PASSWORD}"
 
 # Use an environment variable for the SSH user and server
-SSH_DEST="${USER_AT_SERVER_ENV}"
+SSH_DEST="${USER}@${SERVER}"
 
 dir="$(dirname "$(realpath "$0")")/"
-remote_dir="/home/yukkop/pih-pah-deploy/receiver/"
+remote_dir="/home/${USER}/pih-pah-deploy/receiver/"
 bin="receiver"
 service="pih-pah-receiver"
 
@@ -43,9 +48,6 @@ cargo build --release
 # Transfer the Rust binary
 ssh "${SSH_DEST}" "mkdir -p ${remote_dir} && rm -f ${remote_dir}/${bin}" # if not exist
 scp "${dir}../../../target/release/${bin}" "${SSH_DEST}:${remote_dir}"
-
-# ssh "${SSH_DEST}" <<EOF printf '%s' "${PASSWORD}" | sudo -S ls /
-# EOF
 
 temp_file="~/temp-${service}.service"
 
