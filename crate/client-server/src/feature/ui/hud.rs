@@ -3,6 +3,7 @@ use bevy_egui::{
   egui::{self, Color32, Stroke, Margin, Rounding},
   EguiContexts,
 };
+use crate::feature::ui::hud::egui::Align;
 use epaint::Shadow;
 
 use crate::feature::multiplayer::Lobby;
@@ -29,38 +30,22 @@ fn ui(
     inner_margin: Margin { left: 0., right: 0., top: 0., bottom: 0. }, 
     rounding: Rounding { nw: 0., ne: 0., sw: 0., se: 0. },
   };
+  egui::Area::new("right_panel")
+    .anchor(egui::Align2::RIGHT_BOTTOM, egui::Vec2::new(0.0, 0.0))
+    .show(ctx, |ui| {
+        use egui::Direction;
 
-  egui::TopBottomPanel::top("Top")
-    .show_separator_line(false)
-    .frame(transparent_frame)
-    .show(ctx, |ui| 
-  {
-    ui.heading("Pih-Pah 0.1.0")
+        ui.with_layout(egui::Layout::right_to_left(Align::RIGHT), |ui| {
+          for (player_id, player_data) in lobby.players.iter() {
+            // TODO Color32
+              ui.colored_label(
+                Color32::from_rgb(
+                  (player_data.color.r() * 255.) as u8,
+                  (player_data.color.g() * 255.) as u8,
+                  (player_data.color.b() * 255.) as u8,
+                ),
+                format!("{player_id}")
+              );
+        }});
   });
-
-  egui::SidePanel::right("Users")
-    .show_separator_line(false)
-    .frame(transparent_frame)
-    .show(ctx, |ui| {
-      for (player_id, player_data) in lobby.players.iter() {
-        // TODO Color32
-        ui.colored_label(
-          Color32::from_rgb(
-            (player_data.color.r() * 255.) as u8,
-            (player_data.color.g() * 255.) as u8,
-            (player_data.color.b() * 255.) as u8,
-          ),
-          format!("{player_id}")
-        );
-      }
-    });
-
-  egui::CentralPanel::default()
-    .frame(transparent_frame)
-    .show(ctx, |ui| {
-      ui.with_layout(egui::Layout::bottom_up(egui::Align::TOP), |ui| {
-        ui.heading("Shield: ");
-        ui.heading("Health: ");
-      });
-    });
 }

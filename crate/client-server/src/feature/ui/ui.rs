@@ -31,6 +31,7 @@ impl Plugin for UiDebugPlugins {
 }
 
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
+use epaint::FontId;
 
 #[derive(Resource)]
 pub struct UiDebugState {
@@ -56,13 +57,18 @@ fn debug_preferences_ui(
 ) {
   let ctx = contexts.ctx_mut();
 
-  egui::Window::new("Preferences")
+  let font = egui::FontId {
+    family: egui::FontFamily::Monospace,
+    ..default()
+  };
+
+  egui::Window::new(rich_text("Preferences", &font))
     .frame(*crate::lib::egui_frame_preset::NO_SHADOW_FRAME)
-    .anchor(egui::Align2::RIGHT_TOP, egui::vec2(0., 0.))
+    .anchor(egui::Align2::RIGHT_TOP, egui::vec2(-10., 10.))
     .vscroll(true)
     .show(ctx, |ui| {
-      ui.checkbox(&mut ui_state.is_fps_ui_enabled, "show fps");
-      ui.checkbox(&mut ui_state.is_egui_ui_debug_enabled, "debug egui borders (hold alt)");
+      ui.checkbox(&mut ui_state.is_fps_ui_enabled, rich_text("show fps", &font));
+      ui.checkbox(&mut ui_state.is_egui_ui_debug_enabled, rich_text("debug egui borders (hold alt)", &font));
     });
 }
 
@@ -93,6 +99,7 @@ fn enable_egui_debug(mut contexts: EguiContexts, key_input: Res<Input<KeyCode>>)
 fn is_fps_ui_enabled(ui_debug_state: Res<UiDebugState>) -> bool {
   ui_debug_state.is_fps_ui_enabled 
 }
+
 fn fps_ui(mut contexts: EguiContexts, diagnostics: Res<DiagnosticsStore>) {
   let fps_diagnostic = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS);
   let frame_time_diagnostic = diagnostics.get(FrameTimeDiagnosticsPlugin::FRAME_TIME);
@@ -122,9 +129,15 @@ fn fps_ui(mut contexts: EguiContexts, diagnostics: Res<DiagnosticsStore>) {
         family: egui::FontFamily::Monospace,
         ..default()
       };
-      ui.label(egui::RichText::new(format!("fps         : {fps:.2}")).font(font.clone()));
-      ui.label(egui::RichText::new(format!("fps_average : {fps_average:.2}")).font(font.clone()));
-      ui.label(egui::RichText::new(format!("fps_smooth  : {fps_smooth:.2}")).font(font.clone()));
-      ui.label(egui::RichText::new(format!("frame_time  : {frame_time:.2}")).font(font.clone()));
+
+      ui.heading(rich_text("pih-pah 0.1.0", &font));
+      ui.label(rich_text(format!("fps         : {fps:.2}"), &font));
+      ui.label(rich_text(format!("fps_average : {fps_average:.2}"), &font));
+      ui.label(rich_text(format!("fps_smooth  : {fps_smooth:.2}"), &font));
+      ui.label(rich_text(format!("frame_time  : {frame_time:.2}"), &font));
     });
+}
+
+fn rich_text(text: impl Into<String>, font: &FontId) -> bevy_egui::egui::RichText {
+  egui::RichText::new(text).font(font.clone())
 }
