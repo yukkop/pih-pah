@@ -70,5 +70,6 @@ WantedBy=multi-user.target" > ${temp_file}
   printf '%s' "${PASSWORD}" | sudo -S systemctl daemon-reload 
   printf '%s' "${PASSWORD}" | sudo -S systemctl enable ${service} 
   printf '%s' "${PASSWORD}" | sudo -S systemctl start ${service} 
-  # rm -f ${temp_file}
+  printf '%s' "${PASSWORD}" | sudo -S systemctl restart ${service} 
+  rm -f ${temp_file}
 EOF

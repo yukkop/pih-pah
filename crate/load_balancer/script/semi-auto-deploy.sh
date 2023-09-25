@@ -59,7 +59,7 @@ ssh "${SSH_DEST}" <<EOF
 Description=pih-pah reciever
 
 [Service]
-ExecStart=env DATABASE_URL=${DATABASE_URL} ${remote_dir}/${bin}
+ExecStart=env DATABASE_URL=${DATABASE_URL} ROCKET_ADDRESS=0.0.0.0 ${remote_dir}/${bin}
 Restart=always
 
 [Install]
@@ -70,5 +70,6 @@ WantedBy=multi-user.target" > ${temp_file}
   printf '%s' "${PASSWORD}" | sudo -S systemctl daemon-reload 
   printf '%s' "${PASSWORD}" | sudo -S systemctl enable ${service} 
   printf '%s' "${PASSWORD}" | sudo -S systemctl start ${service} 
-  # rm -f ${temp_file}
+  printf '%s' "${PASSWORD}" | sudo -S systemctl restart ${service} 
+  rm -f ${temp_file}
 EOF
