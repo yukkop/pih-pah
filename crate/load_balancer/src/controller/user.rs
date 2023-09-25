@@ -33,10 +33,10 @@ async fn register(body: Json<ReqNewUser<'_>>) ->  Result<String, ApiError> {
 #[post("/login", format = "application/json", data = "<body>")]
 fn login(body: Json<ReqLogin>) -> Result<String, ApiError> {
     let result;
+    let connection = &mut establish_connection();
     {
       use crate::schema::user::dsl::*;
 
-      let connection = &mut establish_connection();
       result = user
           .filter(account_name.eq(&*body.account_name))
           .select(User::as_select())
@@ -52,13 +52,25 @@ fn login(body: Json<ReqLogin>) -> Result<String, ApiError> {
     let generated_token = generate_token(result.id)
       .map_err(|err| ApiError::conflict(err.to_string()))?;
 
+    // TODO cringe
+    let res = {
+      use crate::schema::jwt_token::dsl::*;
+      jwt_token
+          .filter(token.eq(&generated_token))
+          .select(JwtToken::as_select())
+          .first(connection)
+          // .map_err(|_| ApiError::conflict_str("Password or account name not correct"))?
+    };
+    if let Ok(_) = res {
+      return Ok(generated_token);
+    }
+
     let model = NewJwtToken {
       id: Uuid::new_v4(),
       token: &generated_token,
       active: true,
     };
 
-    let connection = &mut establish_connection();
     let jwt_token = diesel::insert_into(jwt_token::table)
       .values(&model)
       .returning(JwtToken::as_returning())
