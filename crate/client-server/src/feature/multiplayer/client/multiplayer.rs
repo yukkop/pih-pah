@@ -89,11 +89,17 @@ pub fn new_renet_client(
       .duration_since(SystemTime::UNIX_EPOCH)
       .unwrap();
     let client_id = current_time.as_millis() as u64;
+
+    let username_netcode = match Username(settings.username.clone()).to_netcode_data() {
+      Ok(bytes) => Some(bytes),
+      Err(_) => None
+    };
+
     let authentication = ClientAuthentication::Unsecure {
       client_id,
       protocol_id: PROTOCOL_ID,
       server_addr,
-      user_data: None,
+      user_data: username_netcode,
     };
 
     commands.insert_resource(NetcodeClientTransport::new(current_time, authentication, socket).unwrap());
@@ -127,7 +133,7 @@ pub fn client_sync_players(
           *own_id = OwnId(Some(id));
         }
       }
-      ServerMessages::PlayerConnected { id, color } => {
+      ServerMessages::PlayerConnected { id, color, username } => {
         let name = "noname";
 
         let player_entity = commands.spawn_client_side_player(color).id();
@@ -139,12 +145,12 @@ pub fn client_sync_players(
           log::info!("Player {} ({}) connected.", name, id);
         }
 
-
         lobby.players.insert(
           id,
           PlayerData {
             entity: player_entity,
             color,
+            username
           },
         );
       }
@@ -165,15 +171,15 @@ pub fn client_sync_players(
     for (player_id, data) in transport_data.data.iter() {
       if let Some(player_data) = lobby.players.get(player_id) {
         let transform = Transform {
-          translation: (data.0).into(),
-          rotation: Quat::from_array(data.1),
+          translation: (data.position).into(),
+          rotation: Quat::from_array(data.rotation),
           ..Default::default()
         };
         commands.entity(player_data.entity).insert(transform);
         if Some(player_id) == own_id.0.as_ref() {
           if let Ok(mut camera_transform) = tied_camera_query.get_single_mut() {
             camera_transform.translation = transform.translation;
-            camera_transform.rotation = Quat::from_array(data.2);
+            camera_transform.rotation = Quat::from_array(data.tied_camera_rotation);
           }
         }
       }

@@ -44,7 +44,7 @@ fn ui(
                   (player_data.color.g() * 255.) as u8,
                   (player_data.color.b() * 255.) as u8,
                 ),
-                format!("{player_id}")
+                format!("{}", player_data.username)
               );
         }});
   });

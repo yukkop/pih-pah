@@ -9,14 +9,16 @@ use std::collections::HashMap;
 
 pub const PROTOCOL_ID: u64 = 7;
 
-#[derive(Resource, Default, Debug)]
+#[derive(Resource, Default, Debug, Serialize, Deserialize)]
+pub struct PlayerTransportData {
+  pub position: [f32; 3],
+  pub rotation: [f32; 4],
+  pub tied_camera_rotation: [f32; 4],
+}
+
+#[derive(Resource, Default, Debug, Serialize, Deserialize)]
 pub struct TransportData {
-  // let mut players: HashMap<ClientId, ([f32; 3], [f32; 4])> = HashMap::new();
-  pub data: HashMap<ClientId, (
-    [f32; 3], // position
-    [f32; 4], // rotation
-    [f32; 4], // tied camera rotation
-  )>,
+  pub data: HashMap<ClientId, PlayerTransportData>,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, Component, Resource)]
@@ -44,6 +46,7 @@ pub struct Lobby {
 pub struct PlayerData {
   pub entity: Entity,
   pub color: Color,
+  pub username: String,
 }
 
 /// player view direction in global spase
@@ -56,7 +59,11 @@ pub struct PlayerViewDirrection(pub Quat);
 #[derive(Debug, Serialize, Deserialize, Component)]
 pub enum ServerMessages {
   InitConnection { id: ClientId },
-  PlayerConnected { id: ClientId, color: Color },
+  PlayerConnected { 
+    id: ClientId,
+    color: Color,
+    username: String
+  },
   PlayerDisconnected { id: ClientId },
 }
 
@@ -80,6 +87,7 @@ impl Default for Connection {
   }
 }
 
+#[derive(Debug)]
 pub struct Error(String);
 
 #[derive(Resource)]
@@ -98,10 +106,12 @@ impl Default for Username {
 // }
 
 impl Username {
-  fn to_netcode_data(&self) -> Result<[u8; NETCODE_USER_DATA_BYTES], Error> {
+  pub fn to_netcode_data(&self) -> Result<[u8; NETCODE_USER_DATA_BYTES], Error> {
       let mut data = [0u8; NETCODE_USER_DATA_BYTES];
       if self.0.len() > NETCODE_USER_DATA_BYTES - 8 {
-          return Err(Error("Your username to long".to_string()));
+          let err = Error("Your username to long".to_string());
+          log::error!("{:?}", err);
+          return Err(err);
       }
       data[0..8].copy_from_slice(&(self.0.len() as u64).to_le_bytes());
       data[8..self.0.len() + 8].copy_from_slice(self.0.as_bytes());
@@ -109,14 +119,39 @@ impl Username {
       Ok(data)
   }
 
-  fn from_user_data(user_data: &[u8; NETCODE_USER_DATA_BYTES]) -> String {
+  // pub fn to_netcode_user_data(&self) -> [u8; NETCODE_USER_DATA_BYTES] {
+  //   let mut user_data = [0u8; NETCODE_USER_DATA_BYTES];
+  //   if self.0.len() > NETCODE_USER_DATA_BYTES - 8 {
+  //       panic!("Username is too big");
+  //   }
+  //   user_data[0..8].copy_from_slice(&(self.0.len() as u64).to_le_bytes());
+  //   user_data[8..self.0.len() + 8].copy_from_slice(self.0.as_bytes());
+  //
+  //   user_data
+  // }
+
+  // pub fn from_user_data(user_data: &[u8; NETCODE_USER_DATA_BYTES]) -> Self {
+  //     let mut buffer = [0u8; 8];
+  //     buffer.copy_from_slice(&user_data[0..8]);
+  //     let mut len = u64::from_le_bytes(buffer) as usize;
+  //     len = len.min(NETCODE_USER_DATA_BYTES - 8);
+  //     let data = user_data[8..len + 8].to_vec();
+  //     let username = String::from_utf8(data).unwrap();
+  //     Self(username)
+  //   }
+
+
+  pub fn from_user_data(user_data: &[u8; NETCODE_USER_DATA_BYTES]) -> Result<String, Error> {
     let mut buffer = [0u8; 8];
     buffer.copy_from_slice(&user_data[0..8]);
     let mut len = u64::from_le_bytes(buffer) as usize;
     len = len.min(NETCODE_USER_DATA_BYTES - 8);
     let data = user_data[8..len + 8].to_vec();
-    let username = String::from_utf8(data).unwrap(); // TODO 
+    let username = String::from_utf8(data).map_err(|err| {
+      log::error!("{:?}", err);
+      Error(err.to_string())
+    })?; 
 
-    username 
+    Ok(username) 
   }
 }
