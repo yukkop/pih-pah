@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use renet::transport::NetcodeTransportError;
+use renet::transport::{NetcodeTransportError, NETCODE_USER_DATA_BYTES};
 
 use serde::{Deserialize, Serialize};
 
@@ -63,6 +63,60 @@ pub enum ServerMessages {
 pub fn panic_on_error_system(mut renet_errors: EventReader<NetcodeTransportError>) {
   for error in renet_errors.iter() {
     log::error!("{error:?}");
-    panic!();
+    // panic!();
+  }
+}
+
+#[derive(Resource)]
+pub struct Connection {
+  pub initiate_connection: bool, 
+}
+
+impl Default for Connection {
+  fn default() -> Self {
+    Self {
+      initiate_connection: false,
+    }
+  }
+}
+
+pub struct Error(String);
+
+#[derive(Resource)]
+pub struct Username(pub String); 
+
+impl Default for Username {
+  fn default() -> Self {
+    Self("noname".to_string())
+  }
+}
+
+// impl std::ops::Deref for Username {
+//     fn deref(&self) -> String {
+//         &self.0
+//     }
+// }
+
+impl Username {
+  fn to_netcode_data(&self) -> Result<[u8; NETCODE_USER_DATA_BYTES], Error> {
+      let mut data = [0u8; NETCODE_USER_DATA_BYTES];
+      if self.0.len() > NETCODE_USER_DATA_BYTES - 8 {
+          return Err(Error("Your username to long".to_string()));
+      }
+      data[0..8].copy_from_slice(&(self.0.len() as u64).to_le_bytes());
+      data[8..self.0.len() + 8].copy_from_slice(self.0.as_bytes());
+
+      Ok(data)
+  }
+
+  fn from_user_data(user_data: &[u8; NETCODE_USER_DATA_BYTES]) -> String {
+    let mut buffer = [0u8; 8];
+    buffer.copy_from_slice(&user_data[0..8]);
+    let mut len = u64::from_le_bytes(buffer) as usize;
+    len = len.min(NETCODE_USER_DATA_BYTES - 8);
+    let data = user_data[8..len + 8].to_vec();
+    let username = String::from_utf8(data).unwrap(); // TODO 
+
+    username 
   }
 }

@@ -4,7 +4,7 @@ use crate::feature::lobby::client::camera_switch;
 use crate::feature::lobby::client::spawn_client_side_player;
 use crate::feature::lobby::client::{spawn_tied_camera, TiedCamera};
 use crate::feature::multiplayer::{
-  Lobby, PlayerData, PlayerInput, ServerMessages, TransportData, PROTOCOL_ID,
+  Lobby, Connection, Username, PlayerData, PlayerInput, ServerMessages, TransportData, PROTOCOL_ID,
 };
 use bevy_renet::{
   renet::{transport::ClientAuthentication, ConnectionConfig, DefaultChannel, RenetClient},
@@ -37,15 +37,18 @@ impl Plugin for MultiplayerPlugins {
   fn build(&self, app: &mut App) {
     app.init_resource::<Lobby>();
     app.init_resource::<TransportData>();
+
+    // if RenetClient no
     app.add_plugins(RenetClientPlugin);
     app.add_plugins(NetcodeClientPlugin);
     app.init_resource::<PlayerInput>();
     app.init_resource::<OwnId>();
 
-    let (client, transport) = new_renet_client(self.server_addr.to_string());
-    app.insert_resource(client);
-    app.insert_resource(transport);
+    app.init_resource::<Username>();
+    app.init_resource::<Connection>();
+    app.add_event::<InitConnectionEvent>();
 
+    app.add_systems(Update, new_renet_client);
     app.add_systems(
       Update,
       (
@@ -59,24 +62,42 @@ impl Plugin for MultiplayerPlugins {
   }
 }
 
-pub fn new_renet_client(addr: String) -> (RenetClient, NetcodeClientTransport) {
-  let client = RenetClient::new(ConnectionConfig::default());
-  let server_addr = addr.parse().unwrap();
-  let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
-  let current_time = SystemTime::now()
-    .duration_since(SystemTime::UNIX_EPOCH)
-    .unwrap();
-  let client_id = current_time.as_millis() as u64;
-  let authentication = ClientAuthentication::Unsecure {
-    client_id,
-    protocol_id: PROTOCOL_ID,
-    server_addr,
-    user_data: None,
-  };
+#[derive(Default, Event)]
+pub struct InitConnectionEvent{
+  pub addr: String,
+  pub username: String,
+}
 
-  let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
+fn if_initiate_connection(
+  connection: Res<Connection>,
+) -> bool {
+  println!("{}", connection.initiate_connection);
+  if connection.initiate_connection {
+    return true;
+  }
+  false
+}
+pub fn new_renet_client(
+  mut ev: EventReader<InitConnectionEvent>,
+  mut commands: Commands,
+) {
+ for settings in ev.iter() {
+    commands.insert_resource(RenetClient::new(ConnectionConfig::default()));
+    let server_addr = settings.addr.parse().unwrap();
+    let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
+    let current_time = SystemTime::now()
+      .duration_since(SystemTime::UNIX_EPOCH)
+      .unwrap();
+    let client_id = current_time.as_millis() as u64;
+    let authentication = ClientAuthentication::Unsecure {
+      client_id,
+      protocol_id: PROTOCOL_ID,
+      server_addr,
+      user_data: None,
+    };
 
-  (client, transport)
+    commands.insert_resource(NetcodeClientTransport::new(current_time, authentication, socket).unwrap());
+  }
 }
 
 pub fn client_send_input(player_input: Res<PlayerInput>, mut client: ResMut<RenetClient>) {
