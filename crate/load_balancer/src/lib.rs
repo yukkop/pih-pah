@@ -1,7 +1,7 @@
 pub mod model;
 pub mod schema;
 pub mod controller;
-pub mod dto;
+pub mod entity;
 pub mod tool;
 
 use diesel::pg::PgConnection;

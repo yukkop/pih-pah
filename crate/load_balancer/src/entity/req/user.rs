@@ -1,17 +1,10 @@
-use serde::Deserialize;
-
-use crate::model::NewUser;
-use crate::tool::get_argon2_config;
+use crate::{
+  model::NewUser,
+  tool::get_argon2_config,
+};
 use rand::Rng;
 use uuid::Uuid;
-
-#[derive(Deserialize)]
-pub struct ReqNewUser<'a> {
-    pub name: &'a str,
-    pub password: &'a str,
-    pub account_name: &'a str,
-    pub language_id: i32,
-}
+use entity::req::ReqNewUser;
 
 impl<'a> From<ReqNewUser<'a>> for NewUser<'a> {
     fn from(req: ReqNewUser<'a>) -> Self {
@@ -49,12 +42,6 @@ fn generate_hash(password: &str) -> (String, Vec<u8>) {
   let config = get_argon2_config();
   let password_hash = argon2::hash_encoded(password.as_bytes(), &password_salt, &config).unwrap();
   (password_hash, password_salt)
-}
-
-#[derive(Deserialize)]
-pub struct ReqLogin<'a> {
-    pub account_name: &'a str,
-    pub password: &'a str,
 }
 
 // impl<'a> From<ReqNewUser<'_>> for NewUser<'_> {

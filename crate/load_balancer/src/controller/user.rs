@@ -1,16 +1,16 @@
 use rocket::{post, Route, routes, serde::json::Json};
 use uuid::Uuid;
-
-use crate::dto::res::ResUser;
-use crate::establish_connection;
-use crate::model::{NewUser, User, JwtToken, NewJwtToken};
-use crate::schema::user;
-use crate::schema::jwt_token;
+use crate::{
+  establish_connection,
+  model::{NewUser, User, JwtToken, NewJwtToken},
+  schema::{user, jwt_token},
+  controller::tool::{ApiError, to_json, generate_token}
+};
 use diesel::prelude::*;
-use crate::controller::tool::{ApiError, to_json, generate_token};
-use crate::dto::req::{ReqNewUser, ReqLogin};
-
-// use super::tool::{api_error::ApiError, shared::to_json};
+use entity::{
+  req::{ReqNewUser, ReqLogin},
+  res::{ResUser, ResJwtToken},
+};
 
 pub fn user() -> Vec<Route> {
     routes![register, login]
@@ -61,8 +61,8 @@ fn login(body: Json<ReqLogin>) -> Result<String, ApiError> {
           .first(connection)
           // .map_err(|_| ApiError::conflict_str("Password or account name not correct"))?
     };
-    if let Ok(_) = res {
-      return Ok(generated_token);
+    if let Ok(jwt_token) = res {
+      return Ok(to_json(&ResJwtToken::from(jwt_token)));
     }
 
     let model = NewJwtToken {
@@ -77,5 +77,5 @@ fn login(body: Json<ReqLogin>) -> Result<String, ApiError> {
       .get_result(connection)
       .map_err(|err| ApiError::conflict(err.to_string()))?;
 
-    Ok(jwt_token.token)
+    Ok(to_json(&ResJwtToken::from(jwt_token)))
 }

@@ -240,11 +240,13 @@ fn hello (
             ui_state.is_hello = true;
           }
           if ui.add(egui::Button::new("Continue")).clicked() {
-            let url = format!("http:/{}//user/login", res_api.url);
-            let json_body = json!({
-              "account_name": login_state.account_name,
-              "password": login_state.password, 
-            });
+            let url = format!("http://{}/user/login", res_api.url);
+            // let json_body = json!({
+            use entity::req::ReqLogin;
+            let json_body = ReqLogin {
+              account_name: &login_state.account_name,
+              password: &login_state.password, 
+            };
             
             let resp = ureq::post(url.as_str())
               .set("Content-Type", "application/json")
@@ -252,8 +254,11 @@ fn hello (
 
             match resp {
               Ok(body) => {
-                let body = body.into_string().expect("твой код говно");
-                res_api.token = Some(body.into());
+                let body: entity::res::ResJwtToken = serde_json::from_str(
+                  body.into_string().expect("your code is shit").as_str()
+                ).expect("your code is shit");
+                // println!("{}", body);
+                res_api.token = Some(body.token.into());
                 ui_state.is_login = false;
               },
               Err(Error::Status(code, response)) => {

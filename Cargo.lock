@@ -1787,6 +1787,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "entity"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "uuid",
+]
+
+[[package]]
 name = "env_logger"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2659,6 +2667,7 @@ version = "0.1.0"
 dependencies = [
  "diesel",
  "dotenvy",
+ "entity",
  "jsonwebtoken",
  "rand",
  "rocket",
@@ -3383,6 +3392,7 @@ dependencies = [
  "bevy_renet",
  "bevy_xpbd_3d",
  "bincode",
+ "entity",
  "env_logger",
  "epaint",
  "lazy_static",

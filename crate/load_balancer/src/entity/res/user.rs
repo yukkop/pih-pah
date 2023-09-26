@@ -1,14 +1,6 @@
-use serde::Serialize;
 use uuid::Uuid;
-
+use entity::res::ResUser;
 use crate::model::User;
-
-#[derive(Serialize)]
-pub struct ResUser {
-    pub id: Uuid,
-    pub name: String,
-    pub account_name: String,
-}
 
 impl From<User> for ResUser {
     fn from(model: User) -> Self {

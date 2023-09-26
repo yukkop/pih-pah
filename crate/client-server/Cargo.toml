@@ -29,3 +29,4 @@ epaint = "0.22.0"
 lazy_static = "1.4.0"
 ureq = { version = "2.7.1", features = [ "json" ] } # gigachad requests without async
 serde_json = "1.0.107"
+entity = { path = "../entity" }
