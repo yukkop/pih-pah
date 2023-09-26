@@ -7,3 +7,9 @@ pub struct ResUser {
     pub name: String,
     pub account_name: String,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct Me {
+    pub name: String,
+    pub account_name: String,
+}

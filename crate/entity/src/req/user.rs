@@ -13,4 +13,3 @@ pub struct ReqLogin<'a> {
     pub account_name: &'a str,
     pub password: &'a str,
 }
-

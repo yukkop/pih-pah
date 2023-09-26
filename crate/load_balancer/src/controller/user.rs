@@ -1,4 +1,4 @@
-use rocket::{post, Route, routes, serde::json::Json};
+use rocket::{post, get, Route, routes, serde::json::Json};
 use uuid::Uuid;
 use crate::{
   establish_connection,
@@ -9,11 +9,13 @@ use crate::{
 use diesel::prelude::*;
 use entity::{
   req::{ReqNewUser, ReqLogin},
-  res::{ResUser, ResJwtToken},
+  res::{ResUser, ResJwtToken, Me},
 };
 
+use super::tool::TokenHeader;
+
 pub fn user() -> Vec<Route> {
-    routes![register, login]
+    routes![register, login, me]
 }
 
 #[post("/register", format = "application/json", data = "<body>")]
@@ -28,6 +30,20 @@ async fn register(body: Json<ReqNewUser<'_>>) ->  Result<String, ApiError> {
         .map_err(|err| ApiError::conflict(err.to_string()))?;
 
     Ok(to_json(&ResUser::from(result)))
+}
+
+#[get("/me")]
+fn me(token: TokenHeader) -> Result<String, ApiError> {
+    use crate::schema::user::dsl::*;
+
+    let connection = &mut establish_connection();
+    let result = user
+        .filter(id.eq(token.id))
+        .select(User::as_select())
+        .first(connection)
+        .map_err(|err| ApiError::conflict(err.to_string()))?;
+
+    Ok(to_json(&Me::from(result)))
 }
 
 #[post("/login", format = "application/json", data = "<body>")]
