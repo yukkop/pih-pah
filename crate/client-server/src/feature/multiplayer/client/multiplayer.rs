@@ -21,17 +21,7 @@ use std::{
 #[derive(Default, Debug, Resource)]
 pub struct OwnId(Option<ClientId>);
 
-pub struct MultiplayerPlugins{
-  server_addr: String
-}
-
-impl MultiplayerPlugins {
-  pub fn by_string(server_addr: String) -> Self {
-    Self {
-      server_addr
-    }
-  }
-}
+pub struct MultiplayerPlugins;
 
 impl Plugin for MultiplayerPlugins {
   fn build(&self, app: &mut App) {

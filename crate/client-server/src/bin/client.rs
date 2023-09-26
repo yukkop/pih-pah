@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use bevy::window::WindowResolution;
 use bevy::{
   diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
@@ -56,7 +58,6 @@ fn main() {
       ..default()
     };
     app.add_plugins(DefaultPlugins.set(window_plugin_override));
-    app.insert_resource(ApiUrl(api_url.to_string()));
     app.add_plugins(EguiPlugin);
     app.add_plugins(UiDebugPlugins);
     app.add_plugins(FrameTimeDiagnosticsPlugin);
@@ -64,14 +65,11 @@ fn main() {
     // app.add_plugins(WorldInspectorPlugin::default());
   }
 
-  #[derive(Resource)]
-  pub struct ApiUrl(pub String);
-
   app.add_plugins((
     MusicPlugins,
-    UiPlugins,
+    UiPlugins::by_string(Arc::new(api_url.to_string())),
     LobbyPlugins,
-    MultiplayerPlugins::by_string(api_url.to_string())
+    MultiplayerPlugins,
   ));
 
   app.add_systems(Update, panic_on_error_system);

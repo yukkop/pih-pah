@@ -1,34 +1,39 @@
-use crate::feature::ui::HudPlugins;
-use bevy::{prelude::*, tasks::AsyncComputeTaskPool};
-use bevy::tasks::TaskPool;
+use std::sync::Arc;
+use crate::{
+  feature::{
+    multiplayer::client::InitConnectionEvent,
+    ui::{
+      debug::UiDebugState,
+      HudPlugins,
+    }
+  },
+  ui::rich_text
+};
 use bevy_egui::{
   egui,
   EguiContexts,
 };
-use bevy::diagnostic::DiagnosticsStore;
-use crate::{
-  feature::{
-    multiplayer::client::InitConnectionEvent,
-    ui::debug::UiDebugState
-  },
-  ui::rich_text
+use bevy::{
+  prelude::*,
+  tasks::AsyncComputeTaskPool,
+  diagnostic::DiagnosticsStore,
 };
+use serde_json::json;
+use ureq::Error;
 use egui::Align;
 
-use bevy::prelude::*;
-pub struct UiPlugins;
+#[derive(Resource)]
+struct ApiSettings{
+  url: Arc<String>,
+  token: Option<Arc<String>>,
+}
 
-
-/// EguiPlugin nessesarly
-impl Plugin for UiPlugins {
-  fn build(&self, app: &mut App) {
-    app
-      .add_plugins(HudPlugins)
-      .init_resource::<ConnectionState>()
-      .init_resource::<LoginState>()
-      .init_resource::<RegisterState>()
-      .init_resource::<UiState>()
-      .add_systems(Update, debug_preferences_ui);
+impl ApiSettings {
+  fn new(url: Arc<String>) -> Self {
+    Self {
+      url,
+      token: None
+    }
   }
 }
 
@@ -80,13 +85,69 @@ impl Default for ConnectionState {
   }
 } 
 
-fn debug_preferences_ui(
+// Events
+
+#[derive(Event)]
+struct LoginSuccessEvent {
+  token: Arc<String>,
+} 
+
+#[derive(Event)]
+struct LoginErrorEvent {
+  message: String,
+}
+
+// Plugin
+
+pub struct UiPlugins {
+  api_url: Arc<String>,
+}
+
+impl UiPlugins {
+  pub fn by_string(api_url: Arc<String>) -> Self {
+    Self {
+      api_url 
+    }
+  }
+}
+
+/// EguiPlugin nessesarly
+impl Plugin for UiPlugins {
+  fn build(&self, app: &mut App) {
+    app
+      .insert_resource(ApiSettings::new(self.api_url.clone()))
+      .add_plugins(HudPlugins)
+      .add_event::<LoginSuccessEvent>()
+      .add_event::<LoginErrorEvent>()
+      .init_resource::<ConnectionState>()
+      .init_resource::<LoginState>()
+      .init_resource::<RegisterState>()
+      .init_resource::<UiState>()
+      .add_systems(Update, (hello, misc));
+  }
+}
+
+fn login_events_handler(
+  mut login_success_event: EventReader<LoginSuccessEvent>,
+  mut login_error_event: EventReader<LoginErrorEvent>,
+  ) {
+  for success in login_success_event.iter() {
+
+  }
+
+  for error in login_error_event.iter() {
+
+  }
+}
+
+fn hello (
   mut contexts: EguiContexts,
-  mut connection_state: ResMut<ConnectionState>,
-  mut register_state: ResMut<RegisterState>,
   mut ui_state: ResMut<UiState>,
   mut login_state: ResMut<LoginState>,
-  mut ev: EventWriter<InitConnectionEvent>,
+  mut register_state: ResMut<RegisterState>,
+  mut login_success_event: EventWriter<LoginSuccessEvent>,
+  mut login_error_event: EventWriter<LoginErrorEvent>,
+  mut res_api: ResMut<ApiSettings>,
 ) {
   let ctx = contexts.ctx_mut();
 
@@ -156,8 +217,6 @@ fn debug_preferences_ui(
         });
       });
   }
-  use serde_json::json;
-  use ureq::Error;
 
   if ui_state.is_login {
     egui::Window::new(rich_text("Login", &font))
@@ -181,30 +240,47 @@ fn debug_preferences_ui(
             ui_state.is_hello = true;
           }
           if ui.add(egui::Button::new("Continue")).clicked() {
-            ui_state.is_login = false;
-              AsyncComputeTaskPool::get()
-                .spawn(async move {
-                  let url = "http://127.0.0.1:8000/user/login";
-                  let json_body = json!({
-                      "account_name": "tosh_uniq",
-                      "password": "123"
-                  });
-                  
-                  let resp = ureq::post(url)
-                      .set("Content-Type", "application/json")
-                      .send_json(json_body);
+            let url = format!("http:/{}//user/login", res_api.url);
+            let json_body = json!({
+              "account_name": login_state.account_name,
+              "password": login_state.password, 
+            });
+            
+            let resp = ureq::post(url.as_str())
+              .set("Content-Type", "application/json")
+              .send_json(json_body);
 
-                  match resp {
-                      Ok(kek) => log::info!("{}", kek.into_string().unwrap()),
-                      Err(Error::Status(code, response)) => log::error!("Error: {}, {:#?}", code, response),
-                      Err(_) => { log::error!("Oaoaoaoaoaoaaoaoao") }
-                  };
-                })
-                .detach();
+            match resp {
+              Ok(body) => {
+                let body = body.into_string().expect("твой код говно");
+                res_api.token = Some(body.into());
+                ui_state.is_login = false;
+              },
+              Err(Error::Status(code, response)) => {
+                println!("Error: {}, {:#?}", code, response);
+              },
+              Err(err) => {
+                println!("Error: {}", err);
+              }
+            };
           }
         });
       });
   }
+}
+
+fn misc(
+  mut contexts: EguiContexts,
+  mut connection_state: ResMut<ConnectionState>,
+  mut ui_state: ResMut<UiState>,
+  mut ev: EventWriter<InitConnectionEvent>,
+) {
+  let ctx = contexts.ctx_mut();
+
+  let font = egui::FontId {
+    family: egui::FontFamily::Monospace,
+    ..default()
+  };
 
   if ui_state.is_connection_open {
     egui::Window::new(rich_text("Connection", &font))
@@ -228,5 +304,4 @@ fn debug_preferences_ui(
         }
       });
   }
-
 }
