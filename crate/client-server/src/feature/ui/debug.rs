@@ -1,12 +1,11 @@
-use crate::feature::ui::HudPlugins;
 use bevy::prelude::*;
 use bevy_egui::{
   egui,
   EguiContexts,
 };
 use crate::ui::rich_text;
-
 pub struct UiDebugPlugins;
+use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 
 /// EguiPlugin nessesarly
 impl Plugin for UiDebugPlugins {
@@ -21,8 +20,6 @@ impl Plugin for UiDebugPlugins {
   }
 }
 
-use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
-use epaint::FontId;
 
 #[derive(Resource)]
 pub struct UiDebugState {
@@ -43,7 +40,6 @@ impl Default for UiDebugState {
 
 fn debug_preferences_ui(
   mut contexts: EguiContexts,
-  diagnostics: Res<DiagnosticsStore>,
   mut ui_state: ResMut<UiDebugState>,
 ) {
   let ctx = contexts.ctx_mut();

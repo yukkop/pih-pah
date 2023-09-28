@@ -8,4 +8,5 @@ pub mod lib {
   pub mod extend_commands;
   pub mod netutils;
   pub mod egui_frame_preset;
+  pub mod api;
 }

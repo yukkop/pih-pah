@@ -2,31 +2,37 @@ use std::sync::Arc;
 use crate::{
   feature::{
     multiplayer::client::InitConnectionEvent,
-    ui::HudPlugins,
+    ui::{
+      debug::UiDebugState,
+      HudPlugins,
+    }
   },
-  ui::rich_text, lib::*
+  ui::rich_text
 };
 use bevy_egui::{
   egui,
   EguiContexts,
 };
-use bevy::prelude::*;
-use epaint::Color32;
+use bevy::{
+  prelude::*,
+  tasks::AsyncComputeTaskPool,
+  diagnostic::DiagnosticsStore,
+};
+use serde_json::json;
 use ureq::Error;
+use egui::Align;
 
 #[derive(Resource)]
 struct ApiSettings{
   url: Arc<String>,
   token: Option<Arc<String>>,
-  me: Option<entity::res::Me>,
 }
 
 impl ApiSettings {
   fn new(url: Arc<String>) -> Self {
     Self {
       url,
-      token: None,
-      me: None,
+      token: None
     }
   }
 }
@@ -47,7 +53,6 @@ impl Default for UiState {
       is_connection_open: false,
       is_login_open: false,
       is_register_open: false,
-      is_user_info_open: false,
     }
   }
 }
@@ -80,6 +85,18 @@ impl Default for ConnectionState {
   }
 } 
 
+// Events
+
+#[derive(Event)]
+struct LoginSuccessEvent {
+  token: Arc<String>,
+} 
+
+#[derive(Event)]
+struct LoginErrorEvent {
+  message: String,
+}
+
 // Plugin
 
 pub struct UiPlugins {
@@ -94,17 +111,32 @@ impl UiPlugins {
   }
 }
 
-/// EguiPlugin nessesarl
+/// EguiPlugin nessesarly
 impl Plugin for UiPlugins {
   fn build(&self, app: &mut App) {
     app
-      .insert_resource(ApiSettings::new(format!("http://{}/", *self.api_url).into()))
+      .insert_resource(ApiSettings::new(self.api_url.clone()))
       .add_plugins(HudPlugins)
+      .add_event::<LoginSuccessEvent>()
+      .add_event::<LoginErrorEvent>()
       .init_resource::<ConnectionState>()
       .init_resource::<LoginState>()
       .init_resource::<RegisterState>()
       .init_resource::<UiState>()
-      .add_systems(Update, (hello, login));
+      .add_systems(Update, (hello, misc));
+  }
+}
+
+fn login_events_handler(
+  mut login_success_event: EventReader<LoginSuccessEvent>,
+  mut login_error_event: EventReader<LoginErrorEvent>,
+  ) {
+  for success in login_success_event.iter() {
+
+  }
+
+  for error in login_error_event.iter() {
+
   }
 }
 
@@ -113,9 +145,9 @@ fn hello (
   mut ui_state: ResMut<UiState>,
   mut login_state: ResMut<LoginState>,
   mut register_state: ResMut<RegisterState>,
+  mut login_success_event: EventWriter<LoginSuccessEvent>,
+  mut login_error_event: EventWriter<LoginErrorEvent>,
   mut res_api: ResMut<ApiSettings>,
-  mut ev: EventWriter<InitConnectionEvent>,
-  mut connection_state: ResMut<ConnectionState>,
 ) {
   let ctx = contexts.ctx_mut();
 
@@ -154,7 +186,7 @@ fn hello (
   }
 
   if ui_state.is_register_open {
-    egui::Window::new(rich_text("Register", &font))
+    egui::Window::new(rich_text("Login", &font))
       .frame(*crate::lib::egui_frame_preset::NO_SHADOW_FRAME)
       // .default_pos(screen_center)
       .collapsible(false)
@@ -169,11 +201,8 @@ fn hello (
           ui.label(rich_text("password", &font));
           ui.add(egui::TextEdit::singleline(&mut register_state.password));
         });
-        if register_state.repeated_password == register_state.password {
-          ui.colored_label(Color32::RED, rich_text("repeated password", &font));
-        }
         ui.horizontal(|ui| {
-          ui.label(rich_text("repeated password", &font));
+          ui.label(rich_text("password", &font));
           ui.add(egui::TextEdit::singleline(&mut register_state.repeated_password));
         });
 
@@ -189,46 +218,33 @@ fn hello (
       });
   }
 
-  if ui_state.is_connection_open {
-    egui::Window::new(rich_text("Connection", &font))
-      .frame(*crate::lib::egui_frame_preset::NO_SHADOW_FRAME)
-      // .default_pos(screen_center)
-      .collapsible(false)
-      .resizable(false)
-      .vscroll(false)
-      .show(ctx, |ui| {
-        let user = res_api.me.clone().expect("user not exist?");
-        ui.horizontal(|ui| {
-          ui.label(rich_text(format!("username: {}", user.name.clone()), &font));
-        });
-        ui.horizontal(|ui| {
-          ui.label(rich_text(format!("account name: {}", user.account_name), &font));
-        });
+  egui::Window::new(rich_text("Login", &font))
+    .frame(*crate::lib::egui_frame_preset::NO_SHADOW_FRAME)
+    // .default_pos(screen_center)
+    .open()
+    .collapsible(false)
+    .resizable(false)
+    .vscroll(true)
+    .show(ctx, |ui| {
+      ui.horizontal(|ui| {
+        ui.label(rich_text("account name", &font));
+        ui.label(rich_text("account name", &font));
+      });
+      ui.horizontal(|ui| {
+        ui.label(rich_text("password", &font));
+        ui.label(rich_text("password", &font));
+      });
 
-        ui.horizontal(|ui| {
-          ui.label(rich_text("server", &font));
-          ui.add(egui::TextEdit::singleline(&mut connection_state.addr));
-        });
-        if ui.add(egui::Button::new("Connect")).clicked() {
-          ev.send(InitConnectionEvent { addr: connection_state.addr.clone(), username: user.name });
-          ui_state.is_connection_open = false;
+      ui.horizontal(|ui| {
+        if ui.add(egui::Button::new("Back")).clicked() {
+          ui_state.is_register_open = false;
+          ui_state.is_auth_open = true;
         }
+        if ui.add(egui::Button::new("Continue")).clicked() {
+          ui_state.is_register_open = false;
+        }
+      });
     });
-  }
-}
-
-fn login(
-  mut contexts: EguiContexts,
-  mut ui_state: ResMut<UiState>,
-  mut login_state: ResMut<LoginState>,
-  mut res_api: ResMut<ApiSettings>,
-) { 
-  let ctx = contexts.ctx_mut();
-
-  let font = egui::FontId {
-    family: egui::FontFamily::Monospace,
-    ..default()
-  };
 
   if ui_state.is_login_open {
     egui::Window::new(rich_text("Login", &font))
@@ -236,7 +252,7 @@ fn login(
       // .default_pos(screen_center)
       .collapsible(false)
       .resizable(false)
-      .vscroll(false)
+      .vscroll(true)
       .show(ctx, |ui| {
         ui.horizontal(|ui| {
           ui.label(rich_text("account name", &font));
@@ -252,34 +268,71 @@ fn login(
             ui_state.is_auth_open = true;
           }
           if ui.add(egui::Button::new("Continue")).clicked() {
-            let token = match api::login(&res_api.url, &login_state.account_name, &login_state.password) {
-              Ok(user) => user, 
-              Err(err) => panic!("{:#?}", err),
+            let url = format!("http://{}/user/login", res_api.url);
+            use entity::req::ReqLogin;
+            let json_body = ReqLogin {
+              account_name: &login_state.account_name,
+              password: &login_state.password, 
             };
-            res_api.token = Some(token.clone());
+            
+            let resp = ureq::post(url.as_str())
+              .set("Content-Type", "application/json")
+              .send_json(json_body);
 
-            let user = match api::me(&res_api.url, token.as_ref()) {
-              Ok(user) => user,
-              Err(err) => panic!("{:#?}", err), 
+            match resp {
+              Ok(body) => {
+                let body: entity::res::ResJwtToken = serde_json::from_str(
+                  body.into_string().expect("your code is shit").as_str()
+                ).expect("your code is shit");
+                res_api.token = Some(body.token.into());
+                ui_state.is_login_open = false;
+              },
+              Err(Error::Status(code, response)) => {
+                println!("Error: {}, {:#?}", code, response);
+              },
+              Err(err) => {
+                println!("Error: {}", err);
+              }
             };
-            res_api.me = Some(user);
-            ui_state.is_connection_open = true;
-            ui_state.is_login_open = false;
           }
         });
       });
   }
 }
 
-// fn misc(
-//   mut contexts: EguiContexts,
-//   mut ui_state: ResMut<UiState>,
-// ) {
-//   let ctx = contexts.ctx_mut();
-//
-//   let font = egui::FontId {
-//     family: egui::FontFamily::Monospace,
-//     ..default()
-//   };
-//
-// }
+fn misc(
+  mut contexts: EguiContexts,
+  mut connection_state: ResMut<ConnectionState>,
+  mut ui_state: ResMut<UiState>,
+  mut ev: EventWriter<InitConnectionEvent>,
+) {
+  let ctx = contexts.ctx_mut();
+
+  let font = egui::FontId {
+    family: egui::FontFamily::Monospace,
+    ..default()
+  };
+
+  if ui_state.is_connection_open {
+    egui::Window::new(rich_text("Connection", &font))
+      .frame(*crate::lib::egui_frame_preset::NO_SHADOW_FRAME)
+      // .default_pos(screen_center)
+      .collapsible(false)
+      .resizable(false)
+      .vscroll(true)
+      .show(ctx, |ui| {
+        ui.horizontal(|ui| {
+          ui.label(rich_text("username", &font));
+          ui.add(egui::TextEdit::singleline(&mut connection_state.username));
+        });
+        ui.horizontal(|ui| {
+          ui.label(rich_text("server", &font));
+          ui.add(egui::TextEdit::singleline(&mut connection_state.addr));
+        });
+        if ui.add(egui::Button::new("Connect")).clicked() {
+          ev.send(InitConnectionEvent { addr: connection_state.addr.clone(), username: connection_state.username.clone() });
+          ui_state.is_connection_open = false;
+        }
+      });
+  }
+}

@@ -5,9 +5,7 @@ use bevy_egui::{
 };
 use crate::feature::ui::hud::egui::Align;
 use epaint::Shadow;
-
 use crate::feature::multiplayer::Lobby;
-
 pub struct HudPlugins;
 
 impl Plugin for HudPlugins {
@@ -22,7 +20,7 @@ fn ui(
 ) {
   let ctx = contexts.ctx_mut();
 
-  let transparent_frame = egui::containers::Frame {
+  let _transparent_frame = egui::containers::Frame {
     fill: Color32::TRANSPARENT,
     stroke: Stroke::NONE,
     shadow: Shadow::NONE,
@@ -33,10 +31,8 @@ fn ui(
   egui::Area::new("right_panel")
     .anchor(egui::Align2::RIGHT_BOTTOM, egui::Vec2::new(0.0, 0.0))
     .show(ctx, |ui| {
-        use egui::Direction;
-
         ui.with_layout(egui::Layout::right_to_left(Align::RIGHT), |ui| {
-          for (player_id, player_data) in lobby.players.iter() {
+          for (_player_id, player_data) in lobby.players.iter() {
             // TODO Color32
               ui.colored_label(
                 Color32::from_rgb(

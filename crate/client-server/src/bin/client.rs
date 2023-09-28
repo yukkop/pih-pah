@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use bevy::window::WindowResolution;
 use bevy::{
-  diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
+  diagnostic::FrameTimeDiagnosticsPlugin,
   prelude::*,
 };
 use bevy_egui::EguiPlugin;

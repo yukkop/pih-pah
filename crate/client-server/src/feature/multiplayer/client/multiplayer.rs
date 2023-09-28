@@ -58,15 +58,6 @@ pub struct InitConnectionEvent{
   pub username: String,
 }
 
-fn if_initiate_connection(
-  connection: Res<Connection>,
-) -> bool {
-  println!("{}", connection.initiate_connection);
-  if connection.initiate_connection {
-    return true;
-  }
-  false
-}
 pub fn new_renet_client(
   mut ev: EventReader<InitConnectionEvent>,
   mut commands: Commands,
