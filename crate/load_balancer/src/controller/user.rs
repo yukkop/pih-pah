@@ -29,7 +29,7 @@ async fn register(body: Json<ReqNewUser<'_>>) ->  Result<String, ApiError> {
         .get_result(connection)
         .map_err(|err| ApiError::conflict(err.to_string()))?;
 
-    Ok(to_json(&ResUser::from(result)))
+    Ok(to_json(&Me::from(result)))
 }
 
 #[get("/me")]
