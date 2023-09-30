@@ -1,19 +1,21 @@
-use rocket::{post, Route, routes, serde::json::Json};
+use rocket::{post, get, Route, routes, serde::json::Json};
 use uuid::Uuid;
-
-use crate::dto::res::ResUser;
-use crate::establish_connection;
-use crate::model::{NewUser, User, JwtToken, NewJwtToken};
-use crate::schema::user;
-use crate::schema::jwt_token;
+use crate::{
+  establish_connection,
+  model::{NewUser, User, JwtToken, NewJwtToken},
+  schema::{user, jwt_token},
+  controller::tool::{ApiError, to_json, generate_token}
+};
 use diesel::prelude::*;
-use crate::controller::tool::{ApiError, to_json, generate_token};
-use crate::dto::req::{ReqNewUser, ReqLogin};
+use entity::{
+  req::{ReqNewUser, ReqLogin},
+  res::{ResUser, ResJwtToken, Me},
+};
 
-// use super::tool::{api_error::ApiError, shared::to_json};
+use super::tool::TokenHeader;
 
 pub fn user() -> Vec<Route> {
-    routes![register, login]
+    routes![register, login, me]
 }
 
 #[post("/register", format = "application/json", data = "<body>")]
@@ -27,16 +29,30 @@ async fn register(body: Json<ReqNewUser<'_>>) ->  Result<String, ApiError> {
         .get_result(connection)
         .map_err(|err| ApiError::conflict(err.to_string()))?;
 
-    Ok(to_json(&ResUser::from(result)))
+    Ok(to_json(&Me::from(result)))
+}
+
+#[get("/me")]
+fn me(token: TokenHeader) -> Result<String, ApiError> {
+    use crate::schema::user::dsl::*;
+
+    let connection = &mut establish_connection();
+    let result = user
+        .filter(id.eq(token.id))
+        .select(User::as_select())
+        .first(connection)
+        .map_err(|err| ApiError::conflict(err.to_string()))?;
+
+    Ok(to_json(&Me::from(result)))
 }
 
 #[post("/login", format = "application/json", data = "<body>")]
 fn login(body: Json<ReqLogin>) -> Result<String, ApiError> {
     let result;
+    let connection = &mut establish_connection();
     {
       use crate::schema::user::dsl::*;
 
-      let connection = &mut establish_connection();
       result = user
           .filter(account_name.eq(&*body.account_name))
           .select(User::as_select())
@@ -52,18 +68,30 @@ fn login(body: Json<ReqLogin>) -> Result<String, ApiError> {
     let generated_token = generate_token(result.id)
       .map_err(|err| ApiError::conflict(err.to_string()))?;
 
+    // TODO cringe
+    let res = {
+      use crate::schema::jwt_token::dsl::*;
+      jwt_token
+          .filter(token.eq(&generated_token))
+          .select(JwtToken::as_select())
+          .first(connection)
+          // .map_err(|_| ApiError::conflict_str("Password or account name not correct"))?
+    };
+    if let Ok(jwt_token) = res {
+      return Ok(to_json(&ResJwtToken::from(jwt_token)));
+    }
+
     let model = NewJwtToken {
       id: Uuid::new_v4(),
       token: &generated_token,
       active: true,
     };
 
-    let connection = &mut establish_connection();
     let jwt_token = diesel::insert_into(jwt_token::table)
       .values(&model)
       .returning(JwtToken::as_returning())
       .get_result(connection)
       .map_err(|err| ApiError::conflict(err.to_string()))?;
 
-    Ok(jwt_token.token)
+    Ok(to_json(&ResJwtToken::from(jwt_token)))
 }

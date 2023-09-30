@@ -2,10 +2,10 @@ use rocket::{get, post, routes, Route, serde::json::Json};
 use crate::{
   controller::tool::{ApiError, to_json, TokenHeader},
   establish_connection, 
-  dto::{res::ResServer, req::ReqNewServer},
   model::{Server, NewServer},
   schema::server,
 };
+use entity::{res::ResServer, req::ReqNewServer};
 use diesel::prelude::*;
 
 pub fn server() -> Vec<Route> {

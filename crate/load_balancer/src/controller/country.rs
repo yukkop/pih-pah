@@ -2,9 +2,9 @@ use rocket::{get, routes, Route};
 use crate::{
   controller::tool::{ApiError, to_json, TokenHeader},
   establish_connection, 
-  dto::res::ResCountry,
   model::Country,
 };
+use entity::res::ResCountry;
 use diesel::prelude::*;
 
 pub fn coutry() -> Vec<Route> {

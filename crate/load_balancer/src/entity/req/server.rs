@@ -1,14 +1,6 @@
-use serde::Deserialize;
-
 use crate::model::NewServer;
 use uuid::Uuid;
-
-#[derive(Deserialize)]
-pub struct ReqNewServer<'a> {
-    pub name: &'a str,
-    pub address: &'a str, 
-    pub country_id: i32, 
-}
+use entity::req::ReqNewServer;
 
 impl<'a> From<ReqNewServer<'a>> for NewServer<'a> {
     fn from(req: ReqNewServer<'a>) -> Self {

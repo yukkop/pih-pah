@@ -4,7 +4,7 @@ use crate::feature::lobby::client::camera_switch;
 use crate::feature::lobby::client::spawn_client_side_player;
 use crate::feature::lobby::client::{spawn_tied_camera, TiedCamera};
 use crate::feature::multiplayer::{
-  Lobby, PlayerData, PlayerInput, ServerMessages, TransportData, PROTOCOL_ID,
+  Lobby, Connection, Username, PlayerData, PlayerInput, ServerMessages, TransportData, PROTOCOL_ID,
 };
 use bevy_renet::{
   renet::{transport::ClientAuthentication, ConnectionConfig, DefaultChannel, RenetClient},
@@ -21,31 +21,24 @@ use std::{
 #[derive(Default, Debug, Resource)]
 pub struct OwnId(Option<ClientId>);
 
-pub struct MultiplayerPlugins{
-  server_addr: String
-}
-
-impl MultiplayerPlugins {
-  pub fn by_string(server_addr: String) -> Self {
-    Self {
-      server_addr
-    }
-  }
-}
+pub struct MultiplayerPlugins;
 
 impl Plugin for MultiplayerPlugins {
   fn build(&self, app: &mut App) {
     app.init_resource::<Lobby>();
     app.init_resource::<TransportData>();
+
+    // if RenetClient no
     app.add_plugins(RenetClientPlugin);
     app.add_plugins(NetcodeClientPlugin);
     app.init_resource::<PlayerInput>();
     app.init_resource::<OwnId>();
 
-    let (client, transport) = new_renet_client(self.server_addr.to_string());
-    app.insert_resource(client);
-    app.insert_resource(transport);
+    app.init_resource::<Username>();
+    app.init_resource::<Connection>();
+    app.add_event::<InitConnectionEvent>();
 
+    app.add_systems(Update, new_renet_client);
     app.add_systems(
       Update,
       (
@@ -59,24 +52,39 @@ impl Plugin for MultiplayerPlugins {
   }
 }
 
-pub fn new_renet_client(addr: String) -> (RenetClient, NetcodeClientTransport) {
-  let client = RenetClient::new(ConnectionConfig::default());
-  let server_addr = addr.parse().unwrap();
-  let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
-  let current_time = SystemTime::now()
-    .duration_since(SystemTime::UNIX_EPOCH)
-    .unwrap();
-  let client_id = current_time.as_millis() as u64;
-  let authentication = ClientAuthentication::Unsecure {
-    client_id,
-    protocol_id: PROTOCOL_ID,
-    server_addr,
-    user_data: None,
-  };
+#[derive(Default, Event)]
+pub struct InitConnectionEvent{
+  pub addr: String,
+  pub username: String,
+}
 
-  let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
+pub fn new_renet_client(
+  mut ev: EventReader<InitConnectionEvent>,
+  mut commands: Commands,
+) {
+ for settings in ev.iter() {
+    commands.insert_resource(RenetClient::new(ConnectionConfig::default()));
+    let server_addr = settings.addr.parse().unwrap();
+    let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
+    let current_time = SystemTime::now()
+      .duration_since(SystemTime::UNIX_EPOCH)
+      .unwrap();
+    let client_id = current_time.as_millis() as u64;
 
-  (client, transport)
+    let username_netcode = match Username(settings.username.clone()).to_netcode_data() {
+      Ok(bytes) => Some(bytes),
+      Err(_) => None
+    };
+
+    let authentication = ClientAuthentication::Unsecure {
+      client_id,
+      protocol_id: PROTOCOL_ID,
+      server_addr,
+      user_data: username_netcode,
+    };
+
+    commands.insert_resource(NetcodeClientTransport::new(current_time, authentication, socket).unwrap());
+  }
 }
 
 pub fn client_send_input(player_input: Res<PlayerInput>, mut client: ResMut<RenetClient>) {
@@ -106,7 +114,7 @@ pub fn client_sync_players(
           *own_id = OwnId(Some(id));
         }
       }
-      ServerMessages::PlayerConnected { id, color } => {
+      ServerMessages::PlayerConnected { id, color, username } => {
         let name = "noname";
 
         let player_entity = commands.spawn_client_side_player(color).id();
@@ -118,12 +126,12 @@ pub fn client_sync_players(
           log::info!("Player {} ({}) connected.", name, id);
         }
 
-
         lobby.players.insert(
           id,
           PlayerData {
             entity: player_entity,
             color,
+            username
           },
         );
       }
@@ -144,15 +152,15 @@ pub fn client_sync_players(
     for (player_id, data) in transport_data.data.iter() {
       if let Some(player_data) = lobby.players.get(player_id) {
         let transform = Transform {
-          translation: (data.0).into(),
-          rotation: Quat::from_array(data.1),
+          translation: (data.position).into(),
+          rotation: Quat::from_array(data.rotation),
           ..Default::default()
         };
         commands.entity(player_data.entity).insert(transform);
         if Some(player_id) == own_id.0.as_ref() {
           if let Ok(mut camera_transform) = tied_camera_query.get_single_mut() {
             camera_transform.translation = transform.translation;
-            camera_transform.rotation = Quat::from_array(data.2);
+            camera_transform.rotation = Quat::from_array(data.tied_camera_rotation);
           }
         }
       }

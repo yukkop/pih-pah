@@ -1,13 +1,5 @@
-use serde::Serialize;
-
 use crate::model::Server;
-
-#[derive(Serialize)]
-pub struct ResServer {
-    pub name: String,
-    pub address: String,
-    pub online: bool,
-}
+use entity::res::ResServer;
 
 impl From<Server> for ResServer {
     fn from(model: Server) -> Self {

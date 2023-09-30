@@ -2,9 +2,9 @@ use rocket::{get, routes, Route};
 use crate::{
   controller::tool::{ApiError, to_json, TokenHeader},
   establish_connection, 
-  dto::res::ResLanguage,
   model::Language,
 };
+use entity::res::ResLanguage;
 use diesel::prelude::*;
 
 pub fn language() -> Vec<Route> {

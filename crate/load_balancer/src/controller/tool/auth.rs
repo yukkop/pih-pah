@@ -3,7 +3,9 @@ use rocket::http::Status;
 use rocket::request::{Outcome, FromRequest};
 use serde::{Serialize, Deserialize};
 
-pub struct TokenHeader(String);
+pub struct TokenHeader {
+  pub id: Uuid,
+}
 
 #[derive(Debug)]
 pub enum ApiTokenError {
@@ -26,9 +28,9 @@ impl<'r> FromRequest<'r> for TokenHeader {
       match token {
           Some(token) => {
             // check validity
-            if let Ok(_claims) = verify_token(token) {
-              Box::pin(async {
-                Outcome::Success(TokenHeader(token.to_string()))
+            if let Ok(claims) = verify_token(token) {
+              Box::pin(async move {
+                Outcome::Success( TokenHeader { id: claims.sub.clone() })
               })
             } else {
               Box::pin(async {
