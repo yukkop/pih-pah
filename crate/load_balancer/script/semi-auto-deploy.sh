@@ -40,7 +40,7 @@ SSH_DEST="${USER}@${SERVER}"
 dir="$(dirname "$(realpath "$0")")/"
 remote_dir="/home/${USER}/pih-pah-deploy/load-balancer/"
 bin="load-balancer"
-service="pih-pah-load-balancer"
+service="pih-pah-${bin}"
 
 cd "${dir}../"
 cargo build --release
@@ -56,7 +56,7 @@ ssh "${SSH_DEST}" <<EOF
   chmod +x  ${remote_dir}${bin}
 
   echo "[Unit]
-Description=pih-pah reciever
+Description=pih-pah ${bin} 
 
 [Service]
 ExecStart=env DATABASE_URL=${DATABASE_URL} ROCKET_ADDRESS=0.0.0.0 ${remote_dir}/${bin}
@@ -71,5 +71,6 @@ WantedBy=multi-user.target" > ${temp_file}
   printf '%s' "${PASSWORD}" | sudo -S systemctl enable ${service} 
   printf '%s' "${PASSWORD}" | sudo -S systemctl start ${service} 
   printf '%s' "${PASSWORD}" | sudo -S systemctl restart ${service} 
-  rm -f ${temp_file}
 EOF
+
+rm -f ${temp_file}
