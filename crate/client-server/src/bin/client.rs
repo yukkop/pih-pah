@@ -1,18 +1,21 @@
+use std::sync::Arc;
+
 use bevy::window::WindowResolution;
 use bevy::{
-  diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
+  diagnostic::FrameTimeDiagnosticsPlugin,
   prelude::*,
 };
 use bevy_egui::EguiPlugin;
-// use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use pih_pah::feature::lobby::client::LobbyPlugins;
-use pih_pah::feature::multiplayer::client::MultiplayerPlugins;
-use pih_pah::feature::music::MusicPlugins;
-use pih_pah::feature::ui::{UiDebugPlugins, UiPlugins};
+use pih_pah::feature::{
+  lobby::client::LobbyPlugins,
+  multiplayer::client::MultiplayerPlugins,
+  music::MusicPlugins,
+  ui::{UiDebugPlugins, UiPlugins},
+  multiplayer::panic_on_error_system,
+};
 use pih_pah::lib::netutils::{is_http_address, is_ip_with_port};
-use pih_pah::feature::multiplayer::panic_on_error_system;
 
-#[cfg(not(any(feature = "wayland", feature = "x11")))]
+#[cfg(not(any(feature = "wayland", feature = "x11", feature = "windows")))]
 compile_error!("Either 'wayland' or 'x11' feature must be enabled flag.");
 
 fn main() {
@@ -28,7 +31,7 @@ fn main() {
   }
 
   // Checking if the address is either an HTTP address or an IP address with port
-  let server_addr = match &args[1] {
+  let api_url = match &args[1] {
     addr if is_http_address(addr) => addr,
     addr if is_ip_with_port(addr) => addr,
     _ => panic!("Invalid argument, must be an HTTP address or an IP with port."),
@@ -57,16 +60,16 @@ fn main() {
     app.add_plugins(DefaultPlugins.set(window_plugin_override));
     app.add_plugins(EguiPlugin);
     app.add_plugins(UiDebugPlugins);
-    app.add_plugins(LogDiagnosticsPlugin::default());
     app.add_plugins(FrameTimeDiagnosticsPlugin);
+    // app.add_plugins(LogDiagnosticsPlugin::default());
     // app.add_plugins(WorldInspectorPlugin::default());
   }
 
   app.add_plugins((
     MusicPlugins,
-    UiPlugins,
+    UiPlugins::by_string(Arc::new(api_url.to_string())),
     LobbyPlugins,
-    MultiplayerPlugins::by_string(server_addr.to_string())
+    MultiplayerPlugins,
   ));
 
   app.add_systems(Update, panic_on_error_system);

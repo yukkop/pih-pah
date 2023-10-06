@@ -7,8 +7,9 @@ use bevy_xpbd_3d::prelude::*;
 use pih_pah::feature::lobby::server::LobbyPlugins;
 use pih_pah::feature::multiplayer::server::MultiplayerPlugins;
 use pih_pah::feature::ui::UiDebugPlugins;
-use pih_pah::lib::netutils;
+
 use pih_pah::feature::multiplayer::panic_on_error_system;
+use pih_pah::feature::heartbeat::HeartbeatPlugins;
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
@@ -24,17 +25,14 @@ fn main() {
 
   if args.len() < 2 {
     println!("Usage: ");
-    println!("  server '<ip>:<port>'");
-    println!("  server 'example.com'");
+    println!("  server '<server address>' '<load-balanser address>'");
     panic!("Not enough arguments.");
   }
 
-  // Checking if the address is either an HTTP address or an IP address with port
-  let server_addr = match &args[1] {
-    addr if netutils::is_http_address(addr) => addr,
-    addr if netutils::is_ip_with_port(addr) => addr,
-    _ => panic!("Invalid argument, must be an HTTP address or an IP with port."),
-  };
+  // to listen clients
+  let listen_addr = &args[1];
+  // to send online reports to main server
+  let send_addr = &args[2];
 
   let is_debug = std::env::var("DEBUG").is_ok();
 
@@ -66,7 +64,8 @@ fn main() {
   // Plugins that's always there
   app.add_plugins(LobbyPlugins);
   app.add_plugins(PhysicsPlugins::default());
-  app.add_plugins(MultiplayerPlugins::by_string(server_addr.to_string()));
+  app.add_plugins(MultiplayerPlugins::by_string(listen_addr.to_string()));
+  app.add_plugins(HeartbeatPlugins::by_string(send_addr.to_string(), listen_addr.to_string()));
 
   app.add_systems(Update, panic_on_error_system);
 

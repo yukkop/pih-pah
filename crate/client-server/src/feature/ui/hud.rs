@@ -3,10 +3,9 @@ use bevy_egui::{
   egui::{self, Color32, Stroke, Margin, Rounding},
   EguiContexts,
 };
+use crate::feature::ui::hud::egui::Align;
 use epaint::Shadow;
-
 use crate::feature::multiplayer::Lobby;
-
 pub struct HudPlugins;
 
 impl Plugin for HudPlugins {
@@ -21,7 +20,7 @@ fn ui(
 ) {
   let ctx = contexts.ctx_mut();
 
-  let transparent_frame = egui::containers::Frame {
+  let _transparent_frame = egui::containers::Frame {
     fill: Color32::TRANSPARENT,
     stroke: Stroke::NONE,
     shadow: Shadow::NONE,
@@ -29,13 +28,21 @@ fn ui(
     inner_margin: Margin { left: 0., right: 0., top: 0., bottom: 0. }, 
     rounding: Rounding { nw: 0., ne: 0., sw: 0., se: 0. },
   };
-
-  egui::TopBottomPanel::top("Top")
-    .show_separator_line(false)
-    .frame(transparent_frame)
-    .show(ctx, |ui| 
-  {
-    ui.heading("My Butiful Game 0.1.0");
+  egui::Area::new("right_panel")
+    .anchor(egui::Align2::RIGHT_BOTTOM, egui::Vec2::new(0.0, 0.0))
+    .show(ctx, |ui| {
+        ui.with_layout(egui::Layout::right_to_left(Align::RIGHT), |ui| {
+          for (_player_id, player_data) in lobby.players.iter() {
+            // TODO Color32
+              ui.colored_label(
+                Color32::from_rgb(
+                  (player_data.color.r() * 255.) as u8,
+                  (player_data.color.g() * 255.) as u8,
+                  (player_data.color.b() * 255.) as u8,
+                ),
+                format!("{}", player_data.username)
+              );
+        }});
   });
 
   egui::SidePanel::right("Users")

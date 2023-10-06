@@ -1,0 +1,2 @@
+ALTER TABLE "server" ADD COLUMN "online" BOOL NOT NULL;
+ALTER TABLE "server" ADD COLUMN "address" TEXT NOT NULL;
