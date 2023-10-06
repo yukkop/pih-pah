@@ -59,7 +59,7 @@ fn main() {
     app.add_plugins(EguiPlugin);
     app.add_plugins(UiDebugPlugins);
     app.add_plugins(LogDiagnosticsPlugin::default());
-    app.add_plugins(FrameTimeDiagnosticsPlugin);
+    // app.add_plugins(FrameTimeDiagnosticsPlugin);
     app.add_plugins(WorldInspectorPlugin::default());
   }
 

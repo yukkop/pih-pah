@@ -25,6 +25,8 @@ pub struct PlayerInput {
   pub down: bool,
   pub left: bool,
   pub right: bool,
+  pub jump: bool,
+  pub sprint: bool,
   pub turn_left: bool,
   pub turn_right: bool,
 }

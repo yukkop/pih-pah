@@ -18,8 +18,10 @@ fn setup_scene(mut commands: Commands) {
       PbrBundle {
         ..Default::default()
       },
+      Friction::new(0.4),
       RigidBody::Static,
       Collider::cuboid(PLANE_SIZE, 0.002, PLANE_SIZE),
+      // NERV HUESOS
     ),
   );
 }

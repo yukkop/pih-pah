@@ -27,6 +27,7 @@ pub struct PlayerInput {
   pub down: bool,
   pub left: bool,
   pub right: bool,
+ // pub jump: bool,
 }
 
 #[derive(Debug, Component)]
@@ -134,7 +135,7 @@ pub fn server_sync_players(
   mut server: ResMut<RenetServer>,
   mut data: ResMut<TransportData>,
   query: Query<(&Position, &Rotation, &Player)>,
-) {
+) 
   // let mut players: HashMap<ClientId, [[f32; 3]; 2]> = HashMap::new();
   for (position, rotation, player) in query.iter() {
     data
