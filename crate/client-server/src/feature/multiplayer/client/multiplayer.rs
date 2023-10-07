@@ -175,4 +175,6 @@ pub fn player_input(keyboard_input: Res<Input<KeyCode>>, mut player_input: ResMu
   player_input.down = keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
   player_input.turn_left = keyboard_input.pressed(KeyCode::Q);
   player_input.turn_right = keyboard_input.pressed(KeyCode::E);
+  player_input.jump = keyboard_input.just_pressed(KeyCode::Space);
+  player_input.sprint = keyboard_input.pressed(KeyCode::ControlLeft);
 }

@@ -8,7 +8,7 @@ const SECONDARY_CAMERA_ORDER: isize = 2;
 
 // it is not dependet to server
 pub fn camera_switch(keyboard_input: Res<Input<KeyCode>>, mut camera_query: Query<&mut Camera>) {
-  if keyboard_input.just_pressed(KeyCode::Space) {
+  if keyboard_input.just_pressed(KeyCode::C) {
     for mut camera in camera_query.iter_mut() {
       // Switch the camera order
       if camera.order == PRIMARY_CAMERA_ORDER {

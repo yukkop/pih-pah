@@ -159,7 +159,7 @@ pub fn server_sync_players(
   mut data: ResMut<TransportData>,
   query: Query<(&Position, &Rotation, &PlayerViewDirrection, &Player)>,
 ) {
-  for (position, rotation, view_dirrection, player) in query.iter() {
+  for (position, rotation, view_direction, player) in query.iter() {
     data
       .data
       .insert(player.id, PlayerTransportData {
