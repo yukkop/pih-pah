@@ -44,26 +44,4 @@ fn ui(
               );
         }});
   });
-
-  egui::SidePanel::right("Users")
-    .show_separator_line(false)
-    .frame(transparent_frame)
-    .show(ctx, |ui| {
-      for (player_id, player_data) in lobby.players.iter() {
-        // TODO Color32
-        ui.colored_label(
-          Color32::from_rgb(
-            (player_data.color.r() * 255.) as u8,
-            (player_data.color.g() * 255.) as u8,
-            (player_data.color.b() * 255.) as u8,
-          ),
-          format!("{player_id}")
-        );
-      }
-    });
-
-  egui::CentralPanel::default()
-    .frame(transparent_frame)
-    .show(ctx, |_ui| {
-    });
 }

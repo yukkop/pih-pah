@@ -1,5 +1,5 @@
 # Check for help flag
-default_db_link="postgres://postgres:postgres@localhost:5433/pihpah"
+default_db_link="postgres://postgres:postgres@localhost:5433/pih-pah"
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   # echo "Can start only from project folder"
@@ -56,7 +56,7 @@ ssh "${SSH_DEST}" <<EOF
   chmod +x  ${remote_dir}${bin}
 
   echo "[Unit]
-Description=pih-pah ${bin} 
+Description=pih-pah ${bin}
 
 [Service]
 ExecStart=env DATABASE_URL=${DATABASE_URL} ROCKET_ADDRESS=0.0.0.0 ${remote_dir}/${bin}

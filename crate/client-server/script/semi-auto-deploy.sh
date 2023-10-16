@@ -9,6 +9,7 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   printf "  SERVER\tSet the SSH destination as server addres\n"
   printf "  SERVER_PASSWORD\tpassword for user in remote host, I hope you do not use root\n"
   printf "  DATABASE_URL\tpostgresql link\n"
+  printf "  PORT\tport (default: 5000)\n"
   printf "  \tdefault: %s" "${default_db_link}"
   exit 0
 fi
@@ -20,6 +21,11 @@ fi
 
 if [ -z "${SERVER}" ]; then
   echo "SERVER must be set. Exiting."
+  exit 1
+fi
+
+if [ -z "${PORT}" ]; then
+  PORT=5000
   exit 1
 fi
 
@@ -60,7 +66,7 @@ ssh "${SSH_DEST}" <<EOF
 Description=pih-pah ${bin}
 
 [Service]
-ExecStart=${remote_dir}/${bin} 104.248.254.204:5000 104.248.254.204:2007
+ExecStart=${remote_dir}/${bin} ${SERVER}:${PORT} 104.248.254.204:2007
 Restart=always
 
 [Install]

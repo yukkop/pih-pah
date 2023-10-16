@@ -165,7 +165,7 @@ pub fn server_sync_players(
       .insert(player.id, PlayerTransportData {
         position: position.0.into(),
         rotation: rotation.0.into(),
-        tied_camera_rotation: view_dirrection.0.into()
+        tied_camera_rotation: view_direction.0.into()
       });
   }
 
