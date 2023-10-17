@@ -1,21 +1,26 @@
-name: Rust
+name: deploy
 
 on:
   workflow_dispatch:
+    inputs:
+      env_choice:
+            description: 'Environment'
+            required: true
 
-env:
-  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-  SERVER: ${{ secrets.SERVER }}
-  SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
-  USER: ${{ secrets.USER }}
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
     
 jobs:
   deployment:
 
     runs-on: ubuntu-latest
     
-    environment: deploy_loader
+    env:
+      CUSTOM_ENV: ${{ github.event.inputs.env_choice }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      SERVER: ${{ secrets.SERVER }}
+      SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+      USER: ${{ secrets.USER }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
     steps:
     - uses: actions/checkout@v3
@@ -32,14 +37,5 @@ jobs:
         path: target
         key: ${{ runner.os }}-target-release-${{ hashFiles('**/Cargo.lock') }}
     
-    - name: Check
-      run: echo $USER $SERVER $SERVER_PASSWORD
-
-    - name: Check2
-      run: echo ${{ secrets.USER }} ${{ secrets.SERVER }} ${{ secrets.SERVER_PASSWORD }}
-
-    - name: Check3
-      run: echo $CHECK
-    
-    - name: Deploy script
-      run: bash ./crate/receiver/script/semi-auto-deploy.sh
+    - name: Run deploy script
+      run: bash $SCRIPT_PATH
