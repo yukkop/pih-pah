@@ -1,6 +1,8 @@
 name: CI
 
 on:
+  push:
+    branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
 
@@ -12,6 +14,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - uses: actions/checkout@v3
+    - name: Install mold linker
+      run: sudo apt-get install -y mold
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: nightly-2023-07-09 
@@ -37,4 +42,4 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: test
-        args: --all-features --all-targets:
+        args: --all-features --all-targets
