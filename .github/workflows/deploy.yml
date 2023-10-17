@@ -4,7 +4,11 @@ on:
   workflow_dispatch:
 
 env:
-  CHECK: ${{ secrets.USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  SERVER: ${{ secrets.SERVER }}
+  SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+  USER: ${{ secrets.USER }}
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
     
 jobs:
   deployment:
