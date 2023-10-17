@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly-2023-07-09 
+        profile: minimal
+        override: true
+        components: rustfmt, clippy
+    - name: Check formatting
+      uses: actions-rs/cargo@v1
+      with:
+        command: fmt
+        args: --all --verbose -- --check --verbose
+    - name: Check (build)
+      uses: actions-rs/cargo@v1
+      with:
+        command: check
+        args: --all-features --all-targets
+    - name: Clippy (lint)
+      uses: actions-rs/cargo@v1
+      with:
+        command: clippy
+        args: --all-features --all-targets -- --deny warnings
+    - name: Test
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --all-features --all-targets:
