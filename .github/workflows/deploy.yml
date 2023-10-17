@@ -5,13 +5,6 @@ on:
   create:
     tags:
       - 'deploy'
-    
-env:
-  SSH_PRIVATE_KEY: ${{ env.SSH_PRIVATE_KEY }}
-  SERVER: ${{ env.SERVER }}
-  SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
-  USER: ${{ env.USER }}
-  DATABASE_URL: ${{ env.DATABASE_URL }}
 
 jobs:
   build:
