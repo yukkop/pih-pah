@@ -30,7 +30,7 @@ impl<'r> FromRequest<'r> for TokenHeader {
             // check validity
             if let Ok(claims) = verify_token(token) {
               Box::pin(async move {
-                Outcome::Success( TokenHeader { id: claims.sub.clone() })
+                Outcome::Success( TokenHeader { id: claims.sub })
               })
             } else {
               Box::pin(async {
@@ -66,6 +66,6 @@ pub fn generate_token(id: Uuid) -> Result<String, JWTError> {
 }
 
 pub fn verify_token(token: &str) -> Result<Claims, JWTError> {
-    let token_data = decode::<Claims>(&token, &DecodingKey::from_secret("secret".as_ref()), &Validation::default())?;
+    let token_data = decode::<Claims>(token, &DecodingKey::from_secret("secret".as_ref()), &Validation::default())?;
     Ok(token_data.claims)
 }

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+
 use entity::res::ResServer;
 use crate::lib::api::Error;
 use ureq::OrAnyStatus;

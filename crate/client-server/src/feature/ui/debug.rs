@@ -59,7 +59,7 @@ fn debug_preferences_ui(
     });
 }
 
-fn set_egui_debug(context: &mut egui::Context, debug_on_hover: bool) {
+fn set_egui_debug(context: &egui::Context, debug_on_hover: bool) {
   context.set_style(egui::Style {
     debug: egui::style::DebugOptions {
       debug_on_hover,

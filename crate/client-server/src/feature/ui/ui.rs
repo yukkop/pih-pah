@@ -12,7 +12,7 @@ use bevy_egui::{
 };
 use bevy::prelude::*;
 use epaint::Color32;
-use ureq::Error;
+
 
 #[derive(Resource)]
 struct ApiSettings{
@@ -131,7 +131,7 @@ impl Plugin for UiPlugins {
 fn hello (
   mut contexts: EguiContexts,
   mut ui_state: ResMut<UiState>,
-  mut login_state: ResMut<LoginState>,
+  _login_state: ResMut<LoginState>,
   mut register_state: ResMut<RegisterState>,
   mut res_api: ResMut<ApiSettings>,
   mut ev: EventWriter<InitConnectionEvent>,
@@ -246,13 +246,13 @@ fn hello (
               return;
             }
 
-            let user = match api::register(
+            let _user = match api::register(
               &res_api.url,
               &register_state.username,
               &register_state.account_name,
               &register_state.password
             ) {
-              Ok(user) => {
+              Ok(_user) => {
                 let token = api::login(&res_api.url, &register_state.account_name, &register_state.password);
                 if token.is_err() {
                   panic!("your api is shit");
@@ -371,7 +371,7 @@ fn login(
             ui_state.is_auth_open = true;
           }
           if ui.add(egui::Button::new("Continue")).clicked() {
-            let token = match api::login(&res_api.url, &login_state.account_name, &login_state.password) {
+            let _token = match api::login(&res_api.url, &login_state.account_name, &login_state.password) {
               Ok(token) => {
                 res_api.token = Some(token.clone());
 
