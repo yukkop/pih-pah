@@ -9,12 +9,18 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   printf "  SERVER\tSet the SSH destination as server addres\n"
   printf "  SERVER_PASSWORD\tpassword for user in remote host, I hope you do not use root\n"
   printf "  DATABASE_URL\tpostgresql link\n"
+  printf "  SSH_PRIVATE_KEY\tSsh private key\n"
   printf "  \tdefault: %s" "${default_db_link}"
   exit 0
 fi
 
 if [ -z "${USER}" ]; then
   echo "USER must be set. Exiting."
+  exit 1
+fi
+
+if [ -z "${SSH_PRIVATE_KEY}" ]; then
+  echo "SSH_PRIVATE_KEY must be set. Exiting."
   exit 1
 fi
 
@@ -51,8 +57,11 @@ scp "${dir}../../../target/release/${bin}" "${SSH_DEST}:${remote_dir}"
 
 temp_file="~/temp-${service}.service"
 
+tmp_ssh_private="$(mktemp)"
+echo "${SSH_PRIVATE_KEY}" > "${tmp_ssh_private}"
+
 # SSH and setup service
-ssh "${SSH_DEST}" <<EOF
+ssh -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
   chmod +x  ${remote_dir}${bin}
 
   echo "[Unit]
@@ -73,4 +82,5 @@ WantedBy=multi-user.target" > ${temp_file}
   printf '%s' "${PASSWORD}" | sudo -S systemctl restart ${service} 
 EOF
 
-rm -f ${temp_file}
+rm -f "${temp_file}"
+rm -f "${tmp_ssh_private}"
