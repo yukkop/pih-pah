@@ -6,6 +6,13 @@ on:
     tags:
       - 'deploy'
 
+env:
+  SSH_PRIVATE_KEY: ${{ deploy_loader.SSH_PRIVATE_KEY }}
+  SERVER: ${{ deploy_loader.SERVER }}
+  SERVER_PASSWORD: ${{ deploy_loader.SERVER_PASSWORD }}
+  USER: ${{ deploy_loader.USER }}
+  DATABASE_URL: ${{ deploy_loader.DATABASE_URL }}
+
 jobs:
   build:
 
