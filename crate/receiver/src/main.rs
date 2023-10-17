@@ -34,7 +34,6 @@ async fn main() -> Result<(), sqlx::Error> {
 }
 
 const PROTOCOL_ID: u64 = 7;
-
 async fn server(public_addr: SocketAddr, pool: PgPool) -> Result<(), sqlx::Error> {
   let connection_config = ConnectionConfig::default();
   let mut server: RenetServer = RenetServer::new(connection_config);
