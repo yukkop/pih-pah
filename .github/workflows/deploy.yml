@@ -27,6 +27,9 @@ jobs:
     
     - name: Check
       run: echo $USER $SERVER $SERVER_PASSWORD
+
+    - name: Check2
+      run: echo ${{ secrets.USER }} ${{ secrets.SERVER }} ${{ secrets.SERVER_PASSWORD }}
     
     - name: Deploy script
       run: bash ./crate/receiver/script/semi-auto-deploy.sh
