@@ -1,9 +1,4 @@
-use std::{
-  collections::HashMap,
-  net::{SocketAddr, UdpSocket},
-  thread,
-  time::{Duration, Instant, SystemTime},
-};
+use dotenv::dotenv;
 use renet::{
   transport::{
     NetcodeServerTransport, ServerAuthentication, ServerConfig, NETCODE_USER_DATA_BYTES,
@@ -11,7 +6,12 @@ use renet::{
   ClientId, ConnectionConfig, DefaultChannel, RenetServer, ServerEvent,
 };
 use sqlx::postgres::PgPool;
-use dotenv::dotenv;
+use std::{
+  collections::HashMap,
+  net::{SocketAddr, UdpSocket},
+  thread,
+  time::{Duration, Instant, SystemTime},
+};
 
 #[tokio::main]
 async fn main() -> Result<(), sqlx::Error> {
@@ -39,7 +39,9 @@ async fn server(public_addr: SocketAddr, pool: PgPool) -> Result<(), sqlx::Error
   let connection_config = ConnectionConfig::default();
   let mut server: RenetServer = RenetServer::new(connection_config);
 
-  let current_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
+  let current_time = SystemTime::now()
+    .duration_since(SystemTime::UNIX_EPOCH)
+    .unwrap();
   let server_config = ServerConfig {
     current_time,
     max_clients: 64,

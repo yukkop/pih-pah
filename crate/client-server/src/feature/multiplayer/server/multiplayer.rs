@@ -2,15 +2,16 @@ use bevy::prelude::*;
 
 use crate::feature::lobby::server::spawn_server_side_player;
 use crate::feature::multiplayer::{
-  Lobby, Player, PlayerData, PlayerInput, PlayerViewDirrection, ServerMessages, TransportData,
-  PROTOCOL_ID, PlayerTransportData, Username,
+  Lobby, Player, PlayerData, PlayerInput, PlayerTransportData, PlayerViewDirrection,
+  ServerMessages, TransportData, Username, PROTOCOL_ID,
 };
 use bevy_renet::{
-  transport::NetcodeServerPlugin, RenetServerPlugin,
   renet::{
     transport::{ServerAuthentication, ServerConfig},
     ConnectionConfig, DefaultChannel, RenetServer, ServerEvent,
-  }
+  },
+  transport::NetcodeServerPlugin,
+  RenetServerPlugin,
 };
 use bevy_xpbd_3d::prelude::*;
 use renet::transport::NetcodeServerTransport;
@@ -18,15 +19,13 @@ use renet::transport::NetcodeServerTransport;
 use std::net::UdpSocket;
 use std::time::SystemTime;
 
-pub struct MultiplayerPlugins{
-  server_addr: String
+pub struct MultiplayerPlugins {
+  server_addr: String,
 }
 
 impl MultiplayerPlugins {
   pub fn by_string(server_addr: String) -> Self {
-    Self {
-      server_addr
-    }
+    Self { server_addr }
   }
 }
 
@@ -102,12 +101,15 @@ pub fn server_update_system(
         lobby.players_seq += 1;
         let color = generate_player_color(lobby.players_seq as u32);
 
-
         // We could send an InitState with all the players id and positions for the client
         // but this is easier to do.
         for (player_id, player_data) in &lobby.players {
-          let message =
-            bincode::serialize(&ServerMessages::PlayerConnected { id: *player_id, color: player_data.color, username: player_data.username.clone() }).unwrap();
+          let message = bincode::serialize(&ServerMessages::PlayerConnected {
+            id: *player_id,
+            color: player_data.color,
+            username: player_data.username.clone(),
+          })
+          .unwrap();
           server.send_message(*client_id, DefaultChannel::ReliableOrdered, message);
         }
 
@@ -123,12 +125,16 @@ pub fn server_update_system(
           PlayerData {
             entity: player_entity,
             color,
-            username: username.clone()
+            username: username.clone(),
           },
         );
 
-        let message =
-          bincode::serialize(&ServerMessages::PlayerConnected { id: *client_id, color, username }).unwrap();
+        let message = bincode::serialize(&ServerMessages::PlayerConnected {
+          id: *client_id,
+          color,
+          username,
+        })
+        .unwrap();
         server.broadcast_message(DefaultChannel::ReliableOrdered, message);
       }
       ServerEvent::ClientDisconnected { client_id, reason } => {
@@ -160,13 +166,14 @@ pub fn server_sync_players(
   query: Query<(&Position, &Rotation, &PlayerViewDirrection, &Player)>,
 ) {
   for (position, rotation, view_direction, player) in query.iter() {
-    data
-      .data
-      .insert(player.id, PlayerTransportData {
+    data.data.insert(
+      player.id,
+      PlayerTransportData {
         position: position.0.into(),
         rotation: rotation.0.into(),
-        tied_camera_rotation: view_direction.0.into()
-      });
+        tied_camera_rotation: view_direction.0.into(),
+      },
+    );
   }
 
   let sync_message = bincode::serialize(&data.data).unwrap();

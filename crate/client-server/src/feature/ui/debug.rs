@@ -1,9 +1,6 @@
-use bevy::prelude::*;
-use bevy_egui::{
-  egui,
-  EguiContexts,
-};
 use crate::ui::rich_text;
+use bevy::prelude::*;
+use bevy_egui::{egui, EguiContexts};
 pub struct UiDebugPlugins;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 
@@ -15,11 +12,9 @@ impl Plugin for UiDebugPlugins {
       .add_systems(Update, debug_preferences_ui)
       .add_systems(Update, disable_egui_debug.before(enable_egui_debug))
       .add_systems(Update, enable_egui_debug.run_if(is_egui_ui_debug_enabled))
-      .add_systems(Update, fps_ui.run_if(is_fps_ui_enabled))
-    ;
+      .add_systems(Update, fps_ui.run_if(is_fps_ui_enabled));
   }
 }
-
 
 #[derive(Resource)]
 pub struct UiDebugState {
@@ -38,10 +33,7 @@ impl Default for UiDebugState {
   }
 }
 
-fn debug_preferences_ui(
-  mut contexts: EguiContexts,
-  mut ui_state: ResMut<UiDebugState>,
-) {
+fn debug_preferences_ui(mut contexts: EguiContexts, mut ui_state: ResMut<UiDebugState>) {
   let ctx = contexts.ctx_mut();
 
   let font = egui::FontId {
@@ -54,8 +46,14 @@ fn debug_preferences_ui(
     .anchor(egui::Align2::RIGHT_TOP, egui::vec2(-10., 10.))
     .vscroll(true)
     .show(ctx, |ui| {
-      ui.checkbox(&mut ui_state.is_fps_ui_enabled, rich_text("show fps", &font));
-      ui.checkbox(&mut ui_state.is_egui_ui_debug_enabled, rich_text("debug egui borders (hold alt)", &font));
+      ui.checkbox(
+        &mut ui_state.is_fps_ui_enabled,
+        rich_text("show fps", &font),
+      );
+      ui.checkbox(
+        &mut ui_state.is_egui_ui_debug_enabled,
+        rich_text("debug egui borders (hold alt)", &font),
+      );
     });
 }
 
@@ -72,8 +70,15 @@ fn set_egui_debug(context: &egui::Context, debug_on_hover: bool) {
 fn is_egui_ui_debug_enabled(ui_debug_state: Res<UiDebugState>) -> bool {
   ui_debug_state.is_egui_ui_debug_enabled
 }
-fn disable_egui_debug(mut contexts: EguiContexts, key_input: Res<Input<KeyCode>>, ui_debug_state: Res<UiDebugState>) {
-  if key_input.just_released(KeyCode::AltLeft) || key_input.just_released(KeyCode::AltRight) || (ui_debug_state.is_changed() && !ui_debug_state.is_egui_ui_debug_enabled) {
+fn disable_egui_debug(
+  mut contexts: EguiContexts,
+  key_input: Res<Input<KeyCode>>,
+  ui_debug_state: Res<UiDebugState>,
+) {
+  if key_input.just_released(KeyCode::AltLeft)
+    || key_input.just_released(KeyCode::AltRight)
+    || (ui_debug_state.is_changed() && !ui_debug_state.is_egui_ui_debug_enabled)
+  {
     set_egui_debug(contexts.ctx_mut(), false);
   }
 }
@@ -84,7 +89,7 @@ fn enable_egui_debug(mut contexts: EguiContexts, key_input: Res<Input<KeyCode>>)
 }
 
 fn is_fps_ui_enabled(ui_debug_state: Res<UiDebugState>) -> bool {
-  ui_debug_state.is_fps_ui_enabled 
+  ui_debug_state.is_fps_ui_enabled
 }
 
 fn fps_ui(mut contexts: EguiContexts, diagnostics: Res<DiagnosticsStore>) {
@@ -102,7 +107,7 @@ fn fps_ui(mut contexts: EguiContexts, diagnostics: Res<DiagnosticsStore>) {
     .and_then(|fps| fps.smoothed())
     .map(|fps| fps.to_string())
     .unwrap_or(String::from("N/A"));
-  let frame_time = frame_time_diagnostic 
+  let frame_time = frame_time_diagnostic
     .and_then(|ft| ft.value())
     .map(|ft| ft.to_string())
     .unwrap_or(String::from("N/A"));
@@ -124,4 +129,3 @@ fn fps_ui(mut contexts: EguiContexts, diagnostics: Res<DiagnosticsStore>) {
       ui.label(rich_text(format!("frame_time  : {frame_time:.2}"), &font));
     });
 }
-

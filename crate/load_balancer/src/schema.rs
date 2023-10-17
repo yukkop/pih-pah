@@ -87,10 +87,4 @@ diesel::table! {
 diesel::joinable!(server -> country (country_id));
 diesel::joinable!(user -> country (language_id));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    country,
-    jwt_token,
-    language,
-    server,
-    user,
-);
+diesel::allow_tables_to_appear_in_same_query!(country, jwt_token, language, server, user,);

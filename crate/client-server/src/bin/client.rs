@@ -1,17 +1,14 @@
 use std::sync::Arc;
 
 use bevy::window::WindowResolution;
-use bevy::{
-  diagnostic::FrameTimeDiagnosticsPlugin,
-  prelude::*,
-};
+use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*};
 use bevy_egui::EguiPlugin;
 use pih_pah::feature::{
   lobby::client::LobbyPlugins,
   multiplayer::client::MultiplayerPlugins,
+  multiplayer::panic_on_error_system,
   music::MusicPlugins,
   ui::{UiDebugPlugins, UiPlugins},
-  multiplayer::panic_on_error_system,
 };
 use pih_pah::lib::netutils::{is_http_address, is_ip_with_port};
 

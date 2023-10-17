@@ -1,4 +1,4 @@
-use bevy::diagnostic::{LogDiagnosticsPlugin};
+use bevy::diagnostic::LogDiagnosticsPlugin;
 use bevy::prelude::*;
 use bevy::window::{PresentMode, Window, WindowPlugin};
 use bevy_egui::EguiPlugin;
@@ -8,11 +8,10 @@ use pih_pah::feature::lobby::server::LobbyPlugins;
 use pih_pah::feature::multiplayer::server::MultiplayerPlugins;
 use pih_pah::feature::ui::UiDebugPlugins;
 
-use pih_pah::feature::multiplayer::panic_on_error_system;
 use pih_pah::feature::heartbeat::HeartbeatPlugins;
+use pih_pah::feature::multiplayer::panic_on_error_system;
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-
 
 fn main() {
   std::env::set_var(
@@ -65,7 +64,10 @@ fn main() {
   app.add_plugins(LobbyPlugins);
   app.add_plugins(PhysicsPlugins::default());
   app.add_plugins(MultiplayerPlugins::by_string(listen_addr.to_string()));
-  app.add_plugins(HeartbeatPlugins::by_string(send_addr.to_string(), listen_addr.to_string()));
+  app.add_plugins(HeartbeatPlugins::by_string(
+    send_addr.to_string(),
+    listen_addr.to_string(),
+  ));
 
   app.add_systems(Update, panic_on_error_system);
 

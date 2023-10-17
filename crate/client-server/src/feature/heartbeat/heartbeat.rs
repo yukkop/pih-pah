@@ -1,12 +1,12 @@
-use renet::{
-  RenetClient, ConnectionConfig,
-  transport::{ClientAuthentication, NetcodeClientTransport, NETCODE_USER_DATA_BYTES},
-};
-use std::time::SystemTime;
-use std::net::UdpSocket;
 use bevy::prelude::*;
-use bevy_renet::RenetClientPlugin;
 use bevy_renet::transport::NetcodeClientPlugin;
+use bevy_renet::RenetClientPlugin;
+use renet::{
+  transport::{ClientAuthentication, NetcodeClientTransport, NETCODE_USER_DATA_BYTES},
+  ConnectionConfig, RenetClient,
+};
+use std::net::UdpSocket;
+use std::time::SystemTime;
 
 pub const PROTOCOL_ID: u64 = 7;
 
@@ -14,7 +14,7 @@ pub const PROTOCOL_ID: u64 = 7;
 
 pub struct HeartbeatPlugins {
   reciever_addr: String, // addres to repost heart beat
-  server_addr: String, // listening addres
+  server_addr: String,   // listening addres
 }
 
 impl Plugin for HeartbeatPlugins {
@@ -23,7 +23,8 @@ impl Plugin for HeartbeatPlugins {
       .add_plugins(RenetClientPlugin)
       .add_plugins(NetcodeClientPlugin);
 
-    let (client, transport) = new_renet_client(self.reciever_addr.to_string(), self.server_addr.to_string());
+    let (client, transport) =
+      new_renet_client(self.reciever_addr.to_string(), self.server_addr.to_string());
     app.insert_resource(client);
     app.insert_resource(transport);
   }
@@ -33,23 +34,26 @@ impl HeartbeatPlugins {
   pub fn by_string(reciever_addr: String, server_addr: String) -> Self {
     Self {
       server_addr,
-      reciever_addr
+      reciever_addr,
     }
   }
 }
 
 fn addr_to_netcode_data(addr: &str) -> [u8; NETCODE_USER_DATA_BYTES] {
-    let mut data = [0u8; NETCODE_USER_DATA_BYTES];
-    if addr.len() > NETCODE_USER_DATA_BYTES - 8 {
-        panic!("Client data to long, cringe this shouldn't have happened");
-    }
-    data[0..8].copy_from_slice(&(addr.len() as u64).to_le_bytes());
-    data[8..addr.len() + 8].copy_from_slice(addr.as_bytes());
+  let mut data = [0u8; NETCODE_USER_DATA_BYTES];
+  if addr.len() > NETCODE_USER_DATA_BYTES - 8 {
+    panic!("Client data to long, cringe this shouldn't have happened");
+  }
+  data[0..8].copy_from_slice(&(addr.len() as u64).to_le_bytes());
+  data[8..addr.len() + 8].copy_from_slice(addr.as_bytes());
 
-    data
+  data
 }
 
-pub fn new_renet_client(addr: String, listening_addr: String) -> (RenetClient, NetcodeClientTransport) {
+pub fn new_renet_client(
+  addr: String,
+  listening_addr: String,
+) -> (RenetClient, NetcodeClientTransport) {
   let client = RenetClient::new(ConnectionConfig::default());
   let server_addr = addr.parse().unwrap();
   let socket = UdpSocket::bind("0.0.0.0:0").unwrap();

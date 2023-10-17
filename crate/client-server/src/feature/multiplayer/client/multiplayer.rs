@@ -4,7 +4,7 @@ use crate::feature::lobby::client::camera_switch;
 use crate::feature::lobby::client::spawn_client_side_player;
 use crate::feature::lobby::client::{spawn_tied_camera, TiedCamera};
 use crate::feature::multiplayer::{
-  Lobby, Connection, Username, PlayerData, PlayerInput, ServerMessages, TransportData, PROTOCOL_ID,
+  Connection, Lobby, PlayerData, PlayerInput, ServerMessages, TransportData, Username, PROTOCOL_ID,
 };
 use bevy_renet::{
   renet::{transport::ClientAuthentication, ConnectionConfig, DefaultChannel, RenetClient},
@@ -13,10 +13,7 @@ use bevy_renet::{
 };
 use renet::{transport::NetcodeClientTransport, ClientId};
 
-use std::{
-  net::UdpSocket,
-  time::SystemTime
-};
+use std::{net::UdpSocket, time::SystemTime};
 
 #[derive(Default, Debug, Resource)]
 pub struct OwnId(Option<ClientId>);
@@ -53,16 +50,13 @@ impl Plugin for MultiplayerPlugins {
 }
 
 #[derive(Default, Event)]
-pub struct InitConnectionEvent{
+pub struct InitConnectionEvent {
   pub addr: String,
   pub username: String,
 }
 
-pub fn new_renet_client(
-  mut ev: EventReader<InitConnectionEvent>,
-  mut commands: Commands,
-) {
- for settings in ev.iter() {
+pub fn new_renet_client(mut ev: EventReader<InitConnectionEvent>, mut commands: Commands) {
+  for settings in ev.iter() {
     commands.insert_resource(RenetClient::new(ConnectionConfig::default()));
     let server_addr = settings.addr.parse().unwrap();
     let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
@@ -73,7 +67,7 @@ pub fn new_renet_client(
 
     let username_netcode = match Username(settings.username.clone()).to_netcode_data() {
       Ok(bytes) => Some(bytes),
-      Err(_) => None
+      Err(_) => None,
     };
 
     let authentication = ClientAuthentication::Unsecure {
@@ -83,7 +77,8 @@ pub fn new_renet_client(
       user_data: username_netcode,
     };
 
-    commands.insert_resource(NetcodeClientTransport::new(current_time, authentication, socket).unwrap());
+    commands
+      .insert_resource(NetcodeClientTransport::new(current_time, authentication, socket).unwrap());
   }
 }
 
@@ -112,15 +107,18 @@ pub fn client_sync_players(
           *own_id = OwnId(Some(id));
         }
       }
-      ServerMessages::PlayerConnected { id, color, username } => {
+      ServerMessages::PlayerConnected {
+        id,
+        color,
+        username,
+      } => {
         let name = "noname";
 
         let player_entity = commands.spawn_client_side_player(color).id();
         if Some(id) == own_id.0 {
           commands.spawn_tied_camera();
           log::info!("{name} ({id}), welcome.");
-        }
-        else {
+        } else {
           log::info!("Player {} ({}) connected.", name, id);
         }
 
@@ -129,7 +127,7 @@ pub fn client_sync_players(
           PlayerData {
             entity: player_entity,
             color,
-            username
+            username,
           },
         );
       }

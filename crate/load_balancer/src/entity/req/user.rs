@@ -1,39 +1,36 @@
-use crate::{
-  model::NewUser,
-  tool::get_argon2_config,
-};
+use crate::{model::NewUser, tool::get_argon2_config};
+use entity::req::ReqNewUser;
 use rand::Rng;
 use uuid::Uuid;
-use entity::req::ReqNewUser;
 
 impl<'a> From<ReqNewUser<'a>> for NewUser<'a> {
-    fn from(req: ReqNewUser<'a>) -> Self {
-        let (password_hash, password_salt) = generate_hash(req.password);
+  fn from(req: ReqNewUser<'a>) -> Self {
+    let (password_hash, password_salt) = generate_hash(req.password);
 
-        NewUser {
-            id: Uuid::new_v4(), 
-            name: req.name,
-            password_hash,
-            password_salt,
-            account_name: req.account_name,
-            language_id: req.language_id,
-        }
+    NewUser {
+      id: Uuid::new_v4(),
+      name: req.name,
+      password_hash,
+      password_salt,
+      account_name: req.account_name,
+      language_id: req.language_id,
     }
+  }
 }
 
 impl<'a> From<&ReqNewUser<'a>> for NewUser<'a> {
-    fn from(req: &ReqNewUser<'a>) -> Self {
-        let (password_hash, password_salt) = generate_hash(req.password);
+  fn from(req: &ReqNewUser<'a>) -> Self {
+    let (password_hash, password_salt) = generate_hash(req.password);
 
-        NewUser {
-            id: Uuid::new_v4(), 
-            name: req.name,
-            password_hash,
-            password_salt,
-            account_name: req.account_name,
-            language_id: req.language_id,
-        }
+    NewUser {
+      id: Uuid::new_v4(),
+      name: req.name,
+      password_hash,
+      password_salt,
+      account_name: req.account_name,
+      language_id: req.language_id,
     }
+  }
 }
 
 // TODO make it faster

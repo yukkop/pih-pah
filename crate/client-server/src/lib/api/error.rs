@@ -17,9 +17,7 @@ impl FromStr for Error {
 
 impl Error {
   pub fn from_string(message: String) -> Self {
-    Self {
-      message,
-    }
+    Self { message }
   }
 }
 

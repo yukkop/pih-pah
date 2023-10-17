@@ -1,21 +1,15 @@
-use std::sync::Arc;
 use crate::{
-  feature::{
-    multiplayer::client::InitConnectionEvent,
-    ui::HudPlugins,
-  },
-  ui::rich_text, lib::*
-};
-use bevy_egui::{
-  egui,
-  EguiContexts,
+  feature::{multiplayer::client::InitConnectionEvent, ui::HudPlugins},
+  lib::*,
+  ui::rich_text,
 };
 use bevy::prelude::*;
+use bevy_egui::{egui, EguiContexts};
 use epaint::Color32;
-
+use std::sync::Arc;
 
 #[derive(Resource)]
-struct ApiSettings{
+struct ApiSettings {
   url: Arc<String>,
   token: Option<Arc<String>>,
   me: Option<entity::res::Me>,
@@ -62,20 +56,17 @@ struct RegisterState {
   error_message: Option<Arc<String>>,
 }
 
-#[derive(Resource)]
-#[derive(Default)]
+#[derive(Resource, Default)]
 struct LoginState {
   account_name: String,
   password: String,
   error_message: Option<Arc<String>>,
 }
 
-
-
 #[derive(Resource)]
 struct ConnectionState {
   addr: String,
-  addresses: Vec::<Arc<String>>,
+  addresses: Vec<Arc<String>>,
   error_message: Option<Arc<String>>,
   is_server_not_choisen: bool,
 }
@@ -89,7 +80,7 @@ impl Default for ConnectionState {
       is_server_not_choisen: false,
     }
   }
-} 
+}
 
 // Plugin
 
@@ -99,9 +90,7 @@ pub struct UiPlugins {
 
 impl UiPlugins {
   pub fn by_string(api_url: Arc<String>) -> Self {
-    Self {
-      api_url 
-    }
+    Self { api_url }
   }
 }
 
@@ -109,7 +98,9 @@ impl UiPlugins {
 impl Plugin for UiPlugins {
   fn build(&self, app: &mut App) {
     app
-      .insert_resource(ApiSettings::new(format!("http://{}/", *self.api_url).into()))
+      .insert_resource(ApiSettings::new(
+        format!("http://{}/", *self.api_url).into(),
+      ))
       .add_plugins(HudPlugins)
       .init_resource::<ConnectionState>()
       .init_resource::<LoginState>()
@@ -119,7 +110,7 @@ impl Plugin for UiPlugins {
   }
 }
 
-fn hello (
+fn hello(
   mut contexts: EguiContexts,
   mut ui_state: ResMut<UiState>,
   _login_state: ResMut<LoginState>,
@@ -167,7 +158,13 @@ fn hello (
       .vscroll(true)
       .show(ctx, |ui| {
         if register_state.error_message.is_some() {
-          ui.colored_label(Color32::RED, rich_text(format!("{}", register_state.error_message.clone().unwrap().as_str()), &font));
+          ui.colored_label(
+            Color32::RED,
+            rich_text(
+              format!("{}", register_state.error_message.clone().unwrap().as_str()),
+              &font,
+            ),
+          );
         }
 
         // short account name label
@@ -181,7 +178,7 @@ fn hello (
           ui.label(rich_text("account name", &font));
           ui.add(egui::TextEdit::singleline(&mut register_state.account_name));
         });
-  
+
         // short username label
         if register_state.username_too_short {
           if !register_state.username.is_empty() {
@@ -205,12 +202,16 @@ fn hello (
           ui.label(rich_text("password", &font));
           ui.add(egui::TextEdit::singleline(&mut register_state.password));
         });
-        if /* register_state.repeated_password.len() > 0 && */ register_state.repeated_password != register_state.password {
+        if
+        /* register_state.repeated_password.len() > 0 && */
+        register_state.repeated_password != register_state.password {
           ui.colored_label(Color32::RED, rich_text("password mismatch", &font));
         }
         ui.horizontal(|ui| {
           ui.label(rich_text("repeated password", &font));
-          ui.add(egui::TextEdit::singleline(&mut register_state.repeated_password));
+          ui.add(egui::TextEdit::singleline(
+            &mut register_state.repeated_password,
+          ));
         });
 
         ui.horizontal(|ui| {
@@ -228,8 +229,7 @@ fn hello (
             if register_state.password.is_empty() {
               register_state.password_too_short = true;
             }
-            if 
-              register_state.repeated_password != register_state.password
+            if register_state.repeated_password != register_state.password
               || register_state.password_too_short
               || register_state.username_too_short
               || register_state.account_name_too_short
@@ -241,10 +241,14 @@ fn hello (
               &res_api.url,
               &register_state.username,
               &register_state.account_name,
-              &register_state.password
+              &register_state.password,
             ) {
               Ok(_user) => {
-                let token = api::login(&res_api.url, &register_state.account_name, &register_state.password);
+                let token = api::login(
+                  &res_api.url,
+                  &register_state.account_name,
+                  &register_state.password,
+                );
                 if token.is_err() {
                   panic!("your api is shit");
                 }
@@ -256,12 +260,12 @@ fn hello (
                 ui_state.is_connection_open = true;
                 ui_state.is_login_open = false;
                 ui_state.is_register_open = false;
-              },
-              Err(err) => register_state.error_message = Some(err.message.into()), 
+              }
+              Err(err) => register_state.error_message = Some(err.message.into()),
             };
           }
+        });
       });
-    });
   }
 
   if ui_state.is_connection_open {
@@ -272,7 +276,16 @@ fn hello (
       .vscroll(false)
       .show(ctx, |ui| {
         if connection_state.error_message.is_some() {
-          ui.colored_label(Color32::RED, rich_text(format!("{}", connection_state.error_message.clone().unwrap().as_str()), &font));
+          ui.colored_label(
+            Color32::RED,
+            rich_text(
+              format!(
+                "{}",
+                connection_state.error_message.clone().unwrap().as_str()
+              ),
+              &font,
+            ),
+          );
         }
 
         let user = res_api.me.clone().expect("user not exist?");
@@ -280,7 +293,10 @@ fn hello (
           ui.label(rich_text(format!("username: {}", user.name.clone()), &font));
         });
         ui.horizontal(|ui| {
-          ui.label(rich_text(format!("account name: {}", user.account_name), &font));
+          ui.label(rich_text(
+            format!("account name: {}", user.account_name),
+            &font,
+          ));
         });
 
         if connection_state.is_server_not_choisen {
@@ -292,16 +308,19 @@ fn hello (
 
         // TODO need timer. delay, something
         connection_state.addresses.clear();
-        match api::servers(&res_api.url, res_api.token.as_ref().expect("token must be exist here")) {
+        match api::servers(
+          &res_api.url,
+          res_api.token.as_ref().expect("token must be exist here"),
+        ) {
           Ok(servers) => {
             for server in servers {
               // TODO loader must filter it
-              if server.online { 
+              if server.online {
                 connection_state.addresses.push(server.address.into());
               }
             }
-          },
-          Err(err) => connection_state.error_message = Some(err.message.into()), 
+          }
+          Err(err) => connection_state.error_message = Some(err.message.into()),
         };
 
         egui::ComboBox::from_id_source("unique_id")
@@ -309,15 +328,18 @@ fn hello (
           .show_ui(ui, |ui| {
             for val in &connection_state.addresses.clone() {
               ui.selectable_value(&mut connection_state.addr, val.to_string(), val.to_string());
-            } 
+            }
           });
 
         if ui.add(egui::Button::new("Connect")).clicked() {
           if connection_state.addr.is_empty() {
             connection_state.is_server_not_choisen = true;
             return;
-          } 
-          ev.send(InitConnectionEvent { addr: connection_state.addr.clone(), username: user.name });
+          }
+          ev.send(InitConnectionEvent {
+            addr: connection_state.addr.clone(),
+            username: user.name,
+          });
           ui_state.is_connection_open = false;
         }
       });
@@ -329,7 +351,7 @@ fn login(
   mut ui_state: ResMut<UiState>,
   mut login_state: ResMut<LoginState>,
   mut res_api: ResMut<ApiSettings>,
-) { 
+) {
   let ctx = contexts.ctx_mut();
 
   let font = egui::FontId {
@@ -346,7 +368,13 @@ fn login(
       .vscroll(false)
       .show(ctx, |ui| {
         if login_state.error_message.is_some() {
-          ui.colored_label(Color32::RED, rich_text(format!("{}", login_state.error_message.clone().unwrap().as_str()), &font));
+          ui.colored_label(
+            Color32::RED,
+            rich_text(
+              format!("{}", login_state.error_message.clone().unwrap().as_str()),
+              &font,
+            ),
+          );
         }
         ui.horizontal(|ui| {
           ui.label(rich_text("account name", &font));
@@ -362,7 +390,11 @@ fn login(
             ui_state.is_auth_open = true;
           }
           if ui.add(egui::Button::new("Continue")).clicked() {
-            match api::login(&res_api.url, &login_state.account_name, &login_state.password) {
+            match api::login(
+              &res_api.url,
+              &login_state.account_name,
+              &login_state.password,
+            ) {
               Ok(token) => {
                 res_api.token = Some(token.clone());
 
@@ -371,10 +403,10 @@ fn login(
                     res_api.me = Some(user);
                     ui_state.is_connection_open = true;
                     ui_state.is_login_open = false;
-                  },
-                  Err(err) => login_state.error_message = Some(err.message.into()), 
+                  }
+                  Err(err) => login_state.error_message = Some(err.message.into()),
                 };
-              }, 
+              }
               Err(err) => login_state.error_message = Some(err.message.into()),
             };
           }
