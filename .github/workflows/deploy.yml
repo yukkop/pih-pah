@@ -26,4 +26,7 @@ jobs:
         key: ${{ runner.os }}-target-release-${{ hashFiles('**/Cargo.lock') }}
     
     - name: Build
+      run: echo $USER
+    
+    - name: Build
       run: bash ./crate/receiver/script/semi-auto-deploy.sh
