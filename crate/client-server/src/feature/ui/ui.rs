@@ -37,7 +37,6 @@ struct UiState {
   is_connection_open: bool,
   is_login_open: bool,
   is_register_open: bool,
-  is_user_info_open: bool,
 }
 
 impl Default for UiState {
@@ -47,7 +46,6 @@ impl Default for UiState {
       is_connection_open: false,
       is_login_open: false,
       is_register_open: false,
-      is_user_info_open: false,
     }
   }
 }
@@ -65,21 +63,14 @@ struct RegisterState {
 }
 
 #[derive(Resource)]
+#[derive(Default)]
 struct LoginState {
   account_name: String,
   password: String,
   error_message: Option<Arc<String>>,
 }
 
-impl Default for LoginState {
-  fn default() -> Self {
-    Self {
-      account_name: String::new(),
-      password: String::new(),
-      error_message: None,
-    }
-  }
-}
+
 
 #[derive(Resource)]
 struct ConnectionState {
@@ -181,7 +172,7 @@ fn hello (
 
         // short account name label
         if register_state.account_name_too_short {
-          if register_state.account_name.len() > 0 {
+          if !register_state.account_name.is_empty() {
             register_state.account_name_too_short = false;
           }
           ui.colored_label(Color32::RED, rich_text("account name too short", &font));
@@ -193,7 +184,7 @@ fn hello (
   
         // short username label
         if register_state.username_too_short {
-          if register_state.username.len() > 0 {
+          if !register_state.username.is_empty() {
             register_state.username_too_short = false;
           }
           ui.colored_label(Color32::RED, rich_text("username too short", &font));
@@ -205,7 +196,7 @@ fn hello (
 
         // short password label
         if register_state.password_too_short {
-          if register_state.password.len() > 0 {
+          if !register_state.password.is_empty() {
             register_state.password_too_short = false;
           }
           ui.colored_label(Color32::RED, rich_text("password too short", &font));
@@ -228,13 +219,13 @@ fn hello (
             ui_state.is_auth_open = true;
           }
           if ui.add(egui::Button::new("Continue")).clicked() {
-            if register_state.account_name.len() == 0 {
+            if register_state.account_name.is_empty() {
               register_state.account_name_too_short = true;
             }
-            if register_state.username.len() == 0 {
+            if register_state.username.is_empty() {
               register_state.username_too_short = true;
             }
-            if register_state.password.len() == 0 {
+            if register_state.password.is_empty() {
               register_state.password_too_short = true;
             }
             if 
@@ -246,7 +237,7 @@ fn hello (
               return;
             }
 
-            let _user = match api::register(
+            match api::register(
               &res_api.url,
               &register_state.username,
               &register_state.account_name,
@@ -257,7 +248,7 @@ fn hello (
                 if token.is_err() {
                   panic!("your api is shit");
                 }
-                let token = token.ok().expect("your api is shit");
+                let token = token.expect("your api is shit");
                 res_api.token = Some(token.clone());
 
                 let user = api::me(&res_api.url, token.as_ref()).expect("your api is shit");
@@ -371,7 +362,7 @@ fn login(
             ui_state.is_auth_open = true;
           }
           if ui.add(egui::Button::new("Continue")).clicked() {
-            let _token = match api::login(&res_api.url, &login_state.account_name, &login_state.password) {
+            match api::login(&res_api.url, &login_state.account_name, &login_state.password) {
               Ok(token) => {
                 res_api.token = Some(token.clone());
 

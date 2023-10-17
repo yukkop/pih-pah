@@ -9,11 +9,11 @@ use entity::{res::ResServer, req::ReqNewServer};
 use diesel::prelude::*;
 
 pub fn server() -> Vec<Route> {
-    routes![get_all, register]
+    routes![get_all_server, register_server]
 }
 
 #[get("/get")]
-fn get_all(_token: TokenHeader) -> Result<String, ApiError> {
+fn get_all_server(_token: TokenHeader) -> Result<String, ApiError> {
     use crate::schema::server::dsl::*;
 
     let connection = &mut establish_connection();
@@ -33,7 +33,7 @@ fn get_all(_token: TokenHeader) -> Result<String, ApiError> {
 }
 
 #[post("/", format = "application/json", data = "<body>")]
-fn register(_token: TokenHeader, body: Json<ReqNewServer>) ->  Result<String, ApiError> {
+fn register_server(_token: TokenHeader, body: Json<ReqNewServer>) ->  Result<String, ApiError> {
     let model = NewServer::from(&*body);
 
     let connection = &mut establish_connection();

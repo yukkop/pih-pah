@@ -7,12 +7,12 @@ use crate::{
 use entity::res::ResCountry;
 use diesel::prelude::*;
 
-pub fn coutry() -> Vec<Route> {
-    routes![get_all]
+pub fn country() -> Vec<Route> {
+    routes![get_all_countries]
 }
 
 #[get("/get")]
-async fn get_all(_token: TokenHeader) -> Result<String, ApiError> {
+async fn get_all_countries(_token: TokenHeader) -> Result<String, ApiError> {
     use crate::schema::country::dsl::*;
 
     let connection = &mut establish_connection();

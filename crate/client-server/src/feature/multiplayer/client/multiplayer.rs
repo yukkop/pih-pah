@@ -95,8 +95,6 @@ pub fn client_send_input(player_input: Res<PlayerInput>, mut client: ResMut<Rene
 
 pub fn client_sync_players(
   mut commands: Commands,
-  _meshes: ResMut<Assets<Mesh>>,
-  _materials: ResMut<Assets<StandardMaterial>>,
   mut client: ResMut<RenetClient>,
   mut transport_data: ResMut<TransportData>,
   mut lobby: ResMut<Lobby>,

@@ -39,10 +39,8 @@ fn move_players_system(
     linear_velocity.x += dy * PLAYER_MOVE_SPEED * global_y.x * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
     linear_velocity.z += dy * PLAYER_MOVE_SPEED * global_y.z * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
 
-    if jumped{
-      if linear_velocity.y.abs() <= 0.03{
-        linear_velocity.y = 5.0; //velocity = sqrt(2 * 9.8(g) * height), но лучше ставить немного больше
-      }
+    if jumped && linear_velocity.y.abs() <= 0.03 {
+      linear_velocity.y = 5.0; //velocity = sqrt(2 * 9.8(g) * height), но лучше ставить немного больше
     }
 
     // camera turn

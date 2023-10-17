@@ -77,17 +77,12 @@ pub fn panic_on_error_system(mut renet_errors: EventReader<NetcodeTransportError
 }
 
 #[derive(Resource)]
+#[derive(Default)]
 pub struct Connection {
   pub initiate_connection: bool, 
 }
 
-impl Default for Connection {
-  fn default() -> Self {
-    Self {
-      initiate_connection: false,
-    }
-  }
-}
+
 
 #[derive(Debug)]
 pub struct Error(String);
