@@ -25,7 +25,7 @@ fn get_all_server(_token: TokenHeader) -> Result<String, ApiError> {
   Ok(to_json(
     &result
       .iter()
-      .map(|e| ResServer::from(e))
+      .map(ResServer::from)
       .collect::<Vec<ResServer>>(),
   ))
 }

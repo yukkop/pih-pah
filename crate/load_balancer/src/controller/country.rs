@@ -24,7 +24,7 @@ async fn get_all_countries(_token: TokenHeader) -> Result<String, ApiError> {
   Ok(to_json(
     &result
       .iter()
-      .map(|e| ResCountry::from(e))
+      .map(ResCountry::from)
       .collect::<Vec<ResCountry>>(),
   ))
 }

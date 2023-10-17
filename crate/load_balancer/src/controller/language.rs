@@ -24,7 +24,7 @@ async fn get_all_languages(_token: TokenHeader) -> Result<String, ApiError> {
   Ok(to_json(
     &result
       .iter()
-      .map(|e| ResLanguage::from(e))
+      .map(ResLanguage::from)
       .collect::<Vec<ResLanguage>>(),
   ))
 }
