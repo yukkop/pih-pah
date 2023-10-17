@@ -1,5 +1,5 @@
 # Check for help flag
-default_db_link="postgres://postgres:postgres@localhost:5433/pihpah"
+default_db_link="postgres://postgres:postgres@localhost:5433/pih-pah"
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   # echo "Can start only from project folder"

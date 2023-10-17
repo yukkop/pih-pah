@@ -3,17 +3,11 @@
 
 # Usage help
 if [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
-  printf "Usage: $0 [-h]\n"
+  printf "Usage: $0 [-h/c]\n"
+  printf "  --create / -c\tcreate db\n"
   printf "Environment Variables:\n"
   printf "  DATABASE_URL\postgresql url to exist db example: postgres://user:password@host/dbname\n"
-  printf "  DB_NAME\db name that will create (default: pih-pah)\n"
   exit 0
-fi
-
-default_db_name="pih-pah"
-
-if [ -z "${DB_NAME}" ]; then
-  DB_NAME="${default_db_name}"
 fi
 
 # Check if DATABASE_URL is provided
@@ -23,23 +17,19 @@ if [ -z "${DATABASE_URL}" ]; then
   exit 1
 fi
 
-new_db_url="$(echo "${DATABASE_URL}" | sed "s|[^/]*$|${DB_NAME}|")"
+# Usage help
+if [ "$1" == "--create" ] || [ "$1" == "-c" ]; then
+  # Extract information from URL
+  user=$(echo "${DATABASE_URL}" | sed -n 's|^.*//\([^:]*\):.*$|\1|p')
+  password=$(echo "${DATABASE_URL}" | sed -n 's|^.*:\([^@]*\)@.*$|\1|p')
+  host_port=$(echo "${DATABASE_URL}" | sed -n 's|postgres://[^@]*@\([^/]*\).*|\1|p')
+  host=$(echo "${host_port}" | cut -d ':' -f 1)
+  port=$(echo "${host_port}" | cut -d ':' -f 2)
+  db_name=$(echo "${DATABASE_URL}" | sed -n 's|.*/\([^/]*\)$|\1|p')
 
-# Run query
-echo "Check db exist"
-psql -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}';" "${DATABASE_URL}" # > /dev/null 2>&1
-# Create database if it doesn't exist
-if [ $? -ne 0 ]; then
-  echo "creating db"
-  psql -c "CREATE DATABASE \"${DB_NAME}\";" "${DATABASE_URL}"
-  if [ $? -ne 0 ]; then
-    echo "Database creation failed."
-    exit 1
-  fi
+  # Create new database
+  env PGPASSWORD="${password}" createdb -h "${host}" -p "${port}" -U "${user}" "${db_name}"
 fi
-
-# Export DATABASE_URL for Diesel CLI
-export DATABASE_URL="${new_db_url}"
 
 dir="$(dirname "$(realpath "$0")")/"
 cd "${dir}../"

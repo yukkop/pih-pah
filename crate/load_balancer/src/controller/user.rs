@@ -9,7 +9,7 @@ use crate::{
 use diesel::prelude::*;
 use entity::{
   req::{ReqNewUser, ReqLogin},
-  res::{ResUser, ResJwtToken, Me},
+  res::{ResJwtToken, Me},
 };
 
 use super::tool::TokenHeader;
@@ -54,7 +54,7 @@ fn login(body: Json<ReqLogin>) -> Result<String, ApiError> {
       use crate::schema::user::dsl::*;
 
       result = user
-          .filter(account_name.eq(&*body.account_name))
+          .filter(account_name.eq(body.account_name))
           .select(User::as_select())
           .first(connection)
           .map_err(|_| ApiError::conflict_str("Password or account name not correct"))?;

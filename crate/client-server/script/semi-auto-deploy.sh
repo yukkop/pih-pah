@@ -26,7 +26,6 @@ fi
 
 if [ -z "${PORT}" ]; then
   PORT=5000
-  exit 1
 fi
 
 if [ -z "${SERVER_PASSWORD}" ]; then

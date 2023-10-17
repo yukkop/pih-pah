@@ -1,12 +1,4 @@
-#[macro_use] extern crate rocket;
 use load_balancer::controller;
-
-#[get("/")]
-fn index() -> &'static str {
-    "Status ok!"
-}
-
-// #[launch]
 #[rocket::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
   rocket::build()

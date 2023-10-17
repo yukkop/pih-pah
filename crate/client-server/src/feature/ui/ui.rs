@@ -228,13 +228,13 @@ fn hello (
             ui_state.is_auth_open = true;
           }
           if ui.add(egui::Button::new("Continue")).clicked() {
-            if register_state.account_name.len() <= 0 {
+            if register_state.account_name.len() == 0 {
               register_state.account_name_too_short = true;
             }
-            if register_state.username.len() <= 0 {
+            if register_state.username.len() == 0 {
               register_state.username_too_short = true;
             }
-            if register_state.password.len() <= 0 {
+            if register_state.password.len() == 0 {
               register_state.password_too_short = true;
             }
             if 

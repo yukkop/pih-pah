@@ -11,7 +11,6 @@ use renet::{
   ClientId, ConnectionConfig, DefaultChannel, RenetServer, ServerEvent,
 };
 use sqlx::postgres::PgPool;
-use sqlx::Row;
 use dotenv::dotenv;
 
 #[tokio::main]
@@ -110,6 +109,5 @@ fn from_user_data(user_data: &[u8; NETCODE_USER_DATA_BYTES]) -> String {
   let mut len = u64::from_le_bytes(buffer) as usize;
   len = len.min(NETCODE_USER_DATA_BYTES - 8);
   let data = user_data[8..len + 8].to_vec();
-  let addr = String::from_utf8(data).unwrap();
-  addr
+  String::from_utf8(data).unwrap()
 }
