@@ -7,11 +7,11 @@ on:
       - 'deploy'
     
 env:
-  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-  SERVER: ${{ secrets.SERVER }}
+  SSH_PRIVATE_KEY: ${{ env.SSH_PRIVATE_KEY }}
+  SERVER: ${{ env.SERVER }}
   SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
-  USER: ${{ secrets.USER }}
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  USER: ${{ env.USER }}
+  DATABASE_URL: ${{ env.DATABASE_URL }}
 
 jobs:
   build:
