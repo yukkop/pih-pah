@@ -1,0 +1,36 @@
+name: Rust
+
+on:
+  create:
+    tags:
+      - 'deploy'
+    
+env:
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  SERVER: ${{ secrets.SERVER }}
+  SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+  USER: ${{ secrets.USER }}
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Cache Cargo registry
+      uses: actions/cache@v2
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cache target directory
+      uses: actions/cache@v2
+      with:
+        path: target
+        key: ${{ runner.os }}-target-release-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Build
+      run: bash ./crate/receiver/script/semi-auto-deploy.sh
