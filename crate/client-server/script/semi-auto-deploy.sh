@@ -1,6 +1,8 @@
 # Check for help flag
 default_db_link="postgres://postgres:postgres@localhost:5433/pihpah"
 
+. ../../script/log.sh
+
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   # echo "Can start only from project folder"
   printf "Usage: $0 [-h]"

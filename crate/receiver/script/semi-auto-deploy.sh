@@ -1,6 +1,10 @@
 # Check for help flag
 default_db_link="postgres://postgres:postgres@localhost:5433/pih-pah"
 
+. ../../script/log.sh
+
+log "$0 running..."
+
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   # echo "Can start only from project folder"
   printf "Usage: $0 [-h]"
@@ -15,22 +19,22 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 fi
 
 if [ -z "${USER}" ]; then
-  echo "USER must be set. Exiting."
+  error 'USER must be set. Exiting.'
   exit 1
 fi
 
 if [ -z "${SERVER}" ]; then
-  echo "SERVER must be set. Exiting."
+  error 'SERVER must be set. Exiting.'
   exit 1
 fi
 
 if [ -z "${SSH_PRIVATE_KEY}" ]; then
-  echo "SSH_PRIVATE_KEY must be set. Exiting."
+  error 'SSH_PRIVATE_KEY must be set. Exiting.'
   exit 1
 fi
 
 if [ -z "${SERVER_PASSWORD}" ]; then
-  echo "SERVER_PASSWORD must be set. Exiting."
+  error 'SERVER_PASSWORD must be set. Exiting.'
   exit 1
 fi
 
@@ -49,6 +53,8 @@ bin="receiver"
 service="pih-pah-${bin}"
 
 cd "${dir}../"
+
+log 'building...'
 cargo build --release
 
 # Transfer the Rust binary
@@ -60,6 +66,7 @@ temp_file="~/temp-${service}.service"
 tmp_ssh_private="$(mktemp)"
 echo "${SSH_PRIVATE_KEY}" > "${tmp_ssh_private}"
 
+log 'connecting to server...'
 # SSH and setup service
 ssh -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
   chmod +x  ${remote_dir}${bin}
