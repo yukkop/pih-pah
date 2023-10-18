@@ -36,6 +36,9 @@ jobs:
       with:
         path: target
         key: ${{ runner.os }}-target-release-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Check
+      run: echo $SCRIPT_PATH
     
     - name: Run deploy script
       run: bash $SCRIPT_PATH
