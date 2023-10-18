@@ -4,7 +4,6 @@ default_db_link="postgres://postgres:postgres@localhost:5433/pih-pah"
 bin="receiver"
 service="pih-pah-${bin}"
 dir="$(dirname "$(realpath "$0")")/"
-remote_dir="/home/${USER}/pih-pah-deploy/${bin}/"
 
 cd "${dir}../" || exit 1
 . ../../script/log.sh
@@ -52,6 +51,7 @@ if [ -z "${DATABASE_URL}" ]; then
 fi
 
 # Use an environment variable for the SSH user and server
+remote_dir="/home/${SSH_USER}/pih-pah-deploy/${bin}/"
 SSH_DEST="${SSH_USER}@${SSH_SERVER}"
 
 log 'building...'
