@@ -1,0 +1,65 @@
+name: full_deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  load_balancer:
+    runs-on: ubuntu-latest
+
+    environment: deploy_loader
+
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      SERVER: ${{ secrets.SERVER }}
+      SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+      USER: ${{ secrets.USER }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v2
+        with:
+          path: target
+          key: ${{ runner.os }}-target-release-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run deploy script
+        run: bash $SCRIPT_PATH
+
+  receiver:
+    runs-on: ubuntu-latest
+
+    environment: deploy_receiver
+
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      SERVER: ${{ secrets.SERVER }}
+      SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+      USER: ${{ secrets.USER }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v2
+        with:
+          path: target
+          key: ${{ runner.os }}-target-release-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run deploy script
+        run: bash $SCRIPT_PATH
