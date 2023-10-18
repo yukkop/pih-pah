@@ -55,8 +55,7 @@ fi
 SSH_DEST="${SSH_USER}@${SSH_SERVER}"
 
 log 'building...'
-cargo build --release
-env CARGO_TARGET_DIR=../../target cargo build --release --bin server
+env CARGO_TARGET_DIR=../../target cargo build --release --bin receiver
 
 # Ssh setup
 tmp_ssh_private="$(mktemp)"

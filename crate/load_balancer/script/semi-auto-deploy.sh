@@ -54,8 +54,7 @@ PASSWORD="${SERVER_PASSWORD}"
 SSH_DEST="${USER}@${SERVER}"
 
 log 'building...'
-cargo build --release
-env CARGO_TARGET_DIR=../../target cargo build --release --bin server
+env CARGO_TARGET_DIR=../../target cargo build --release --bin load_balancer
 
 # Ssh setup
 tmp_ssh_private="$(mktemp)"
