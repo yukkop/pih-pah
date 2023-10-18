@@ -70,13 +70,11 @@ scp -i "${tmp_ssh_private}" "${dir}../../../target/release/${bin}" "${SSH_DEST}:
 # SSH and setup service
 log 'connecting to server...'
 
-temp_service="$(mktemp)"
-temp_file="~/temp-${service}.service"
-
-PASSWORD="${SERVER_PASSWORD}"
-printf 'password: %s' "${PASSWORD}"
+# temp_service="~/temp-${service}.service"
 
 ssh -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
+  export TEMP_SERVICE="$(mktemp)"
+
   chmod +x  ${remote_dir}${bin}
 
   echo "[Unit]
@@ -87,41 +85,17 @@ ExecStart=env DATABASE_URL=${DATABASE_URL} ${remote_dir}/${bin} 2007
 Restart=always
 
 [Install]
-WantedBy=multi-user.target" > ${temp_file}
-  printf 'password: %s' "${PASSWORD}"
-
-  printf '%s' "${PASSWORD}" | sudo -S -rm -f /etc/systemd/system/${service}.service
-  printf '%s' "${PASSWORD}" | sudo -S mv ${temp_file} /etc/systemd/system/${service}.service
-  printf '%s' "${PASSWORD}" | sudo -S systemctl daemon-reload
-  printf '%s' "${PASSWORD}" | sudo -S systemctl enable ${service}
-  printf '%s' "${PASSWORD}" | sudo -S systemctl start ${service}
-  printf '%s' "${PASSWORD}" | sudo -S systemctl restart ${service}
-
-  rm -f "${temp_file}"
-EOF
-
-ssh -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
-  chmod +x  ${remote_dir}${bin}
-
-  echo "[Unit]
-Description=pih-pah ${bin}
-
-[Service]
-ExecStart=env DATABASE_URL=${DATABASE_URL} ${remote_dir}/${bin} 2007
-Restart=always
-
-[Install]
-WantedBy=multi-user.target" > ${temp_service}
+WantedBy=multi-user.target" > ${TEMP_SERVICE}
   printf 'password: %s' "${SERVER_PASSWORD}"
 
-  printf '%s' "${SERVER_PASSWORD}" | sudo -S -rm -f /etc/systemd/system/${service}.service
-  printf '%s' "${SERVER_PASSWORD}" | sudo -S mv ${temp_service} /etc/systemd/system/${service}.service
-  printf '%s' "${SERVER_PASSWORD}" | sudo -S systemctl daemon-reload
-  printf '%s' "${SERVER_PASSWORD}" | sudo -S systemctl enable ${service}
-  printf '%s' "${SERVER_PASSWORD}" | sudo -S systemctl start ${service}
-  printf '%s' "${SERVER_PASSWORD}" | sudo -S systemctl restart ${service}
+  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S -rm -f /etc/systemd/system/${service}.service
+  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S mv ${TEMP_SERVICE} /etc/systemd/system/${service}.service
+  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S systemctl daemon-reload
+  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S systemctl enable ${service}
+  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S systemctl start ${service}
+  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S systemctl restart ${service}
 
-  rm -f "${temp_service}"
+  rm -f "${TEMP_SERVICE}"
 EOF
 
 rm -f "${tmp_ssh_private}"
