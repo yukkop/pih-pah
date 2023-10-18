@@ -6,31 +6,34 @@ service="pih-pah-${bin}"
 dir="$(dirname "$(realpath "$0")")/"
 remote_dir="/home/${USER}/pih-pah-deploy/${bin}/"
 
-cd "${dir}../"
+cd "${dir}../" || exit 1
 . ../../script/log.sh
-
-log "${dir} running..."
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   # echo "Can start only from project folder"
-  printf "Usage: $0 [-h]"
+  printf "Usage: %s [-h]" "${dir}"
   printf "Environment Variables:"
-  printf "  USER\tSet the SSH destination as user\n"
-  printf "  SERVER\tSet the SSH destination as server addres\n"
-  printf "  SERVER_PASSWORD\tpassword for user in remote host, I hope you do not use root\n"
-  printf "  DATABASE_URL\tpostgresql link\n"
+  printf "  SSH_USER\tSet the SSH destination as user\n"
+  printf "  SSH_SERVER\tSet the SSH destination as server address\n"
+  printf "  SSH_USER_PASSWORD\tpassword for user in remote host, I hope you do not use root\n"
   printf "  SSH_PRIVATE_KEY\tSsh private key\n"
-  printf "  \tdefault: %s" "${default_db_link}"
+  printf "  DATABASE_URL\tpostgresql link\n"
+  printf ""
+  printf "  defaults:"
+  printf "  \tDATABASE_URL: %s" "${default_db_link}"
   exit 0
 fi
 
-if [ -z "${USER}" ]; then
+log "${dir} running..."
+log "check env..."
+
+if [ -z "${SSH_USER}" ]; then
   error 'USER must be set. Exiting.'
   exit 1
 fi
 
-if [ -z "${SERVER}" ]; then
-  error 'SERVER must be set. Exiting.'
+if [ -z "${SSH_SERVER}" ]; then
+  error 'SSH_SERVER must be set. Exiting.'
   exit 1
 fi
 
@@ -39,8 +42,8 @@ if [ -z "${SSH_PRIVATE_KEY}" ]; then
   exit 1
 fi
 
-if [ -z "${SERVER_PASSWORD}" ]; then
-  error 'SERVER_PASSWORD must be set. Exiting.'
+if [ -z "${SSH_USER_PASSWORD}" ]; then
+  error 'SSH_USER_PASSWORD must be set. Exiting.'
   exit 1
 fi
 
@@ -48,10 +51,8 @@ if [ -z "${DATABASE_URL}" ]; then
   DATABASE_URL="${default_db_link}"
 fi
 
-PASSWORD="${SERVER_PASSWORD}"
-
 # Use an environment variable for the SSH user and server
-SSH_DEST="${USER}@${SERVER}"
+SSH_DEST="${SSH_USER}@${SSH_SERVER}"
 
 log 'building...'
 cargo build --release
@@ -70,9 +71,9 @@ scp -i "${tmp_ssh_private}" "${dir}../../../target/release/${bin}" "${SSH_DEST}:
 # SSH and setup service
 log 'connecting to server...'
 
-temp_file="~/temp-${service}.service"
+temp_service="$(mktemp)"
 
-ssh -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
+ssh -i "${tmp_ssh_private}" "${SSH_DEST}" << "EOF"
   chmod +x  ${remote_dir}${bin}
 
   echo "[Unit]
@@ -85,13 +86,13 @@ Restart=always
 [Install]
 WantedBy=multi-user.target" > ${temp_file}
 
-  printf '%s' "${PASSWORD}" | sudo -S -rm -f /etc/systemd/system/${service}.service
-  printf '%s' "${PASSWORD}" | sudo -S mv ${temp_file} /etc/systemd/system/${service}.service
-  printf '%s' "${PASSWORD}" | sudo -S systemctl daemon-reload 
-  printf '%s' "${PASSWORD}" | sudo -S systemctl enable ${service} 
-  printf '%s' "${PASSWORD}" | sudo -S systemctl start ${service} 
-  printf '%s' "${PASSWORD}" | sudo -S systemctl restart ${service} 
+  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S -rm -f /etc/systemd/system/${service}.service
+  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S mv ${temp_service} /etc/systemd/system/${service}.service
+  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S systemctl daemon-reload
+  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S systemctl enable ${service}
+  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S systemctl start ${service}
+  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S systemctl restart ${service}
 EOF
 
-rm -f "${temp_file}"
+rm -f "${temp_service}"
 rm -f "${tmp_ssh_private}"
