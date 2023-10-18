@@ -71,9 +71,9 @@ scp -i "${tmp_ssh_private}" "${dir}../../../target/release/${bin}" "${SSH_DEST}:
 log 'connecting to server...'
 
 temp_service="~/temp-${service}.service"
-PASSWORD="${SSH_USER_PASSWORD}"
+PASSWORD="${SSH_USER_PASSWORD}" # need var to transport (envvar in ather envarment)
 
-ssh -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
+ssh -i "${tmp_ssh_private}" "${SSH_DEST}" << "EOF"
   chmod +x  ${remote_dir}${bin}
 
   echo "[Unit]
@@ -85,15 +85,13 @@ Restart=always
 
 [Install]
 WantedBy=multi-user.target" > ${temp_service}
-  printf 'password: %s' "${SERVER_PASSWORD}"
-  printf 'password: %s' "${PASSWORD}"
 
-  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S -rm -f /etc/systemd/system/${service}.service
-  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S mv ${temp_service} /etc/systemd/system/${service}.service
-  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S systemctl daemon-reload
-  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S systemctl enable ${service}
-  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S systemctl start ${service}
-  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S systemctl restart ${service}
+  printf '%s' "${PASSWORD}" | sudo -S -rm -f /etc/systemd/system/${service}.service
+  printf '%s' "${PASSWORD}" | sudo -S mv ${temp_service} /etc/systemd/system/${service}.service
+  printf '%s' "${PASSWORD}" | sudo -S systemctl daemon-reload
+  printf '%s' "${PASSWORD}" | sudo -S systemctl enable ${service}
+  printf '%s' "${PASSWORD}" | sudo -S systemctl start ${service}
+  printf '%s' "${PASSWORD}" | sudo -S systemctl restart ${service}
 
   rm -f "${temp_service}"
 EOF
