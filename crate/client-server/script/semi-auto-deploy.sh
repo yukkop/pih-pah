@@ -1,7 +1,15 @@
 # Check for help flag
 default_db_link="postgres://postgres:postgres@localhost:5433/pihpah"
 
+bin="server"
+service="pih-pah-${bin}"
+dir="$(dirname "$(realpath "$0")")/"
+remote_dir="/home/${USER}/pih-pah-deploy/${bin}/"
+
+cd "${dir}../"
 . ../../script/log.sh
+
+log "${dir} running..."
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   # echo "Can start only from project folder"
@@ -18,26 +26,22 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 fi
 
 if [ -z "${USER}" ]; then
-  echo "USER must be set. Exiting."
+  error "USER must be set. Exiting."
   exit 1
 fi
 
 if [ -z "${SERVER}" ]; then
-  echo "SERVER must be set. Exiting."
+  error "SERVER must be set. Exiting."
   exit 1
 fi
 
-if [ -z "${PORT}" ]; then
-  PORT=5000
-fi
-
 if [ -z "${SSH_PRIVATE_KEY}" ]; then
-  echo "SSH_PRIVATE_KEY must be set. Exiting."
+  error "SSH_PRIVATE_KEY must be set. Exiting."
   exit 1
 fi
 
 if [ -z "${SERVER_PASSWORD}" ]; then
-  echo "SERVER_PASSWORD must be set. Exiting."
+  error "SERVER_PASSWORD must be set. Exiting."
   exit 1
 fi
 
@@ -45,30 +49,33 @@ if [ -z "${DATABASE_URL}" ]; then
   DATABASE_URL="${default_db_link}"
 fi
 
+if [ -z "${PORT}" ]; then
+  PORT=5000
+fi
+
 PASSWORD="${SERVER_PASSWORD}"
 
 # Use an environment variable for the SSH user and server
 SSH_DEST="${USER}@${SERVER}"
 
-dir="$(dirname "$(realpath "$0")")/"
-remote_dir="/home/${USER}/pih-pah-deploy/server/"
-bin="server"
-service="pih-pah-${bin}"
-
-cd "${dir}../"
+log 'building...'
 cargo build --release
 env CARGO_TARGET_DIR=../../target cargo build --release --bin server
-
-# Transfer the Rust binary
-ssh "${SSH_DEST}" "mkdir -p ${remote_dir} && rm -f ${remote_dir}/${bin}" # if not exist
-scp "${dir}../../../target/release/${bin}" "${SSH_DEST}:${remote_dir}"
-
-temp_file="~/temp-${service}.service"
 
 tmp_ssh_private="$(mktemp)"
 echo "${SSH_PRIVATE_KEY}" > "${tmp_ssh_private}"
 
-# SSH and setup service
+# Transfer the Rust binary
+log 'some ssh magic...'
+
+ssh -i "${tmp_ssh_private}" "${SSH_DEST}" "mkdir -p ${remote_dir} && rm -f ${remote_dir}/${bin}" # if not exist
+scp -i "${tmp_ssh_private}" "${dir}../../../target/release/${bin}" "${SSH_DEST}:${remote_dir}"
+
+# Setup service
+log 'connecting to server...'
+
+temp_file="~/temp-${service}.service"
+
 ssh -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
   chmod +x  ${remote_dir}${bin}
 

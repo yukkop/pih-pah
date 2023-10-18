@@ -1,9 +1,15 @@
 # Check for help flag
 default_db_link="postgres://postgres:postgres@localhost:5433/pih-pah"
 
+bin="receiver"
+service="pih-pah-${bin}"
+dir="$(dirname "$(realpath "$0")")/"
+remote_dir="/home/${USER}/pih-pah-deploy/${bin}/"
+
+cd "${dir}../"
 . ../../script/log.sh
 
-log "$0 running..."
+log "${dir} running..."
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   # echo "Can start only from project folder"
@@ -47,27 +53,25 @@ PASSWORD="${SERVER_PASSWORD}"
 # Use an environment variable for the SSH user and server
 SSH_DEST="${USER}@${SERVER}"
 
-dir="$(dirname "$(realpath "$0")")/"
-remote_dir="/home/${USER}/pih-pah-deploy/receiver/"
-bin="receiver"
-service="pih-pah-${bin}"
-
-cd "${dir}../"
-
 log 'building...'
 cargo build --release
+env CARGO_TARGET_DIR=../../target cargo build --release --bin server
 
-# Transfer the Rust binary
-ssh "${SSH_DEST}" "mkdir -p ${remote_dir} && rm -f ${remote_dir}/${bin}" # if not exist
-scp "${dir}../../../target/release/${bin}" "${SSH_DEST}:${remote_dir}"
-
-temp_file="~/temp-${service}.service"
-
+# Ssh setup
 tmp_ssh_private="$(mktemp)"
 echo "${SSH_PRIVATE_KEY}" > "${tmp_ssh_private}"
 
-log 'connecting to server...'
+# Transfer the Rust binary
+log 'some ssh magic...'
+ssh -i "${tmp_ssh_private}" "${SSH_DEST}" "mkdir -p ${remote_dir} && rm -f ${remote_dir}/${bin}" # if not exist
+scp -i "${tmp_ssh_private}" "${dir}../../../target/release/${bin}" "${SSH_DEST}:${remote_dir}"
+
+
 # SSH and setup service
+log 'connecting to server...'
+
+temp_file="~/temp-${service}.service"
+
 ssh -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
   chmod +x  ${remote_dir}${bin}
 
