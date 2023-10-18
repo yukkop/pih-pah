@@ -28,7 +28,7 @@ log "${dir} running..."
 log "check env..."
 
 if [ -z "${SSH_USER}" ]; then
-  error 'USER must be set. Exiting.'
+  error 'SSH_USER must be set. Exiting.'
   exit 1
 fi
 
@@ -72,6 +72,8 @@ log 'connecting to server...'
 
 temp_service="$(mktemp)"
 
+PASSWORD="${SERVER_PASSWORD}"
+
 ssh -i "${tmp_ssh_private}" "${SSH_DEST}" << "EOF"
   chmod +x  ${remote_dir}${bin}
 
@@ -85,12 +87,12 @@ Restart=always
 [Install]
 WantedBy=multi-user.target" > ${temp_file}
 
-  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S -rm -f /etc/systemd/system/${service}.service
-  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S mv ${temp_service} /etc/systemd/system/${service}.service
-  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S systemctl daemon-reload
-  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S systemctl enable ${service}
-  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S systemctl start ${service}
-  printf '%s' "${SSH_USER_PASSWORD}" | sudo -S systemctl restart ${service}
+  printf '%s' "${PASSWORD}" | sudo -S -rm -f /etc/systemd/system/${service}.service
+  printf '%s' "${PASSWORD}" | sudo -S mv ${temp_service} /etc/systemd/system/${service}.service
+  printf '%s' "${PASSWORD}" | sudo -S systemctl daemon-reload
+  printf '%s' "${PASSWORD}" | sudo -S systemctl enable ${service}
+  printf '%s' "${PASSWORD}" | sudo -S systemctl start ${service}
+  printf '%s' "${PASSWORD}" | sudo -S systemctl restart ${service}
 EOF
 
 rm -f "${temp_service}"
