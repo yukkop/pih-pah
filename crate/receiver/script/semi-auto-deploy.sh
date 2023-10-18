@@ -73,7 +73,7 @@ log 'connecting to server...'
 temp_service="~/temp-${service}.service"
 PASSWORD="${SSH_USER_PASSWORD}" # need var to transport (envvar in ather envarment)
 
-ssh -i "${tmp_ssh_private}" "${SSH_DEST}" << "EOF"
+ssh -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
   chmod +x  ${remote_dir}${bin}
 
   echo "[Unit]
