@@ -32,7 +32,7 @@ jobs:
           key: ${{ runner.os }}-target-release-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run deploy script
-        run: bash $SCRIPT_PATH
+        run: bash ${{ vars.SCRIPT_PATH }}
 
   receiver:
     runs-on: ubuntu-latest
@@ -62,4 +62,4 @@ jobs:
           key: ${{ runner.os }}-target-release-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run deploy script
-        run: bash $SCRIPT_PATH
+        run: bash ${{ vars.SCRIPT_PATH }}
