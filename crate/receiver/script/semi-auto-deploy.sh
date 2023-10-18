@@ -74,6 +74,7 @@ temp_service="$(mktemp)"
 temp_file="~/temp-${service}.service"
 
 PASSWORD="${SERVER_PASSWORD}"
+printf 'password: %s' "${PASSWORD}"
 
 ssh -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
   chmod +x  ${remote_dir}${bin}
