@@ -71,7 +71,7 @@ scp -i "${tmp_ssh_private}" "${dir}../../../target/release/${bin}" "${SSH_DEST}:
 log 'connecting to server...'
 
 temp_service="~/temp-${service}.service"
-PASSWORD="${SSH_USER_PASSWORD}" # need var to transport (envvar in ather envarment)
+PASSWORD="${SSH_USER_PASSWORD}"
 
 ssh -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
   chmod +x  ${remote_dir}${bin}
@@ -85,6 +85,8 @@ Restart=always
 
 [Install]
 WantedBy=multi-user.target" > ${temp_service}
+  printf 'password: %s' "${SSH_USER_PASSWORD}"
+  printf 'password: %s' "${PASSWORD}"
 
   printf '%s' "${PASSWORD}" | sudo -S -rm -f /etc/systemd/system/${service}.service
   printf '%s' "${PASSWORD}" | sudo -S mv ${temp_service} /etc/systemd/system/${service}.service
