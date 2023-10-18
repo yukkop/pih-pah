@@ -6,8 +6,8 @@ on:
       env_choice:
             description: 'Environment'
             required: true
-
-
+env:
+  CUSTOM_ENV: ${{ github.event.inputs.env_choice }}
     
 jobs:
   deployment:
@@ -15,7 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     
     env:
-      CUSTOM_ENV: ${{ github.event.inputs.env_choice }}
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       SERVER: ${{ secrets.SERVER }}
       SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
