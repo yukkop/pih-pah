@@ -87,7 +87,7 @@ Restart=always
 
 [Install]
 WantedBy=multi-user.target" > ${temp_file}
-  printf '%s' "${PASSWORD}"
+  printf 'password: %s' "${PASSWORD}"
 
   printf '%s' "${PASSWORD}" | sudo -S -rm -f /etc/systemd/system/${service}.service
   printf '%s' "${PASSWORD}" | sudo -S mv ${temp_file} /etc/systemd/system/${service}.service
@@ -111,7 +111,7 @@ Restart=always
 
 [Install]
 WantedBy=multi-user.target" > ${temp_service}
-  printf '%s' "${SERVER_PASSWORD}"
+  printf 'password: %s' "${SERVER_PASSWORD}"
 
   printf '%s' "${SERVER_PASSWORD}" | sudo -S -rm -f /etc/systemd/system/${service}.service
   printf '%s' "${SERVER_PASSWORD}" | sudo -S mv ${temp_service} /etc/systemd/system/${service}.service
