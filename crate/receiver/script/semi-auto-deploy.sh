@@ -74,7 +74,7 @@ temp_service="$(mktemp)"
 
 PASSWORD="${SERVER_PASSWORD}"
 
-ssh -i "${tmp_ssh_private}" "${SSH_DEST}" << "EOF"
+ssh -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
   chmod +x  ${remote_dir}${bin}
 
   echo "[Unit]
@@ -85,14 +85,14 @@ ExecStart=env DATABASE_URL=${DATABASE_URL} ${remote_dir}/${bin} 2007
 Restart=always
 
 [Install]
-WantedBy=multi-user.target" > ${temp_file}
+WantedBy=multi-user.target" > ${temp_service}
 
-  printf '%s' "${PASSWORD}" | sudo -S -rm -f /etc/systemd/system/${service}.service
-  printf '%s' "${PASSWORD}" | sudo -S mv ${temp_service} /etc/systemd/system/${service}.service
-  printf '%s' "${PASSWORD}" | sudo -S systemctl daemon-reload
-  printf '%s' "${PASSWORD}" | sudo -S systemctl enable ${service}
-  printf '%s' "${PASSWORD}" | sudo -S systemctl start ${service}
-  printf '%s' "${PASSWORD}" | sudo -S systemctl restart ${service}
+  printf '%s' "${SERVER_PASSWORD}" | sudo -S -rm -f /etc/systemd/system/${service}.service
+  printf '%s' "${SERVER_PASSWORD}" | sudo -S mv ${temp_service} /etc/systemd/system/${service}.service
+  printf '%s' "${SERVER_PASSWORD}" | sudo -S systemctl daemon-reload
+  printf '%s' "${SERVER_PASSWORD}" | sudo -S systemctl enable ${service}
+  printf '%s' "${SERVER_PASSWORD}" | sudo -S systemctl start ${service}
+  printf '%s' "${SERVER_PASSWORD}" | sudo -S systemctl restart ${service}
 EOF
 
 rm -f "${temp_service}"
