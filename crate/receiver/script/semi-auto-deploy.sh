@@ -11,6 +11,9 @@ cd "${dir}../../../" || exit 1 # going to repos root
 . ./script/log.sh
 
 if [ "$1" = '-h' ] || [ "$1" = '--help' ]; then
+  printf '\033[33mWARNING\033[0m: it uses sudo in remote server..\n'
+  printf '\033[33mWARNING\033[0m: if you want start it on another os need improves..\n'
+  printf '\n'
   printf 'Usage: %s [-h]\n' "${name}"
   printf 'script for deploying %s target\n' "${bin}"
   printf '\n'
@@ -96,6 +99,7 @@ PASSWORD="${SSH_USER_PASSWORD}"
 
 # shellcheck disable=SC2087
 ssh -o StrictHostKeyChecking=no -p "${SSH_PORT}" -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
+  sudo pacman -S alsa-lib
   chmod +x  ${remote_dir}${bin}
 
   echo "[Unit]
