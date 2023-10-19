@@ -5,7 +5,7 @@ on:
 
 env:
   SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-  ADDRESS: ${{ secrets.MAIN_SERVER_ADDRESS }}
+  SSH_ADDRESS: ${{ secrets.MAIN_SERVER_ADDRESS }}
   SSH_USER_PASSWORD: ${{ secrets.PIH_PAH_PASSWORD }}
   SSH_USER: ${{ secrets.PIH_PAH_USER }}
 
