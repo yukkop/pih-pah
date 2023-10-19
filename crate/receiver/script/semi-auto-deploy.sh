@@ -99,7 +99,7 @@ PASSWORD="${SSH_USER_PASSWORD}"
 
 # shellcheck disable=SC2087
 ssh -o StrictHostKeyChecking=no -p "${SSH_PORT}" -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
-  sudo pacman -S alsa-lib
+  printf '%s' "${PASSWORD}" | sudo pacman -S alsa-lib
   chmod +x  ${remote_dir}${bin}
 
   echo "[Unit]
