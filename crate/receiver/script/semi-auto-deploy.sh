@@ -85,8 +85,6 @@ Restart=always
 
 [Install]
 WantedBy=multi-user.target" > ${temp_service}
-  printf 'password: %s' "${SSH_USER_PASSWORD}"
-  printf 'password: %s' "${PASSWORD}"
 
   printf '%s' "${PASSWORD}" | sudo -S -rm -f /etc/systemd/system/${service}.service
   printf '%s' "${PASSWORD}" | sudo -S mv ${temp_service} /etc/systemd/system/${service}.service
