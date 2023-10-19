@@ -1,31 +1,36 @@
 # Check for help flag
 default_db_link="postgres://postgres:postgres@localhost:5433/pih-pah"
+default_port="22"
 
 bin="load-balancer"
 service="pih-pah-${bin}"
 dir="$(dirname "$(realpath "$0")")/"
-remote_dir="/home/${USER}/pih-pah-deploy/${bin}/"
 
-cd "${dir}../"
+cd "${dir}../" || exit 1
 . ../../script/log.sh
-
-log "${dir} running..."
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   # echo "Can start only from project folder"
-  printf "Usage: $0 [-h]"
+  printf "Usage: %s [-h]" "${dir}"
   printf "Environment Variables:"
-  printf "  USER\tSet the SSH destination as user\n"
-  printf "  SERVER\tSet the SSH destination as server addres\n"
-  printf "  SERVER_PASSWORD\tpassword for user in remote host, I hope you do not use root\n"
+  printf "  SSH_USER\tSet the SSH destination as user\n"
+  printf "  SSH_ADDRESS\tSet the SSH destination as server addres\n"
+  printf "  SSH_PORT\tSet the SSH destination as server port\n"
+  printf "  SSH_USER_PASSWORD\tpassword for user in remote host, I hope you do not use root\n"
   printf "  DATABASE_URL\tpostgresql link\n"
   printf "  SSH_PRIVATE_KEY\tSsh private key\n"
-  printf "  \tdefault: %s" "${default_db_link}"
+  printf ""
+  printf "  \tdefault:"
+  printf "  \tDATABASE_URL: %s" "${default_db_link}"
+  printf "  \tPORT: %s" "${default_port}"
   exit 0
 fi
 
-if [ -z "${USER}" ]; then
-  error "USER must be set. Exiting."
+log "${dir} running..."
+log "check env..."
+
+if [ -z "${SSH_USER}" ]; then
+  error "SSH_USER must be set. Exiting."
   exit 1
 fi
 
@@ -34,13 +39,13 @@ if [ -z "${SSH_PRIVATE_KEY}" ]; then
   exit 1
 fi
 
-if [ -z "${SERVER}" ]; then
-  error "SERVER must be set. Exiting."
+if [ -z "${SSH_ADDRESS}" ]; then
+  error "SSH_ADDRESS must be set. Exiting."
   exit 1
 fi
 
-if [ -z "${SERVER_PASSWORD}" ]; then
-  error "SERVER_PASSWORD must be set. Exiting."
+if [ -z "${SSH_USER_PASSWORD}" ]; then
+  error "SSH_USER_PASSWORD must be set. Exiting."
   exit 1
 fi
 
@@ -48,13 +53,16 @@ if [ -z "${DATABASE_URL}" ]; then
   DATABASE_URL="${default_db_link}"
 fi
 
-PASSWORD="${SERVER_PASSWORD}"
+if [ -z "${SSH_PORT}" ]; then
+  SSH_PORT="${default_port}"
+fi
 
 # Use an environment variable for the SSH user and server
-SSH_DEST="${USER}@${SERVER}"
+remote_dir="/home/${SSH_USER}/pih-pah-deploy/${bin}/"
+SSH_DEST="${SSH_USER}@${SSH_ADDRESS}"
 
 log 'building...'
-env CARGO_TARGET_DIR=../../target cargo build --release --bin load_balancer
+env CARGO_TARGET_DIR=../../target cargo build --release --bin load-balancer
 
 # Ssh setup
 tmp_ssh_private="$(mktemp)"
@@ -63,15 +71,17 @@ echo "${SSH_PRIVATE_KEY}" > "${tmp_ssh_private}"
 # Transfer the Rust binary
 log 'some ssh magic...'
 
-ssh -i "${tmp_ssh_private}"  "${SSH_DEST}" "mkdir -p ${remote_dir} && rm -f ${remote_dir}/${bin}" # if not exist
-scp -i "${tmp_ssh_private}" "${dir}../../../target/release/${bin}" "${SSH_DEST}:${remote_dir}"
+ssh -p "${SSH_PORT}" -i "${tmp_ssh_private}"  "${SSH_DEST}" "mkdir -p ${remote_dir} && rm -f ${remote_dir}/${bin}" # if not exist
+scp -P "${SSH_PORT}" -i "${tmp_ssh_private}" "${dir}../../../target/release/${bin}" "${SSH_DEST}:${remote_dir}"
 
 # SSH and setup service
 log 'connecting to server...'
 
-temp_file="~/temp-${service}.service"
+TEMP_SERVICE="$(mktemp)"
+PASSWORD="${SSH_USER_PASSWORD}"
 
-ssh -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
+# shellcheck disable=SC2087
+ssh -p "${SSH_PORT}" -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
   chmod +x  ${remote_dir}${bin}
 
   echo "[Unit]
@@ -82,15 +92,15 @@ ExecStart=env DATABASE_URL=${DATABASE_URL} ROCKET_ADDRESS=0.0.0.0 ${remote_dir}/
 Restart=always
 
 [Install]
-WantedBy=multi-user.target" > ${temp_file}
+WantedBy=multi-user.target" > ${TEMP_SERVICE}
 
   printf '%s' "${PASSWORD}" | sudo -S -rm -f /etc/systemd/system/${service}.service
-  printf '%s' "${PASSWORD}" | sudo -S mv ${temp_file} /etc/systemd/system/${service}.service
+  printf '%s' "${PASSWORD}" | sudo -S mv ${TEMP_SERVICE} /etc/systemd/system/${service}.service
   printf '%s' "${PASSWORD}" | sudo -S systemctl daemon-reload 
   printf '%s' "${PASSWORD}" | sudo -S systemctl enable ${service} 
   printf '%s' "${PASSWORD}" | sudo -S systemctl start ${service} 
   printf '%s' "${PASSWORD}" | sudo -S systemctl restart ${service} 
+  rm -f "${TEMP_SERVICE}"
 EOF
 
-rm -f "${temp_file}"
 rm -f "${tmp_ssh_private}"
