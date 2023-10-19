@@ -12,7 +12,6 @@ cd "${dir}../" || exit 1
 log "${dir} running..."
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-  # echo "Can start only from project folder"
   printf "Usage: %s [-h]" "${dir}"
   printf "Environment Variables:"
   printf "  SSH_USER\tSet the SSH destination as user\n"
@@ -60,7 +59,10 @@ remote_dir="/home/${SSH_USER}/pih-pah-deploy/${bin}/"
 SSH_DEST="${SSH_USER}@${SSH_ADDRESS}"
 
 log 'building...'
-env CARGO_TARGET_DIR="${dir}../../target" cargo build --release --bin server
+if ! env CARGO_TARGET_DIR="${dir}../../target" cargo build --release --bin server; then
+ error "build error"
+ exit 1
+fi
 
 tmp_ssh_private="$(mktemp)"
 echo "${SSH_PRIVATE_KEY}" > "${tmp_ssh_private}"
@@ -68,8 +70,15 @@ echo "${SSH_PRIVATE_KEY}" > "${tmp_ssh_private}"
 # Transfer the Rust binary
 log 'some ssh magic...'
 
-ssh -o StrictHostKeyChecking=no -p "${SSH_PORT}" -i "${tmp_ssh_private}" "${SSH_DEST}" "mkdir -p ${remote_dir} && rm -f ${remote_dir}/${bin}" # if not exist
-scp -o StrictHostKeyChecking=no -P "${SSH_PORT}" -i "${tmp_ssh_private}" "${dir}../../../target/release/${bin}" "${SSH_DEST}:${remote_dir}"
+if ! ssh -o StrictHostKeyChecking=no -p "${SSH_PORT}" -i "${tmp_ssh_private}" "${SSH_DEST}" "mkdir -p ${remote_dir} && rm -f ${remote_dir}/${bin}"; then
+ error "ssh error"
+ exit 1
+fi
+
+if ! scp -o StrictHostKeyChecking=no -P "${SSH_PORT}" -i "${tmp_ssh_private}" "${dir}../../../target/release/${bin}" "${SSH_DEST}:${remote_dir}"; then
+ error "ssh error"
+ exit 1
+fi
 
 # Setup service
 log 'connecting to server...'
@@ -100,5 +109,10 @@ WantedBy=multi-user.target" > ${TEMP_SERVICE}
 
   rm -f "${TEMP_SERVICE}"
 EOF
+# shellcheck disable=SC2181
+if [ $? -ne 0 ]; then
+ error "ssh error"
+ exit 1
+fi
 
 rm -f "${tmp_ssh_private}"
