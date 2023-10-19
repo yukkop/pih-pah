@@ -1,50 +1,55 @@
 # Check for help flag
-default_db_link="postgres://postgres:postgres@localhost:5433/pih-pah"
-default_port="22"
+default_db_link='postgres://postgres:postgres@localhost:5433/pih-pah'
+default_port='22'
 
-bin="load-balancer"
+bin='load-balancer'
 service="pih-pah-${bin}"
 dir="$(dirname "$(realpath "$0")")/"
+name="$(basename "$0")"
 
-cd "${dir}../" || exit 1
-. ../../script/log.sh
+cd "${dir}../../../" || exit 1 # going to repos root
+. ./script/log.sh
 
-if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-  printf "Usage: %s [-h]" "${dir}"
-  printf "Environment Variables:"
-  printf "  SSH_USER\tSet the SSH destination as user\n"
-  printf "  SSH_ADDRESS\tSet the SSH destination as server addres\n"
-  printf "  SSH_PORT\tSet the SSH destination as server port\n"
-  printf "  SSH_USER_PASSWORD\tpassword for user in remote host, I hope you do not use root\n"
-  printf "  DATABASE_URL\tpostgresql link\n"
-  printf "  SSH_PRIVATE_KEY\tSsh private key\n"
-  printf ""
-  printf "  \tdefault:"
-  printf "  \tDATABASE_URL: %s" "${default_db_link}"
-  printf "  \tPORT: %s" "${default_port}"
+if [ "$1" = '-h' ] || [ "$1" = '--help' ]; then
+  printf 'Usage: %s [-h]\n' "${name}"
+  printf 'script for deploying %s target\n' "${bin}"
+  printf '\n'
+  printf 'Options:\n'
+  printf '  --help / -h    this message\n'
+  printf 'Environment Variables:\n'
+  printf '  SSH_USER  Set the SSH destination as user\n'
+  printf '  SSH_ADDRESS  Set the SSH destination as server addres\n'
+  printf '  SSH_PORT  Set the SSH destination as server port\n'
+  printf '  SSH_USER_PASSWORD  password for user in remote host, I hope you do not use root\n'
+  printf '  DATABASE_URL  postgresql link\n'
+  printf '  SSH_PRIVATE_KEY  Ssh private key\n'
+  printf '\n'
+  printf '    default:\n'
+  printf '    DATABASE_URL: %s\n' "${default_db_link}"
+  printf '    PORT: %s\n' "${default_port}"
   exit 0
 fi
 
-log "${dir} running..."
-log "check env..."
+log "${name} running..."
+log 'check env...'
 
 if [ -z "${SSH_USER}" ]; then
-  error "SSH_USER must be set. Exiting."
+  error 'SSH_USER must be set. Exiting.'
   exit 1
 fi
 
 if [ -z "${SSH_PRIVATE_KEY}" ]; then
-  error "SSH_PRIVATE_KEY must be set. Exiting."
+  error 'SSH_PRIVATE_KEY must be set. Exiting.'
   exit 1
 fi
 
 if [ -z "${SSH_ADDRESS}" ]; then
-  error "SSH_ADDRESS must be set. Exiting."
+  error 'SSH_ADDRESS must be set. Exiting.'
   exit 1
 fi
 
 if [ -z "${SSH_USER_PASSWORD}" ]; then
-  error "SSH_USER_PASSWORD must be set. Exiting."
+  error 'SSH_USER_PASSWORD must be set. Exiting.'
   exit 1
 fi
 
@@ -61,8 +66,8 @@ remote_dir="/home/${SSH_USER}/pih-pah-deploy/${bin}/"
 SSH_DEST="${SSH_USER}@${SSH_ADDRESS}"
 
 log 'building...'
-if ! env CARGO_TARGET_DIR="${dir}../../target" cargo build --release --bin load-balancer; then
- error "build error"
+if ! env CARGO_TARGET_DIR="${dir}/target" cargo build --release --bin "${bin}"; then
+ error 'build error'
  exit 1
 fi
 
@@ -74,12 +79,12 @@ echo "${SSH_PRIVATE_KEY}" > "${tmp_ssh_private}"
 log 'some ssh magic...'
 
 if ! ssh -o StrictHostKeyChecking=no -p "${SSH_PORT}" -i "${tmp_ssh_private}"  "${SSH_DEST}" "mkdir -p ${remote_dir} && rm -f ${remote_dir}/${bin}"; then
- error "ssh error"
+ error 'ssh error'
  exit 1
 fi
 
-if ! scp -o StrictHostKeyChecking=no -P "${SSH_PORT}" -i "${tmp_ssh_private}" "${dir}../../../target/release/${bin}" "${SSH_DEST}:${remote_dir}"; then
- error "ssh error"
+if ! scp -o StrictHostKeyChecking=no -P "${SSH_PORT}" -i "${tmp_ssh_private}" "${dir}/target/release/${bin}" "${SSH_DEST}:${remote_dir}"; then
+ error 'ssh error'
  exit 1
 fi
 
@@ -113,7 +118,7 @@ WantedBy=multi-user.target" > ${TEMP_SERVICE}
 EOF
 # shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
- error "ssh error"
+ error 'ssh error'
  exit 1
 fi
 
