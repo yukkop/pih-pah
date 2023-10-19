@@ -70,8 +70,8 @@ echo "${SSH_PRIVATE_KEY}" > "${tmp_ssh_private}"
 
 # Transfer the Rust binary
 log 'some ssh magic...'
-ssh -p "${SSH_PORT}" -i "${tmp_ssh_private}" "${SSH_DEST}" "mkdir -p ${remote_dir} && rm -f ${remote_dir}/${bin}" # if not exist
-scp -P "${SSH_PORT}" -i "${tmp_ssh_private}" "${dir}../../../target/release/${bin}" "${SSH_DEST}:${remote_dir}"
+ssh -o StrictHostKeyChecking=no -p "${SSH_PORT}" -i "${tmp_ssh_private}" "${SSH_DEST}" "mkdir -p ${remote_dir} && rm -f ${remote_dir}/${bin}" # if not exist
+scp -o StrictHostKeyChecking=no -P "${SSH_PORT}" -i "${tmp_ssh_private}" "${dir}../../../target/release/${bin}" "${SSH_DEST}:${remote_dir}"
 
 
 # SSH and setup service
@@ -81,7 +81,7 @@ TEMP_SERVICE="$(mktemp)"
 PASSWORD="${SSH_USER_PASSWORD}"
 
 # shellcheck disable=SC2087
-ssh -p "${SSH_PORT}" -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
+ssh -o StrictHostKeyChecking=no -p "${SSH_PORT}" -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
   chmod +x  ${remote_dir}${bin}
 
   echo "[Unit]
