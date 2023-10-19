@@ -60,7 +60,7 @@ remote_dir="/home/${SSH_USER}/pih-pah-deploy/${bin}/"
 SSH_DEST="${SSH_USER}@${SSH_ADDRESS}"
 
 log 'building...'
-env CARGO_TARGET_DIR=../../target cargo build --release --bin server
+env CARGO_TARGET_DIR="${dir}../../target" cargo build --release --bin server
 
 tmp_ssh_private="$(mktemp)"
 echo "${SSH_PRIVATE_KEY}" > "${tmp_ssh_private}"

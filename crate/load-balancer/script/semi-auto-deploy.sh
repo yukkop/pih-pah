@@ -62,7 +62,7 @@ remote_dir="/home/${SSH_USER}/pih-pah-deploy/${bin}/"
 SSH_DEST="${SSH_USER}@${SSH_ADDRESS}"
 
 log 'building...'
-env CARGO_TARGET_DIR=../../target cargo build --release --bin load-balancer
+env CARGO_TARGET_DIR="${dir}../../target" cargo build --release --bin load-balancer
 
 # Ssh setup
 tmp_ssh_private="$(mktemp)"
