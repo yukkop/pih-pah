@@ -65,7 +65,7 @@ remote_dir="/home/${SSH_USER}/pih-pah-deploy/${bin}/"
 SSH_DEST="${SSH_USER}@${SSH_ADDRESS}"
 
 log 'building...'
-if ! env CARGO_TARGET_DIR="${dir}/target" cargo build --release --bin "${bin}"; then
+if ! env CARGO_TARGET_DIR='/target' cargo build --release --bin "${bin}"; then
  error 'build error'
  exit 1
 fi
@@ -81,7 +81,7 @@ if ! ssh -o StrictHostKeyChecking=no -p "${SSH_PORT}" -i "${tmp_ssh_private}" "$
  exit 1
 fi
 
-if ! scp -o StrictHostKeyChecking=no -P "${SSH_PORT}" -i "${tmp_ssh_private}" "${dir}/target/release/${bin}" "${SSH_DEST}:${remote_dir}"; then
+if ! scp -o StrictHostKeyChecking=no -P "${SSH_PORT}" -i "${tmp_ssh_private}" "/target/release/${bin}" "${SSH_DEST}:${remote_dir}"; then
  error 'ssh error'
  exit 1
 fi
