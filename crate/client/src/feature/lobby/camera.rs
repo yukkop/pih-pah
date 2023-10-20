@@ -1,7 +1,7 @@
 #![allow(unused_doc_comments)]
 use bevy::{ecs::system::EntityCommands, prelude::*};
 
-use crate::extend_commands;
+use shared::extend_commands;
 
 const PRIMARY_CAMERA_ORDER: isize = 3;
 const SECONDARY_CAMERA_ORDER: isize = 2;

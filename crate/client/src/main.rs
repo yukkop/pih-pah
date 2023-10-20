@@ -11,8 +11,8 @@ use client::{
     music::MusicPlugins,
     ui::{UiDebugPlugins, UiPlugins},
   },
-  lib::netutils::{is_http_address, is_ip_with_port},
 };
+use shared::lib::netutils::{is_http_address, is_ip_with_port};
 
 #[cfg(not(any(feature = "wayland", feature = "x11", feature = "windows")))]
 compile_error!("Either 'wayland' or 'x11' feature must be enabled flag.");

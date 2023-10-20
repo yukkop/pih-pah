@@ -1,8 +1,8 @@
 use crate::{
   feature::{multiplayer::InitConnectionEvent, ui::HudPlugins},
-  lib::*,
   ui::rich_text,
 };
+use shared::lib::*;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 use epaint::Color32;
@@ -129,7 +129,7 @@ fn hello(
 
   if ui_state.is_auth_open {
     egui::Window::new(rich_text("Hello", &font))
-      .frame(*crate::lib::egui_frame_preset::NO_SHADOW_FRAME)
+      .frame(*egui_frame_preset::NO_SHADOW_FRAME)
       // .default_pos(screen_center)
       .collapsible(false)
       .resizable(false)
@@ -151,7 +151,7 @@ fn hello(
 
   if ui_state.is_register_open {
     egui::Window::new(rich_text("Register", &font))
-      .frame(*crate::lib::egui_frame_preset::NO_SHADOW_FRAME)
+      .frame(*egui_frame_preset::NO_SHADOW_FRAME)
       // .default_pos(screen_center)
       .collapsible(false)
       .resizable(false)
@@ -361,7 +361,7 @@ fn login(
 
   if ui_state.is_login_open {
     egui::Window::new(rich_text("Login", &font))
-      .frame(*crate::lib::egui_frame_preset::NO_SHADOW_FRAME)
+      .frame(*egui_frame_preset::NO_SHADOW_FRAME)
       // .default_pos(screen_center)
       .collapsible(false)
       .resizable(false)

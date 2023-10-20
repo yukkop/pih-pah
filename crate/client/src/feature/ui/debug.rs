@@ -4,6 +4,8 @@ use bevy_egui::{egui, EguiContexts};
 pub struct UiDebugPlugins;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 
+use shared::lib::egui_frame_preset;
+
 /// EguiPlugin nessesarly
 impl Plugin for UiDebugPlugins {
   fn build(&self, app: &mut App) {
@@ -42,7 +44,7 @@ fn debug_preferences_ui(mut contexts: EguiContexts, mut ui_state: ResMut<UiDebug
   };
 
   egui::Window::new(rich_text("Preferences", &font))
-    .frame(*crate::lib::egui_frame_preset::NO_SHADOW_FRAME)
+    .frame(*egui_frame_preset::NO_SHADOW_FRAME)
     .anchor(egui::Align2::RIGHT_TOP, egui::vec2(-10., 10.))
     .vscroll(true)
     .show(ctx, |ui| {
@@ -115,7 +117,7 @@ fn fps_ui(mut contexts: EguiContexts, diagnostics: Res<DiagnosticsStore>) {
   let ctx = contexts.ctx_mut();
 
   egui::CentralPanel::default()
-    .frame(*crate::lib::egui_frame_preset::TRANSPARENT)
+    .frame(*egui_frame_preset::TRANSPARENT)
     .show(ctx, |ui| {
       let font = egui::FontId {
         family: egui::FontFamily::Monospace,

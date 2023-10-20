@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
-use crate::feature::lobby::server::spawn_server_side_player;
-use crate::feature::multiplayer::{
+use crate::feature::lobby::spawn_server_side_player;
+use shared::feature::multiplayer::{
   Lobby, Player, PlayerData, PlayerInput, PlayerTransportData, PlayerViewDirrection,
   ServerMessages, TransportData, Username, PROTOCOL_ID,
 };

@@ -4,12 +4,12 @@ use bevy::window::{PresentMode, Window, WindowPlugin};
 use bevy_egui::EguiPlugin;
 use bevy_xpbd_3d::prelude::*;
 
-use pih_pah::feature::lobby::server::LobbyPlugins;
-use pih_pah::feature::multiplayer::server::MultiplayerPlugins;
-use pih_pah::feature::ui::UiDebugPlugins;
+use server::feature::lobby::LobbyPlugins;
+use server::feature::multiplayer::MultiplayerPlugins;
+// use server::feature::UiDebugPlugins;
 
-use pih_pah::feature::heartbeat::HeartbeatPlugins;
-use pih_pah::feature::multiplayer::panic_on_error_system;
+use server::feature::heartbeat::HeartbeatPlugins;
+use shared::feature::multiplayer::panic_on_error_system;
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
@@ -54,7 +54,7 @@ fn main() {
     // Debug plugins
     app.add_plugins(DefaultPlugins.set(window_plugin_override));
     app.add_plugins(EguiPlugin);
-    app.add_plugins(UiDebugPlugins);
+    // app.add_plugins(UiDebugPlugins);
     app.add_plugins(LogDiagnosticsPlugin::default());
     // app.add_plugins(FrameTimeDiagnosticsPlugin);
     app.add_plugins(WorldInspectorPlugin::default());

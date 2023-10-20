@@ -1,7 +1,7 @@
 use shared::feature::lobby::{PLAYER_SIZE, PLAYER_SPAWN_POINT};
 use bevy::{ecs::system::EntityCommands, prelude::*};
 
-use crate::extend_commands;
+use shared::extend_commands;
 
 // rgb(0.8, 0.7, 0.6)
 

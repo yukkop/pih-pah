@@ -1,5 +1,5 @@
-use crate::feature::lobby::server::PlayerPlugins;
-use crate::feature::lobby::server::ScenePlugins;
+use crate::feature::lobby::PlayerPlugins;
+use crate::feature::lobby::ScenePlugins;
 
 use bevy::prelude::*;
 

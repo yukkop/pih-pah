@@ -3992,6 +3992,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "server"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy-inspector-egui",
+ "bevy_egui",
+ "bevy_kira_audio",
+ "bevy_renet",
+ "bevy_xpbd_3d",
+ "bincode",
+ "entity",
+ "env_logger",
+ "epaint",
+ "lazy_static",
+ "log",
+ "regex",
+ "renet",
+ "serde",
+ "serde_json",
+ "shared",
+ "ureq",
+ "url",
+]
+
+[[package]]
 name = "sha1"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
