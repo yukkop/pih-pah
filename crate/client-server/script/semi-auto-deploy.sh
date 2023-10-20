@@ -93,7 +93,7 @@ TEMP_SERVICE="$(mktemp)"
 PASSWORD="${SSH_USER_PASSWORD}"
 
 # shellcheck disable=SC2087
-ssh -o StrictHostKeyChecking=no -p "${SSH_PORT}" -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
+ssh -T -o StrictHostKeyChecking=no -p "${SSH_PORT}" -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
   chmod +x  ${remote_dir}${bin}
 
   echo "[Unit]
@@ -106,12 +106,11 @@ Restart=always
 [Install]
 WantedBy=multi-user.target" > ${TEMP_SERVICE}
 
-  printf '%s' "${PASSWORD}" | sudo -S -rm -f /etc/systemd/system/${service}.service
   printf '%s' "${PASSWORD}" | sudo -S mv ${TEMP_SERVICE} /etc/systemd/system/${service}.service
-  printf '%s' "${PASSWORD}" | sudo -S systemctl daemon-reload 
-  printf '%s' "${PASSWORD}" | sudo -S systemctl enable ${service} 
-  printf '%s' "${PASSWORD}" | sudo -S systemctl start ${service} 
-  printf '%s' "${PASSWORD}" | sudo -S systemctl restart ${service}
+  sudo -S systemctl daemon-reload
+  sudo -S systemctl enable ${service}
+  sudo -S systemctl start ${service}
+  sudo -S systemctl restart ${service}
 
   rm -f "${TEMP_SERVICE}"
 EOF
