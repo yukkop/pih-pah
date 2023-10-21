@@ -3,15 +3,13 @@ use std::sync::Arc;
 use bevy::window::WindowResolution;
 use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*};
 use bevy_egui::EguiPlugin;
-use shared::feature::multiplayer::panic_on_error_system;
-use client::{
-  feature::{
-    lobby::LobbyPlugins,
-    multiplayer::MultiplayerPlugins,
-    music::MusicPlugins,
-    ui::{UiDebugPlugins, UiPlugins},
-  },
+use client::feature::{
+  lobby::LobbyPlugins,
+  multiplayer::MultiplayerPlugins,
+  music::MusicPlugins,
+  ui::{UiDebugPlugins, UiPlugins},
 };
+use shared::feature::multiplayer::panic_on_error_system;
 use shared::lib::netutils::{is_http_address, is_ip_with_port};
 
 #[cfg(not(any(feature = "wayland", feature = "x11", feature = "windows")))]

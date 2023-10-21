@@ -1,4 +1,3 @@
-use shared::feature::multiplayer::Lobby;
 use crate::feature::ui::hud::egui::Align;
 use bevy::prelude::*;
 use bevy_egui::{
@@ -6,6 +5,7 @@ use bevy_egui::{
   EguiContexts,
 };
 use epaint::Shadow;
+use shared::feature::multiplayer::Lobby;
 pub struct HudPlugins;
 
 impl Plugin for HudPlugins {

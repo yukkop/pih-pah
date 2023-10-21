@@ -1,5 +1,5 @@
-use shared::feature::lobby::{PLAYER_SIZE, PLAYER_SPAWN_POINT};
 use bevy::{ecs::system::EntityCommands, prelude::*};
+use shared::feature::lobby::{PLAYER_SIZE, PLAYER_SPAWN_POINT};
 
 use shared::extend_commands;
 

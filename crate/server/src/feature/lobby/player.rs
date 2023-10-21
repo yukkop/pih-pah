@@ -1,8 +1,8 @@
-use shared::extend_commands;
-use shared::feature::multiplayer::{Player, PlayerInput, PlayerViewDirrection};
 use bevy::{ecs::system::EntityCommands, prelude::*};
 use bevy_xpbd_3d::prelude::*;
 use renet::ClientId;
+use shared::extend_commands;
+use shared::feature::multiplayer::{Player, PlayerInput, PlayerViewDirrection};
 
 use shared::feature::lobby::{
   PLAYER_CAMERA_ROTATION_SPEED, PLAYER_MOVE_SPEED, PLAYER_SIZE, PLAYER_SPAWN_POINT,

@@ -4057,7 +4057,6 @@ dependencies = [
  "bevy_kira_audio",
  "bevy_renet",
  "bevy_xpbd_3d",
- "bincode",
  "entity",
  "env_logger",
  "epaint",

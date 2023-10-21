@@ -1,5 +1,5 @@
-use shared::feature::lobby::PLANE_SIZE;
 use bevy::prelude::{shape::Plane, *};
+use shared::feature::lobby::PLANE_SIZE;
 
 pub struct ScenePlugins;
 

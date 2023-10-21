@@ -6,6 +6,8 @@
       <sourceFolder url="file://$MODULE_DIR$/crate/receiver/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crate/load-balancer/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crate/shared/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crate/client/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crate/server/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

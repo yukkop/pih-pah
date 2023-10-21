@@ -1,3 +1,4 @@
+#![allow(clippy::module_inception)]
 /// Module that defines a lobby.
 pub mod lobby;
 pub use lobby::*;

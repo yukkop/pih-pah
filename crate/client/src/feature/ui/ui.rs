@@ -2,10 +2,10 @@ use crate::{
   feature::{multiplayer::InitConnectionEvent, ui::HudPlugins},
   ui::rich_text,
 };
-use shared::lib::*;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 use epaint::Color32;
+use shared::lib::*;
 use std::sync::Arc;
 
 #[derive(Resource)]
