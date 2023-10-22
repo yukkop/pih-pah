@@ -96,6 +96,7 @@ PASSWORD="${SSH_USER_PASSWORD}"
 
 # shellcheck disable=SC2087
 ssh -T -o StrictHostKeyChecking=no -p "${SSH_PORT}" -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
+  export TEMP_SERVICE="\$(mktemp)"
   chmod +x  ${remote_dir}${bin}
 
   echo "[Unit]
@@ -106,9 +107,9 @@ ExecStart=env DATABASE_URL=${DATABASE_URL} ROCKET_ADDRESS=0.0.0.0 ${remote_dir}/
 Restart=always
 
 [Install]
-WantedBy=multi-user.target" > ${TEMP_SERVICE}
+WantedBy=multi-user.target" > \${TEMP_SERVICE}
 
-  printf '%s' "${PASSWORD}" | sudo -S mv ${TEMP_SERVICE} /etc/systemd/system/${service}.service
+  printf '%s' "${PASSWORD}" | sudo -S mv \${TEMP_SERVICE} /etc/systemd/system/${service}.service
   sudo -S systemctl daemon-reload
   sudo -S systemctl enable ${service}
   sudo -S systemctl start ${service}

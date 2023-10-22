@@ -94,7 +94,6 @@ fi
 # SSH and setup service
 log 'connecting to server...'
 
-TEMP_SERVICE="$(mktemp)"
 PASSWORD="${SSH_USER_PASSWORD}"
 
 # shellcheck disable=SC2087
@@ -102,6 +101,8 @@ ssh -T -o StrictHostKeyChecking=no -p "${SSH_PORT}" -i "${tmp_ssh_private}" "${S
   # printf '%s' "${PASSWORD}" | sudo -S pacman -S alsa-lib
   { printf '%s\n' "${PASSWORD}"; yes; } | sudo -S pacman -S alsa-lib
   chmod +x  ${remote_dir}${bin}
+
+  export TEMP_SERVICE="\$(mktemp)"
 
   echo "[Unit]
 Description=pih-pah ${bin}
@@ -111,9 +112,9 @@ ExecStart=env DATABASE_URL=${DATABASE_URL} ${remote_dir}/${bin} 2007
 Restart=always
 
 [Install]
-WantedBy=multi-user.target" > ${TEMP_SERVICE}
+WantedBy=multi-user.target" > \${TEMP_SERVICE}
 
-  sudo mv ${TEMP_SERVICE} /etc/systemd/system/${service}.service
+  sudo mv \${TEMP_SERVICE} /etc/systemd/system/${service}.service
   sudo systemctl daemon-reload
   sudo systemctl enable ${service}
   sudo systemctl start ${service}

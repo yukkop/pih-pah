@@ -89,11 +89,11 @@ fi
 # Setup service
 log 'connecting to server...'
 
-TEMP_SERVICE="$(mktemp)"
 PASSWORD="${SSH_USER_PASSWORD}"
 
 # shellcheck disable=SC2087
 ssh -T -o StrictHostKeyChecking=no -p "${SSH_PORT}" -i "${tmp_ssh_private}" "${SSH_DEST}" <<EOF
+  export TEMP_SERVICE="\$(mktemp)"
   chmod +x  ${remote_dir}${bin}
 
   echo "[Unit]
@@ -104,9 +104,9 @@ ExecStart=${remote_dir}/${bin} ${SSH_ADDRESS}:${SERVER_PORT} 104.248.254.204:200
 Restart=always
 
 [Install]
-WantedBy=multi-user.target" > ${TEMP_SERVICE}
+WantedBy=multi-user.target" > \${TEMP_SERVICE}
 
-  printf '%s' "${PASSWORD}" | sudo -S mv ${TEMP_SERVICE} /etc/systemd/system/${service}.service
+  printf '%s' "${PASSWORD}" | sudo -S mv \${TEMP_SERVICE} /etc/systemd/system/${service}.service
   sudo -S systemctl daemon-reload
   sudo -S systemctl enable ${service}
   sudo -S systemctl start ${service}
