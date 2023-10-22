@@ -1272,6 +1272,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "client"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy-inspector-egui",
+ "bevy_egui",
+ "bevy_kira_audio",
+ "bevy_renet",
+ "bevy_xpbd_3d",
+ "bincode",
+ "entity",
+ "env_logger",
+ "epaint",
+ "lazy_static",
+ "log",
+ "regex",
+ "renet",
+ "serde",
+ "serde_json",
+ "shared",
+ "ureq",
+ "url",
+]
+
+[[package]]
 name = "clipboard-win"
 version = "4.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3367,30 +3392,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pih-pah"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "bevy-inspector-egui",
- "bevy_egui",
- "bevy_kira_audio",
- "bevy_renet",
- "bevy_xpbd_3d",
- "bincode",
- "entity",
- "env_logger",
- "epaint",
- "lazy_static",
- "log",
- "regex",
- "renet",
- "serde",
- "serde_json",
- "ureq",
- "url",
-]
-
-[[package]]
 name = "pin-project-lite"
 version = "0.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3991,6 +3992,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "server"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy-inspector-egui",
+ "bevy_egui",
+ "bevy_kira_audio",
+ "bevy_renet",
+ "bevy_xpbd_3d",
+ "bincode",
+ "entity",
+ "env_logger",
+ "epaint",
+ "lazy_static",
+ "log",
+ "regex",
+ "renet",
+ "serde",
+ "serde_json",
+ "shared",
+ "ureq",
+ "url",
+]
+
+[[package]]
 name = "sha1"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4019,6 +4045,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f40ca3c46823713e0d4209592e8d6e826aa57e928f09752619fc696c499637f6"
 dependencies = [
  "lazy_static",
+]
+
+[[package]]
+name = "shared"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy-inspector-egui",
+ "bevy_egui",
+ "bevy_kira_audio",
+ "bevy_renet",
+ "bevy_xpbd_3d",
+ "entity",
+ "env_logger",
+ "epaint",
+ "lazy_static",
+ "log",
+ "regex",
+ "renet",
+ "serde",
+ "serde_json",
+ "ureq",
+ "url",
 ]
 
 [[package]]
