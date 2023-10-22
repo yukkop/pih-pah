@@ -12,6 +12,7 @@ use server::feature::heartbeat::HeartbeatPlugins;
 use shared::feature::multiplayer::panic_on_error_system;
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use shared::lib::netutils::{is_http_address, is_ip_with_port};
 
 fn main() {
   std::env::set_var(
@@ -22,16 +23,18 @@ fn main() {
 
   let args: Vec<String> = std::env::args().collect();
 
-  if args.len() < 2 {
+  if args.len() < 2 || &args[1] == "-h" || &args[1] == "--help" {
     println!("Usage: ");
-    println!("  server '<server address>' '<load-balanser address>'");
+    println!("  server '<server address>' '<load-balancer address>'");
     panic!("Not enough arguments.");
   }
 
   // to listen clients
-  let listen_addr = &args[1];
-  // to send online reports to main server
-  let send_addr = &args[2];
+  let listen_addr = match &args[1] {
+    addr if is_http_address(addr) => addr,
+    addr if is_ip_with_port(addr) => addr,
+    _ => panic!("Invalid argument, must be an HTTP address or an IP with port."),
+  };
 
   let is_debug = std::env::var("DEBUG").is_ok();
 
@@ -52,24 +55,32 @@ fn main() {
     app.add_plugins(MinimalPlugins);
   } else {
     // Debug plugins
-    app.add_plugins(DefaultPlugins.set(window_plugin_override));
-    app.add_plugins(EguiPlugin);
-    // app.add_plugins(UiDebugPlugins);
-    app.add_plugins(LogDiagnosticsPlugin::default());
-    // app.add_plugins(FrameTimeDiagnosticsPlugin);
-    app.add_plugins(WorldInspectorPlugin::default());
+    app.add_plugins(DefaultPlugins.set(window_plugin_override))
+      .add_plugins(EguiPlugin)
+      //.add_plugins(UiDebugPlugins);
+      .add_plugins(LogDiagnosticsPlugin::default())
+      //.add_plugins(FrameTimeDiagnosticsPlugin);
+      .add_plugins(WorldInspectorPlugin::default());
+  }
+
+  if args.len() >= 3 {
+    let addr = match &args[2] {
+      addr if is_http_address(addr) => addr,
+      addr if is_ip_with_port(addr) => addr,
+      _ => panic!("Invalid argument, must be an HTTP address or an IP with port."),
+    };
+
+    // to send online reports to main server
+    app.add_plugins(HeartbeatPlugins::by_string(
+      addr.clone().to_string(),
+      listen_addr.to_string(),
+    ));
   }
 
   // Plugins that's always there
-  app.add_plugins(LobbyPlugins);
-  app.add_plugins(PhysicsPlugins::default());
-  app.add_plugins(MultiplayerPlugins::by_string(listen_addr.to_string()));
-  app.add_plugins(HeartbeatPlugins::by_string(
-    send_addr.to_string(),
-    listen_addr.to_string(),
-  ));
-
-  app.add_systems(Update, panic_on_error_system);
-
-  app.run();
+  app.add_plugins(LobbyPlugins)
+    .add_plugins(PhysicsPlugins::default())
+    .add_plugins(MultiplayerPlugins::by_string(listen_addr.to_string()))
+    .add_systems(Update, panic_on_error_system)
+    .run();
 }
