@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use bevy::asset::*;
 
 use bevy::window::WindowResolution;
 use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*};
@@ -9,11 +10,12 @@ use client::feature::{
   music::MusicPlugins,
   ui::{UiDebugPlugins, UiPlugins},
 };
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use shared::feature::multiplayer::panic_on_error_system;
 use shared::lib::netutils::{is_http_address, is_ip_with_port};
 
 #[cfg(not(any(feature = "wayland", feature = "x11", feature = "windows")))]
-compile_error!("Either 'wayland' or 'x11' feature must be enabled flag.");
+compile_error!("Either 'wayland' or 'x11' or 'windows' feature must be enabled flag.");
 
 fn main() {
   env_logger::init();
@@ -56,7 +58,8 @@ fn main() {
     };
     app.add_plugins(DefaultPlugins.set(window_plugin_override));
     app.add_plugins(EguiPlugin);
-    app.add_plugins(UiDebugPlugins);
+    app.add_plugins(UiDebugPlugins)
+    .add_plugins(WorldInspectorPlugin::default());
     app.add_plugins(FrameTimeDiagnosticsPlugin);
     // app.add_plugins(LogDiagnosticsPlugin::default());
     // app.add_plugins(WorldInspectorPlugin::default());

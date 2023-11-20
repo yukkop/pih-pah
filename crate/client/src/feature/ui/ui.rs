@@ -295,7 +295,12 @@ fn hello(
           );
         }
 
-        let user = if std::env::var("DEBUG").is_ok() { Me { account_name : "test".to_string(), name: "test".to_string() } } else {  res_api.me.clone().expect("user not exist?") };
+        let user = if std::env::var("DEBUG").is_ok() {
+          Me { account_name : "test".to_string(), name: "test".to_string() }
+        } else {
+          res_api.me.clone().expect("user not exist?")
+        };
+
         ui.horizontal(|ui| {
           ui.label(rich_text(format!("username: {}", user.name.clone()), &font));
         });

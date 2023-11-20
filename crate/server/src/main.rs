@@ -1,5 +1,6 @@
 use bevy::diagnostic::LogDiagnosticsPlugin;
 use bevy::prelude::*;
+use bevy::render::mesh::MeshPlugin;
 use bevy::window::{PresentMode, Window, WindowPlugin};
 use bevy_egui::EguiPlugin;
 use bevy_xpbd_3d::prelude::*;
@@ -33,7 +34,7 @@ fn main() {
   let listen_addr = match &args[1] {
     addr if is_http_address(addr) => addr,
     addr if is_ip_with_port(addr) => addr,
-    _ => panic!("Invalid argument, must be an HTTP address or an IP with port."),
+    _ => panic!("Invalid argument, must be an HTTP address or an IP with port.")
   };
 
   let is_debug = std::env::var("DEBUG").is_ok();
@@ -52,7 +53,10 @@ fn main() {
 
   if !is_debug {
     // Normal plugins
-    app.add_plugins(MinimalPlugins);
+    app
+        .add_plugins(MinimalPlugins)
+        .add_plugins(bevy::asset::AssetPlugin::default())
+        .add_plugins(bevy::render::mesh::MeshPlugin);
   } else {
     // Debug plugins
     app.add_plugins(DefaultPlugins.set(window_plugin_override))

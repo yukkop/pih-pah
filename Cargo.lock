@@ -371,6 +371,12 @@ dependencies = [
 
 [[package]]
 name = "base64"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
+
+[[package]]
+name = "base64"
 version = "0.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ba43ea6f343b788c8764558649e08df62f86c6ef251fdaeb1ffd010a9ae50a2"
@@ -617,6 +623,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_gltf"
+version = "0.11.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f07494a733dca032e71a20f4b1f423de765da49cbff34406ae6cd813f9b50c41"
+dependencies = [
+ "anyhow",
+ "base64 0.13.1",
+ "bevy_app",
+ "bevy_asset",
+ "bevy_core",
+ "bevy_core_pipeline",
+ "bevy_ecs",
+ "bevy_hierarchy",
+ "bevy_log",
+ "bevy_math",
+ "bevy_pbr",
+ "bevy_reflect",
+ "bevy_render",
+ "bevy_scene",
+ "bevy_tasks",
+ "bevy_transform",
+ "bevy_utils",
+ "gltf",
+ "percent-encoding",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "bevy_hierarchy"
 version = "0.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -660,6 +696,7 @@ dependencies = [
  "bevy_diagnostic",
  "bevy_ecs",
  "bevy_gizmos",
+ "bevy_gltf",
  "bevy_hierarchy",
  "bevy_input",
  "bevy_log",
@@ -2162,6 +2199,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "gltf"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ad2dcfb6dd7a66f9eb3d181a29dcfb22d146b0bcdc2e1ed1713cbf03939a88ea"
+dependencies = [
+ "byteorder",
+ "gltf-json",
+ "lazy_static",
+]
+
+[[package]]
+name = "gltf-derive"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2cbcea5dd47e7ad4e9ee6f040384fcd7204bbf671aa4f9e7ca7dfc9bfa1de20"
+dependencies = [
+ "inflections",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.37",
+]
+
+[[package]]
+name = "gltf-json"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d5b810806b78dde4b71a95cc0e6fdcab34c4c617da3574df166f9987be97d03"
+dependencies = [
+ "gltf-derive",
+ "serde",
+ "serde_derive",
+ "serde_json",
+]
+
+[[package]]
 name = "gpu-alloc"
 version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2448,6 +2520,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "inflections"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a257582fdcde896fd96463bf2d40eefea0580021c0712a0e2b028b60b47a837a"
+
+[[package]]
 name = "inlinable_string"
 version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2579,7 +2657,7 @@ name = "jsonwebtoken"
 version = "8.3.0"
 source = "git+https://github.com/Keats/jsonwebtoken.git#61b8c1e9918a54bae96b688f3740ef57eb0ea997"
 dependencies = [
- "base64",
+ "base64 0.21.4",
  "pem",
  "ring",
  "serde",
@@ -3371,7 +3449,7 @@ version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6b13fe415cdf3c8e44518e18a7c95a13431d9bdf6d15367d82b23c377fdd441a"
 dependencies = [
- "base64",
+ "base64 0.21.4",
  "serde",
 ]
 
@@ -3796,7 +3874,7 @@ version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b91f7eff05f748767f183df4320a63d6936e9c6107d97c9e6bdd9784f4289c94"
 dependencies = [
- "base64",
+ "base64 0.21.4",
  "bitflags 2.4.0",
  "serde",
  "serde_derive",
@@ -3808,7 +3886,7 @@ version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e71971821b3ae0e769e4a4328dbcb517607b434db7697e9aba17203ec14e46a"
 dependencies = [
- "base64",
+ "base64 0.21.4",
  "blake2b_simd",
  "constant_time_eq",
 ]
@@ -4331,7 +4409,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eb7ae0e6a97fb3ba33b23ac2671a5ce6e3cabe003f451abd5a56e7951d975624"
 dependencies = [
  "atoi",
- "base64",
+ "base64 0.21.4",
  "bitflags 2.4.0",
  "byteorder",
  "crc",
@@ -4955,7 +5033,7 @@ version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f5ccd538d4a604753ebc2f17cd9946e89b77bf87f6a8e2309667c6f2e87855e3"
 dependencies = [
- "base64",
+ "base64 0.21.4",
  "flate2",
  "log",
  "once_cell",

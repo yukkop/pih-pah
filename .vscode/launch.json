@@ -8,8 +8,8 @@
             "type": "lldb",
             "request": "launch",
             "name": "Debug",
-            "program": "${workspaceFolder}/<executable file>",
-            "args": [],
+            "program": "${workspaceFolder}/target/debug/client.exe",
+            "args": ["--features", "windows"],
             "cwd": "${workspaceFolder}"
         }
     ]
