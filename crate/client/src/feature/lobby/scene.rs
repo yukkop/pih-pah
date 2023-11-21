@@ -10,10 +10,9 @@ pub struct ScenePlugins;
 impl Plugin for ScenePlugins {
   fn build(&self, app: &mut App) {
     app
-      .add_systems(Startup, (setup_scene, spawn_gltf_mesh))
-      .add_systems(Update, test);
-    app.register_type::<PromiseMesh>();
-    app.register_type::<PromiseScene>();
+      .add_systems(Startup, (setup_scene, spawn_gltf_mesh));
+    // app.register_type::<PromiseMesh>();
+    // app.register_type::<PromiseScene>();
   }
 }
 
@@ -70,73 +69,98 @@ fn spawn_gltf_mesh(
     Name::new("GltfMesh"),
     // PromiseMesh(mesh_handle)
   ));
+
+  let mesh_handle = ass.load("terrain-2.glb#Mesh0/Primitive0");
+
+  commands.spawn((
+    PbrBundle {
+      mesh: mesh_handle.clone(),
+      material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+      transform: Transform::from_scale(Vec3::splat(16.88806915283203)),
+      ..Default::default()
+    },
+    Name::new("GltfMesh"),
+    // PromiseMesh(mesh_handle)
+  ));
+
+  // let scene_handle = ass.load("terrain-2.glb#Scene0");
+  //
+  // commands.spawn((
+  //   SceneBundle {
+  //     scene: scene_handle.clone(),
+  //     transform: Transform::from_xyz(0.0, 0.0, 0.0),
+  //     ..Default::default()
+  //   },
+  //   Name::new("GltfMesh"),
+  //   // PromiseMesh(mesh_handle)
+  // ));
 }
 
-fn test(
-  asset_server: Res<AssetServer>,
-  mut meshes: ResMut<Assets<Mesh>>,
-  promise_query: Query<(Entity, &PromiseMesh)>,
-)
-{
-  for (entity, PromiseMesh(collider_handler)) in promise_query.iter() {
-    if let Some(mesh) = meshes.get(&collider_handler) {
-      println!("loaded huli");
-      // Do something with the mesh
-    }
-    else {
-      println!("poka sosi");
-    }
-  }
-}
-
-fn spawn_gltf_scene(
-  mut commands: Commands,
-  ass: Res<AssetServer>,
-  scene: Res<Assets<Scene>>
-) {
-  // note that we have to include the `Scene0` label
-  let my_gltf = ass.load("terrain.glb#Scene0");
-  if scene.get(&my_gltf).is_some() {
-    println!("afhdglhl;dshgu;heskjghilhroi;gh");
-  }
-
-  // to position our 3d model, simply use the Transform
-  // in the SceneBundle
-  commands.spawn(
-    (
-      SceneBundle {
-        scene: my_gltf.clone(),
-        transform: Transform::from_xyz(0., -5., 0.),
-        ..Default::default()
-      },
-      PromiseScene(my_gltf)
-    )
-  );
-}
-
-#[derive(Component, Debug, Clone, InspectorOptions, Reflect/* , Serialize, Deserialize */)]
-struct PromiseScene(Handle<Scene>);
-#[derive(Component, Debug, Clone, InspectorOptions, Reflect/*, Serialize, Deserialize */)]
-struct PromiseMesh(Handle<Mesh>);
-
-
-fn find_and_make_collider (
-  mut commands: Commands,
-  scene: Res<Assets<Scene>>,
-  mesh: Res<Assets<Mesh>>,
-  promise_query: Query<(Entity, &PromiseScene)>
-) {
-  for (entity, PromiseScene(collider_handler)) in promise_query.iter() {
-    if let Some(scene_) = scene.get(collider_handler) {
-      println!("loaded!!");
-      // scene_.
-      // mesh.add(Mesh::from(scene_));
-      commands.entity(entity).remove::<PromiseScene>();
-    } else {
-      println!("not loaded yet");
-    }
-  }
-}
+// fn test(
+//   asset_server: Res<AssetServer>,
+//   mut meshes: ResMut<Assets<Mesh>>,
+//   promise_query: Query<(Entity, &PromiseMesh)>,
+// )
+// {
+//   for (entity, PromiseMesh(collider_handler)) in promise_query.iter() {
+//     if let Some(mesh) = meshes.get(&collider_handler) {
+//       println!("loaded huli");
+//       // Do something with the mesh
+//     }
+//     else {
+//       println!("poka sosi");
+//     }
+//   }
+// }
+//
+// fn spawn_gltf_scene(
+//   mut commands: Commands,
+//   ass: Res<AssetServer>,
+//   scene: Res<Assets<Scene>>
+// ) {
+//   // note that we have to include the `Scene0` label
+//   let my_gltf = ass.load("terrain.glb#Scene0");
+//   if scene.get(&my_gltf).is_some() {
+//     println!("afhdglhl;dshgu;heskjghilhroi;gh");
+//   }
+//
+//   // to position our 3d model, simply use the Transform
+//   // in the SceneBundle
+//   commands.spawn(
+//     (
+//       SceneBundle {
+//         scene: my_gltf.clone(),
+//         transform: Transform::from_xyz(0., -5., 0.),
+//         ..Default::default()
+//       },
+//       PromiseScene(my_gltf)
+//     )
+//   );
+// }
+//
+// #[derive(Component, Debug, Clone, InspectorOptions, Reflect/* , Serialize, Deserialize */)]
+// struct PromiseScene(Handle<Scene>);
+// #[derive(Component, Debug, Clone, InspectorOptions, Reflect/*, Serialize, Deserialize */)]
+// struct PromiseMesh(Handle<Mesh>);
+//
+//
+// fn find_and_make_collider (
+//   mut commands: Commands,
+//   scene: Res<Assets<Scene>>,
+//   mesh: Res<Assets<Mesh>>,
+//   promise_query: Query<(Entity, &PromiseScene)>
+// ) {
+//   for (entity, PromiseScene(collider_handler)) in promise_query.iter() {
+//     if let Some(scene_) = scene.get(collider_handler) {
+//       println!("loaded!!");
+//       // scene_.
+//       // mesh.add(Mesh::from(scene_));
+//       commands.entity(entity).remove::<PromiseScene>();
+//     } else {
+//       println!("not loaded yet");
+//     }
+//   }
+// }
 
 // fn get_first_mesh(
 //   world: &World, gltf_handle: Handle<SceneFormat>
