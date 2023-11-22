@@ -10,7 +10,8 @@ pub struct ScenePlugins;
 impl Plugin for ScenePlugins {
   fn build(&self, app: &mut App) {
     app
-      .add_systems(Startup, (setup_scene, spawn_gltf_mesh));
+      .add_systems(Startup, (setup_scene, spawn_gltf_mesh))
+      .add_systems(Update, test);
     // app.register_type::<PromiseMesh>();
     // app.register_type::<PromiseScene>();
   }
@@ -103,16 +104,16 @@ fn spawn_gltf_mesh(
 // )
 // {
 //   for (entity, PromiseMesh(collider_handler)) in promise_query.iter() {
-//     if let Some(mesh) = meshes.get(&collider_handler) {
-//       println!("loaded huli");
-//       // Do something with the mesh
-//     }
-//     else {
-//       println!("poka sosi");
-//     }
+//     println!("{:#?}", collider_handler.clone());
+//       if let Some(mesh) = meshes.get(collider_handler) {
+//         println!("loaded huli");
+//         // Do something with the mesh
+//       } else {
+//         println!("poka sosi");
+//       }
 //   }
 // }
-//
+
 // fn spawn_gltf_scene(
 //   mut commands: Commands,
 //   ass: Res<AssetServer>,
@@ -137,11 +138,11 @@ fn spawn_gltf_mesh(
 //     )
 //   );
 // }
-//
-// #[derive(Component, Debug, Clone, InspectorOptions, Reflect/* , Serialize, Deserialize */)]
-// struct PromiseScene(Handle<Scene>);
-// #[derive(Component, Debug, Clone, InspectorOptions, Reflect/*, Serialize, Deserialize */)]
-// struct PromiseMesh(Handle<Mesh>);
+
+#[derive(Component, Debug, Clone, InspectorOptions, Reflect/* , Serialize, Deserialize */)]
+struct PromiseScene(Handle<Scene>);
+#[derive(Component, Debug, Clone, InspectorOptions, Reflect/*, Serialize, Deserialize */)]
+struct PromiseMesh(Handle<Mesh>);
 //
 //
 // fn find_and_make_collider (

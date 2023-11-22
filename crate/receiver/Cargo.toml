@@ -1,6 +1,6 @@
 [package]
 name = "receiver"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 dotenv = "0.15.0"
 env_logger = "0.10.0"
-renet = { git = "https://github.com/lucaspoffo/renet.git", package = "renet", version = "0.0.13", features = ["bevy", "serde", "transport" ] }
+renet = { git = "https://github.com/lucaspoffo/renet.git", package = "renet", version = "0.0.14", features = ["bevy", "serde", "transport" ] }
 sqlx = { version = "0.7.1", default-features = false, features = [ "postgres", "runtime-tokio" ] }
 tokio = { version = "1.32.0", features = ["macros", "rt-multi-thread"]}
 

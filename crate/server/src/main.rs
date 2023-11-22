@@ -61,7 +61,7 @@ fn main() {
         .add_plugins(AssetPlugin::default())
         .add_plugins(MeshPlugin)
         .add_plugins(ScenePlugin)
-        .add_plugins(GltfPlugin::default());
+        .add_plugins(bevy_minimal_gltf::MinimalGltfPlugin::default());
 
   } else {
     // Debug plugins
@@ -117,16 +117,15 @@ fn test(
 )
 {
   for (entity, PromiseMesh(collider_handler)) in promise_query.iter() {
-    if let Some(mesh) = meshes.get(&collider_handler) {
-      println!("loaded huli");
-      // Do something with the mesh
-    }
-    else {
-      println!("poka sosi");
-    }
+      if let Some(mesh) = meshes.get(collider_handler) {
+        println!("loaded huli");
+        // Do something with the mesh
+      } else {
+        println!("poka sosi");
+      }
   }
 }
-//
+
 // fn spawn_gltf_scene(
 //   mut commands: Commands,
 //   ass: Res<AssetServer>,

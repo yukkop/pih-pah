@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_renet::client_connected;
 
 use crate::feature::lobby::camera_switch;
 use crate::feature::lobby::spawn_client_side_player;
@@ -44,7 +45,7 @@ impl Plugin for MultiplayerPlugins {
         client_send_input,
         client_sync_players,
       )
-        .run_if(bevy_renet::transport::client_connected()),
+        .run_if(bevy_renet::client_connected()),
     );
   }
 }
