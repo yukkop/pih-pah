@@ -10,8 +10,7 @@ pub struct ScenePlugins;
 impl Plugin for ScenePlugins {
   fn build(&self, app: &mut App) {
     app
-      .add_systems(Startup, (setup_scene, spawn_gltf_mesh))
-      .add_systems(Update, test);
+      .add_systems(Startup, (setup_scene, spawn_gltf_mesh));
     // app.register_type::<PromiseMesh>();
     // app.register_type::<PromiseScene>();
   }
