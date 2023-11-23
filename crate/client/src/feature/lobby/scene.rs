@@ -1,25 +1,30 @@
-use bevy::prelude::{shape::Plane, *};
-use shared::feature::lobby::PLANE_SIZE;
+use bevy::prelude::*;
 
 pub struct ScenePlugins;
 
 impl Plugin for ScenePlugins {
   fn build(&self, app: &mut App) {
-    app.add_systems(Startup, setup_scene);
+    app.add_systems(Startup, (setup_scene, spawn_gltf_mesh));
   }
 }
 
 fn setup_scene(
   mut commands: Commands,
-  mut meshes: ResMut<Assets<Mesh>>,
+  ass: Res<AssetServer>,
   mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-  // plane
-  commands.spawn(PbrBundle {
-    mesh: meshes.add(Mesh::from(Plane::from_size(PLANE_SIZE))),
-    material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
-    ..default()
-  });
+  let mesh_handle = ass.load("terrain.gltf#Mesh0/Primitive0");
+
+  commands.spawn((
+    PbrBundle {
+      mesh: mesh_handle.clone(),
+      material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+      transform: Transform::from_scale(Vec3::splat(16.888)), // 16.88806915283203
+      ..Default::default()
+    },
+    Name::new("GltfMesh"),
+  ));
+
   // light
   commands.spawn(PointLightBundle {
     point_light: PointLight {
@@ -40,3 +45,5 @@ fn setup_scene(
     ..default()
   });
 }
+
+fn spawn_gltf_mesh() {}

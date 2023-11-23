@@ -85,7 +85,7 @@ pub fn server_update_system(
   mut server: ResMut<RenetServer>,
   transport: Res<NetcodeServerTransport>,
 ) {
-  for event in server_events.iter() {
+  for event in server_events.read() {
     match event {
       ServerEvent::ClientConnected { client_id } => {
         log::info!("Player {} connected.", client_id);

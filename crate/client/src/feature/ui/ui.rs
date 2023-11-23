@@ -4,6 +4,7 @@ use crate::{
 };
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
+use entity::res::Me;
 use epaint::Color32;
 use shared::lib::*;
 use std::sync::Arc;
@@ -68,16 +69,20 @@ struct ConnectionState {
   addr: String,
   addresses: Vec<Arc<String>>,
   error_message: Option<Arc<String>>,
-  is_server_not_choisen: bool,
+  is_server_not_chosen: bool,
 }
 
 impl Default for ConnectionState {
   fn default() -> Self {
     Self {
-      addr: "".into(),
+      addr: if std::env::var("DEBUG").is_ok() {
+        "127.0.0.1:5000".into()
+      } else {
+        "".into()
+      },
       addresses: Vec::<Arc<String>>::new(),
       error_message: None,
-      is_server_not_choisen: false,
+      is_server_not_chosen: false,
     }
   }
 }
@@ -128,6 +133,11 @@ fn hello(
   // let screen_center = egui::Pos2 { x: ctx.raw_input().screen_size.x * 0.5, y: ctx.raw_input().screen_size.y * 0.5 };
 
   if ui_state.is_auth_open {
+    if std::env::var("DEBUG").is_ok() {
+      ui_state.is_auth_open = false;
+      ui_state.is_connection_open = true;
+    }
+
     egui::Window::new(rich_text("Hello", &font))
       .frame(*egui_frame_preset::NO_SHADOW_FRAME)
       // .default_pos(screen_center)
@@ -288,7 +298,15 @@ fn hello(
           );
         }
 
-        let user = res_api.me.clone().expect("user not exist?");
+        let user = if std::env::var("DEBUG").is_ok() {
+          Me {
+            account_name: "test".to_string(),
+            name: "test".to_string(),
+          }
+        } else {
+          res_api.me.clone().expect("user not exist?")
+        };
+
         ui.horizontal(|ui| {
           ui.label(rich_text(format!("username: {}", user.name.clone()), &font));
         });
@@ -299,41 +317,48 @@ fn hello(
           ));
         });
 
-        if connection_state.is_server_not_choisen {
+        if connection_state.is_server_not_chosen {
           if !connection_state.addr.is_empty() {
-            connection_state.is_server_not_choisen = false;
+            connection_state.is_server_not_chosen = false;
           }
           ui.colored_label(Color32::RED, rich_text("server not choisen", &font));
         }
 
-        // TODO need timer. delay, something
-        connection_state.addresses.clear();
-        match api::servers(
-          &res_api.url,
-          res_api.token.as_ref().expect("token must be exist here"),
-        ) {
-          Ok(servers) => {
-            for server in servers {
-              // TODO loader must filter it
-              if server.online {
-                connection_state.addresses.push(server.address.into());
+        if std::env::var("DEBUG").is_ok() {
+          ui.horizontal(|ui| {
+            ui.label(rich_text("server", &font));
+            ui.add(egui::TextEdit::singleline(&mut connection_state.addr));
+          });
+        } else {
+          // TODO need timer. delay, something
+          connection_state.addresses.clear();
+          match api::servers(
+            &res_api.url,
+            res_api.token.as_ref().expect("token must be exist here"),
+          ) {
+            Ok(servers) => {
+              for server in servers {
+                // TODO loader must filter it
+                if server.online {
+                  connection_state.addresses.push(server.address.into());
+                }
               }
             }
-          }
-          Err(err) => connection_state.error_message = Some(err.message.into()),
-        };
+            Err(err) => connection_state.error_message = Some(err.message.into()),
+          };
 
-        egui::ComboBox::from_id_source("unique_id")
-          .selected_text(&connection_state.addr)
-          .show_ui(ui, |ui| {
-            for val in &connection_state.addresses.clone() {
-              ui.selectable_value(&mut connection_state.addr, val.to_string(), val.to_string());
-            }
-          });
+          egui::ComboBox::from_id_source("unique_id")
+            .selected_text(&connection_state.addr)
+            .show_ui(ui, |ui| {
+              for val in &connection_state.addresses.clone() {
+                ui.selectable_value(&mut connection_state.addr, val.to_string(), val.to_string());
+              }
+            });
+        }
 
         if ui.add(egui::Button::new("Connect")).clicked() {
           if connection_state.addr.is_empty() {
-            connection_state.is_server_not_choisen = true;
+            connection_state.is_server_not_chosen = true;
             return;
           }
           ev.send(InitConnectionEvent {

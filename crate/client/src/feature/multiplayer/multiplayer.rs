@@ -1,8 +1,7 @@
-use bevy::prelude::*;
-
 use crate::feature::lobby::camera_switch;
 use crate::feature::lobby::spawn_client_side_player;
 use crate::feature::lobby::{spawn_tied_camera, TiedCamera};
+use bevy::prelude::*;
 use bevy_renet::{
   renet::{transport::ClientAuthentication, ConnectionConfig, DefaultChannel, RenetClient},
   transport::NetcodeClientPlugin,
@@ -12,12 +11,9 @@ use renet::{transport::NetcodeClientTransport, ClientId};
 use shared::feature::multiplayer::{
   Connection, Lobby, PlayerData, PlayerInput, ServerMessages, TransportData, Username, PROTOCOL_ID,
 };
-
 use std::{net::UdpSocket, time::SystemTime};
-
 #[derive(Default, Debug, Resource)]
 pub struct OwnId(Option<ClientId>);
-
 pub struct MultiplayerPlugins;
 
 impl Plugin for MultiplayerPlugins {
@@ -44,7 +40,7 @@ impl Plugin for MultiplayerPlugins {
         client_send_input,
         client_sync_players,
       )
-        .run_if(bevy_renet::transport::client_connected()),
+        .run_if(bevy_renet::client_connected()),
     );
   }
 }
@@ -56,7 +52,7 @@ pub struct InitConnectionEvent {
 }
 
 pub fn new_renet_client(mut ev: EventReader<InitConnectionEvent>, mut commands: Commands) {
-  for settings in ev.iter() {
+  for settings in ev.read() {
     commands.insert_resource(RenetClient::new(ConnectionConfig::default()));
     let server_addr = settings.addr.parse().unwrap();
     let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
