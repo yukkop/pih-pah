@@ -13,6 +13,17 @@ fn setup_scene(
   ass: Res<AssetServer>,
   mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
+  let mesh_handle = ass.load("walking.gltf#Scene0");
+
+  commands.spawn((
+    SceneBundle {
+      scene: mesh_handle.clone(),
+      transform: Transform::from_translation(Vec3::new(0., 4.5, 0.)),
+      ..Default::default()
+    },
+    Name::new("My personajjj"),
+  ));
+
   let mesh_handle = ass.load("terrain.gltf#Mesh0/Primitive0");
 
   commands.spawn((
@@ -28,11 +39,11 @@ fn setup_scene(
   // light
   commands.spawn(PointLightBundle {
     point_light: PointLight {
-      intensity: 1500.0,
+      intensity: 4000.0,
       shadows_enabled: true,
       ..default()
     },
-    transform: Transform::from_xyz(4.0, 8.0, 4.0),
+    transform: Transform::from_xyz(8.0, 12.0, 8.0),
     ..default()
   });
   // camera
@@ -45,5 +56,3 @@ fn setup_scene(
     ..default()
   });
 }
-
-fn spawn_gltf_mesh() {}
