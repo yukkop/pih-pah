@@ -4,10 +4,10 @@ use crate::{
 };
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
+use entity::res::Me;
 use epaint::Color32;
 use shared::lib::*;
 use std::sync::Arc;
-use entity::res::Me;
 
 #[derive(Resource)]
 struct ApiSettings {
@@ -75,7 +75,11 @@ struct ConnectionState {
 impl Default for ConnectionState {
   fn default() -> Self {
     Self {
-      addr: if std::env::var("DEBUG").is_ok() { "127.0.0.1:5000".into() } else {"".into()},
+      addr: if std::env::var("DEBUG").is_ok() {
+        "127.0.0.1:5000".into()
+      } else {
+        "".into()
+      },
       addresses: Vec::<Arc<String>>::new(),
       error_message: None,
       is_server_not_chosen: false,
@@ -129,7 +133,6 @@ fn hello(
   // let screen_center = egui::Pos2 { x: ctx.raw_input().screen_size.x * 0.5, y: ctx.raw_input().screen_size.y * 0.5 };
 
   if ui_state.is_auth_open {
-
     if std::env::var("DEBUG").is_ok() {
       ui_state.is_auth_open = false;
       ui_state.is_connection_open = true;
@@ -296,7 +299,10 @@ fn hello(
         }
 
         let user = if std::env::var("DEBUG").is_ok() {
-          Me { account_name : "test".to_string(), name: "test".to_string() }
+          Me {
+            account_name: "test".to_string(),
+            name: "test".to_string(),
+          }
         } else {
           res_api.me.clone().expect("user not exist?")
         };
@@ -342,13 +348,13 @@ fn hello(
           };
 
           egui::ComboBox::from_id_source("unique_id")
-              .selected_text(&connection_state.addr)
-              .show_ui(ui, |ui| {
-                for val in &connection_state.addresses.clone() {
-                  ui.selectable_value(&mut connection_state.addr, val.to_string(), val.to_string());
-                }
+            .selected_text(&connection_state.addr)
+            .show_ui(ui, |ui| {
+              for val in &connection_state.addresses.clone() {
+                ui.selectable_value(&mut connection_state.addr, val.to_string(), val.to_string());
+              }
             });
-      }
+        }
 
         if ui.add(egui::Button::new("Connect")).clicked() {
           if connection_state.addr.is_empty() {

@@ -34,7 +34,7 @@ fn main() {
   let listen_addr = match &args[1] {
     addr if is_http_address(addr) => addr,
     addr if is_ip_with_port(addr) => addr,
-    _ => panic!("Invalid argument, must be an HTTP address or an IP with port.")
+    _ => panic!("Invalid argument, must be an HTTP address or an IP with port."),
   };
 
   let is_debug = std::env::var("DEBUG").is_ok();
@@ -54,15 +54,15 @@ fn main() {
   if !is_debug {
     // Normal plugins
     app
-        .add_plugins(MinimalPlugins)
-        .add_plugins(AssetPlugin::default())
-        .add_plugins(MeshPlugin)
-        .add_plugins(ScenePlugin)
-        .add_plugins(bevy_minimal_gltf::MinimalGltfPlugin::default());
-
+      .add_plugins(MinimalPlugins)
+      .add_plugins(AssetPlugin::default())
+      .add_plugins(MeshPlugin)
+      .add_plugins(ScenePlugin)
+      .add_plugins(bevy_minimal_gltf::MinimalGltfPlugin::default());
   } else {
     // Debug plugins
-    app.add_plugins(DefaultPlugins.set(window_plugin_override))
+    app
+      .add_plugins(DefaultPlugins.set(window_plugin_override))
       .add_plugins(EguiPlugin)
       //.add_plugins(UiDebugPlugins);
       .add_plugins(LogDiagnosticsPlugin::default())
@@ -85,10 +85,10 @@ fn main() {
   }
 
   // Plugins that's always there
-  app.add_plugins(LobbyPlugins)
+  app
+    .add_plugins(LobbyPlugins)
     .add_plugins(PhysicsPlugins::default())
     .add_plugins(MultiplayerPlugins::by_string(listen_addr.to_string()))
     .add_systems(Update, panic_on_error_system)
     .run();
-
 }

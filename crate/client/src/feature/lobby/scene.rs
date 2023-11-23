@@ -4,8 +4,7 @@ pub struct ScenePlugins;
 
 impl Plugin for ScenePlugins {
   fn build(&self, app: &mut App) {
-    app
-      .add_systems(Startup, (setup_scene, spawn_gltf_mesh));
+    app.add_systems(Startup, (setup_scene, spawn_gltf_mesh));
   }
 }
 
@@ -20,7 +19,7 @@ fn setup_scene(
     PbrBundle {
       mesh: mesh_handle.clone(),
       material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
-      transform: Transform::from_scale(Vec3::splat(16.88806915283203)),
+      transform: Transform::from_scale(Vec3::splat(16.888)), // 16.88806915283203
       ..Default::default()
     },
     Name::new("GltfMesh"),
@@ -47,7 +46,4 @@ fn setup_scene(
   });
 }
 
-fn spawn_gltf_mesh(
-) {
-
-}
+fn spawn_gltf_mesh() {}

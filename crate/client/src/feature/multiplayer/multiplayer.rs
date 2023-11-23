@@ -1,7 +1,7 @@
-use bevy::prelude::*;
 use crate::feature::lobby::camera_switch;
 use crate::feature::lobby::spawn_client_side_player;
 use crate::feature::lobby::{spawn_tied_camera, TiedCamera};
+use bevy::prelude::*;
 use bevy_renet::{
   renet::{transport::ClientAuthentication, ConnectionConfig, DefaultChannel, RenetClient},
   transport::NetcodeClientPlugin,
