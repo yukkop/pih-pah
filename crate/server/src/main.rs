@@ -1,16 +1,13 @@
 use bevy::diagnostic::LogDiagnosticsPlugin;
-use bevy::gltf::GltfPlugin;
 use bevy::prelude::*;
 use bevy::render::mesh::MeshPlugin;
 use bevy::scene::ScenePlugin;
 use bevy::window::{PresentMode, Window, WindowPlugin};
 use bevy_egui::EguiPlugin;
-use bevy_inspector_egui::InspectorOptions;
 use bevy_xpbd_3d::prelude::*;
 
 use server::feature::lobby::LobbyPlugins;
 use server::feature::multiplayer::MultiplayerPlugins;
-// use server::feature::UiDebugPlugins;
 
 use server::feature::heartbeat::HeartbeatPlugins;
 use shared::feature::multiplayer::panic_on_error_system;
