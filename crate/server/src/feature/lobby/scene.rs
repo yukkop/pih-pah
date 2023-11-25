@@ -19,6 +19,18 @@ fn setup_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
   let mesh_handle = asset_server.load("terrain.gltf#Mesh0/Primitive0");
 
   commands.spawn((Name::new("GltfMesh"), PromiseMesh(mesh_handle)));
+
+  let mesh_handle = asset_server.load("walking.gltf#Scene0");
+
+  commands.spawn((
+    SceneBundle {
+      scene: mesh_handle.clone(),
+      transform: Transform::from_translation(Vec3::new(0., 4.5, 0.)),
+      ..Default::default()
+    },
+    Name::new("My personajjj"),
+  ));
+
 }
 
 fn process_colliders(

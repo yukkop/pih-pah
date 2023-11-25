@@ -4,7 +4,7 @@ pub struct ScenePlugins;
 
 impl Plugin for ScenePlugins {
   fn build(&self, app: &mut App) {
-    app.add_systems(Startup, (setup_scene, spawn_gltf_mesh));
+    app.add_systems(Startup, setup_scene);
   }
 }
 

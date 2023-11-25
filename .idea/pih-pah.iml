@@ -12,6 +12,7 @@
       <excludeFolder url="file://$MODULE_DIR$/crate/load-balancer" />
       <excludeFolder url="file://$MODULE_DIR$/crate/receiver" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
+      <excludeFolder url="file://$MODULE_DIR$/crate/server/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

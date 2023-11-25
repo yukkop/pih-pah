@@ -4,12 +4,13 @@ version = "0.2.0"
 edition = "2021"
 
 [features]
-wayland = ["bevy/wayland", "bevy/bevy_winit"]
-x11 = ["bevy/x11", "bevy/bevy_winit"]
-windows = ["bevy/bevy_winit"]
+wayland = ["win", "bevy/wayland", "shared/wayland"]
+x11 = ["win", "bevy/x11", "shared/x11"]
+windows = ["win", "shared/windows"]
+win = ["bevy/bevy_winit"]
 
 [dependencies]
-bevy = { version = "0.12.0", default-features = false, features = ["bevy_gltf", "bevy_scene", "bevy_core_pipeline", "bevy_render", "bevy_asset", "bevy_pbr", "tonemapping_luts", "ktx2", "zstd", "multi-threaded" ] }
+bevy = { version = "0.12.0", default-features = false, features = ["bevy_scene", "bevy_asset", "tonemapping_luts", "multi-threaded" ] }
 bincode = "1.3.1"
 env_logger = "0.10.0"
 serde = { version = "=1.0.169", features = ["derive"] }
@@ -19,7 +20,7 @@ regex = "1.9.5"
 url = "2.4.1"
 bevy_kira_audio = { version = "0.18.0", default-features = false, features = [ "wav" ] }
 bevy_egui = "0.23.0"
-bevy_xpbd_3d = "0.3.2"
+bevy_xpbd_3d = { git = "https://github.com/yukkop/bevy_xpbd.git", branch = "bevy-redistributor", version = "0.3.2"  }
 log = "0.4.20"
 bevy-inspector-egui = "0.21.0"
 epaint = "0.23.0"

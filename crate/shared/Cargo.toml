@@ -8,10 +8,15 @@ edition = "2021"
 [features]
 wayland = ["bevy/wayland", "bevy/bevy_winit"]
 x11 = ["bevy/x11", "bevy/bevy_winit"]
-windows = ["bevy/bevy_winit"]
+windows = ["bevy/bevy_winit", "dep:bevy_egui", "dep:bevy-inspector-egui"]
 
 [dependencies]
-bevy = { version = "0.12.0", default-features = false, features = ["bevy_core_pipeline", "bevy_render", "bevy_asset", "bevy_pbr", "tonemapping_luts", "ktx2", "zstd", "multi-threaded" ] }
+## debug
+bevy_egui = { version = "0.23.0", optional = true }
+bevy-inspector-egui = {  version = "0.21.0", optional = true }
+
+## deafault
+bevy = { version = "0.12.0", default-features = false, features = ["bevy_asset"] }
 env_logger = "0.10.1"
 serde = { version = "=1.0.169", features = ["derive"] }
 renet = { git = "https://github.com/lucaspoffo/renet.git", package = "renet", version = "0.0.14", features = ["bevy", "serde", "transport" ] }
@@ -19,10 +24,9 @@ bevy_renet = { git = "https://github.com/lucaspoffo/renet.git", package = "bevy_
 regex = "1.9.5"
 url = "2.4.1"
 bevy_kira_audio = { version = "0.18.0", default-features = false, features = [ "wav" ] }
-bevy_egui = "0.23.0"
-bevy_xpbd_3d = "0.3.2"
+bevy_xpbd_3d = { version = "0.3.2" }
 log = "0.4.20"
-bevy-inspector-egui = "0.21.0"
+# bevy-inspector-egui = "0.21.0"
 epaint = "0.23.0"
 lazy_static = "1.4.0"
 ureq = { version = "2.7.1", features = [ "json" ] } # gigachad requests without async
