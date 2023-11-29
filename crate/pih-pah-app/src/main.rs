@@ -2,7 +2,9 @@ use bevy::window::WindowResolution;
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use pih_pah_app::province::ProvincePlugins;
 use pih_pah_app::sound::SoundPlugins;
+use pih_pah_app::world::WorldPlugins;
 
 #[cfg(not(any(feature = "wayland", feature = "x11", feature = "windows")))]
 compile_error!("Either 'wayland' or 'x11' or 'windows' feature must be enabled flag.");
@@ -35,7 +37,8 @@ fn main() {
       .add_plugins(WorldInspectorPlugin::default());
   }
 
-  app.add_plugins(SoundPlugins);
+  app.add_plugins(SoundPlugins)
+      .add_plugins((WorldPlugins, ProvincePlugins));
 
   app.run();
 }
