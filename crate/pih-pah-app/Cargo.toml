@@ -27,6 +27,7 @@ serde = { version = "=1.0.169", features = ["derive"] }
 regex = "1.9.5"
 log = "0.4.20"
 epaint = "0.24.0"
+rand = "0.8.5"
 
 # renet_steam = { path = "../renet_steam", version = "0.0.1", features = [ "bevy" ], optional = true }
 # ureq = { version = "2.7.1", features = [ "json" ] } # gigachad requests without async

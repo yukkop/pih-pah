@@ -1,7 +1,8 @@
 use bevy::window::WindowResolution;
-use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*};
+use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use pih_pah_app::sound::SoundPlugins;
 
 #[cfg(not(any(feature = "wayland", feature = "x11", feature = "windows")))]
 compile_error!("Either 'wayland' or 'x11' or 'windows' feature must be enabled flag.");
@@ -30,9 +31,11 @@ fn main() {
       }),
       ..default()
     };
-    app.add_plugins((DefaultPlugins.set(window_plugin_override), EguiPlugin))
+    app.add_plugins((DefaultPlugins.set(window_plugin_override).set(AssetPlugin { file_path: "asset".into(), ..default() }), EguiPlugin))
       .add_plugins(WorldInspectorPlugin::default());
   }
+
+  app.add_plugins(SoundPlugins);
 
   app.run();
 }
