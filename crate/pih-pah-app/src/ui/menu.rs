@@ -1,7 +1,13 @@
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 use crate::ui::{rich_text, TRANSPARENT};
+use crate::util::i18n::Uniq;
 use crate::util::ResourceAction;
+use crate::util::i18n::Uniq::Module;
+
+lazy_static::lazy_static! {
+    static ref module: &'static str = module_path!().splitn(3, ':').nth(2).unwrap_or(module_path!());
+}
 
 #[derive(Event)]
 pub struct MenuEvent(pub ResourceAction);
@@ -59,20 +65,40 @@ fn handle_state(
     };
 
     if state.is_active {
-        egui::Window::new("My UI")
+        egui::Window::new(rich_text(
+            "Menu".to_string(),
+            Module(&module),
+            &font))
             .frame(*TRANSPARENT)
-            .anchor(egui::Align2::LEFT_BOTTOM, [0.0, 0.0])  // Anchor to bottom-left
+            .anchor(egui::Align2::LEFT_BOTTOM, [10., -10.])
             .collapsible(false)
             .resizable(false)
             .movable(false)
             .show(ctx, |ui| {
-                if ui.button("Button 1").clicked() {
-                    // Handle button 1 click
+                if ui.button(rich_text(
+                    "Shutting range".to_string(),
+                    Module(&module),
+                    &font)).clicked() {
+
                 }
-                if ui.button("Button 2").clicked() {
-                    // Handle button 2 click
+                if ui.button(rich_text(
+                    "Multiplayer".to_string(),
+                    Module(&module),
+                    &font)).clicked() {
+
                 }
-                // Add more buttons as needed
+                if ui.button(rich_text(
+                    "Settings".to_string(),
+                    Module(&module),
+                    &font)).clicked() {
+
+                }
+                if ui.button(rich_text(
+                    "Exit".to_string(),
+                    Module(&module),
+                    &font)).clicked() {
+
+                }
             });
     }
 }
