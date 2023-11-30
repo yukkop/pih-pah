@@ -1641,19 +1641,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "ecolor"
-version = "0.24.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6d9d80ab06fc3e7ceb0a7c9b0514c9eba266c189e71044e7bac679e1736a7cb"
-
-[[package]]
 name = "egui"
 version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8bd69fed5fcf4fbb8225b24e80ea6193b61e17a625db105ef0c4d71dde6eb8b7"
 dependencies = [
  "ahash",
- "epaint 0.23.0",
+ "epaint",
  "nohash-hasher",
 ]
 
@@ -1671,12 +1665,6 @@ checksum = "1ef2b29de53074e575c18b694167ccbe6e5191f7b25fe65175a0d905a32eeec0"
 dependencies = [
  "bytemuck",
 ]
-
-[[package]]
-name = "emath"
-version = "0.24.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df747beaedee141dc3950edc68a156c0e548c92fe1a92f0a51c1bdca3d6a054d"
 
 [[package]]
 name = "encase"
@@ -1741,22 +1729,8 @@ dependencies = [
  "ab_glyph",
  "ahash",
  "bytemuck",
- "ecolor 0.23.0",
- "emath 0.23.0",
- "nohash-hasher",
- "parking_lot",
-]
-
-[[package]]
-name = "epaint"
-version = "0.24.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12f370b53e435fc235243174f3b2bf68a4b0202f3885cece16ad4aecd03222c4"
-dependencies = [
- "ab_glyph",
- "ahash",
- "ecolor 0.24.0",
- "emath 0.24.0",
+ "ecolor",
+ "emath",
  "nohash-hasher",
  "parking_lot",
 ]
@@ -3121,7 +3095,7 @@ dependencies = [
  "bevy_xpbd_3d",
  "bincode",
  "env_logger",
- "epaint 0.24.0",
+ "lazy_static",
  "log",
  "rand",
  "regex",
