@@ -1,18 +1,24 @@
 use bevy::prelude::*;
-use crate::province;
+use crate::{province, ui};
+use crate::province::ProvincePlugins;
+use crate::sound::SoundPlugins;
+use crate::ui::UiPlugins;
+use crate::util::ResourceAction;
 
 pub struct WorldPlugins;
 
 impl Plugin for WorldPlugins {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup);
+        app
+            .add_plugins((SoundPlugins, ProvincePlugins, UiPlugins))
+            .add_systems(Startup, setup);
     }
 }
 
 fn setup(
-    commands: Commands,
-    materials: ResMut<Assets<StandardMaterial>>,
-    mesh: ResMut<Assets<Mesh>>
+    mut ui_menu_writer: EventWriter<ui::menu::MenuEvent>,
+    mut province_menu_writer: EventWriter<province::menu::MenuEvent>,
 ) {
-    let (_command, _mesh, _material) = province::menu::load(commands, mesh, materials);
+    ui_menu_writer.send(ui::menu::MenuEvent(ResourceAction::Load));
+    province_menu_writer.send(province::menu::MenuEvent(ResourceAction::Load));
 }

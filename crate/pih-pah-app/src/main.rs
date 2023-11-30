@@ -2,8 +2,6 @@ use bevy::window::WindowResolution;
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use pih_pah_app::province::ProvincePlugins;
-use pih_pah_app::sound::SoundPlugins;
 use pih_pah_app::world::WorldPlugins;
 
 #[cfg(not(any(feature = "wayland", feature = "x11", feature = "windows")))]
@@ -37,8 +35,7 @@ fn main() {
       .add_plugins(WorldInspectorPlugin::default());
   }
 
-  app.add_plugins(SoundPlugins)
-      .add_plugins((WorldPlugins, ProvincePlugins));
+  app.add_plugins(WorldPlugins);
 
   app.run();
 }
