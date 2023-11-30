@@ -2,7 +2,7 @@ use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 use crate::{province, ui};
-use crate::ui::{GameMenuEvent, rich_text, TRANSPARENT, UiAction};
+use crate::ui::{rich_text, TRANSPARENT, UiAction};
 use crate::util::ResourceAction;
 use crate::util::i18n::Uniq::Module;
 
@@ -11,27 +11,29 @@ lazy_static::lazy_static! {
 }
 
 #[derive(Event)]
-pub struct MenuEvent(pub ResourceAction);
+pub struct GameMenuEvent(pub UiAction);
 
 #[derive(Resource)]
 struct State {
     is_active: bool,
+    is_loaded: bool,
 }
 
 impl Default for State {
     fn default() -> Self {
         Self {
             is_active: false,
+            is_loaded: false,
         }
     }
 }
 
-pub struct MenuPlugins;
+pub struct GameMenuPlugins;
 
-impl Plugin for MenuPlugins {
+impl Plugin for GameMenuPlugins {
     fn build(&self, app: &mut App) {
         app
-            .add_event::<MenuEvent>()
+            .add_event::<GameMenuEvent>()
             .init_resource::<State>()
             .add_systems(Update, handle_action)
             .add_systems(Update, handle_state);
@@ -39,26 +41,40 @@ impl Plugin for MenuPlugins {
 }
 
 fn handle_action(
-    mut reader: EventReader<MenuEvent>,
+    mut reader: EventReader<GameMenuEvent>,
     mut state: ResMut<State>,
 ) {
-    for MenuEvent(action) in reader.read() {
+    for GameMenuEvent(action) in reader.read() {
         match action {
-            ResourceAction::Load => {
-                state.is_active = true;
+            UiAction::Load => {
+                state.is_loaded = true;
             },
-            ResourceAction::Unload => {
-                state.is_active = false;
+            UiAction::Unload => {
+                state.is_loaded = false;
             },
+            UiAction::Enable => {
+                if state.is_loaded {
+                    state.is_active = true;
+                }
+            }
+            UiAction::Disable => {
+                if state.is_loaded {
+                    state.is_active = false;
+                }
+            }
+            UiAction::Toggle => {
+                if state.is_loaded {
+                    state.is_active = !state.is_active;
+                }
+            }
         }
     }
 }
 
 fn handle_state(
     mut context: EguiContexts,
-    mut exit: EventWriter<AppExit>,
     state: Res<State>,
-    mut ui_menu_writer: EventWriter<MenuEvent>,
+    mut ui_menu_writer: EventWriter<ui::MenuEvent>,
     mut province_menu_writer: EventWriter<province::MenuEvent>,
     mut ui_game_menu_writer: EventWriter<GameMenuEvent>,
 ) {
@@ -81,30 +97,19 @@ fn handle_state(
             .movable(false)
             .show(ctx, |ui| {
                 if ui.button(rich_text(
-                    "Shooting range".to_string(),
+                    "Back".to_string(),
                     Module(&module),
                     &font)).clicked() {
-                    ui_game_menu_writer.send(GameMenuEvent(UiAction::Load));
-                    ui_menu_writer.send(MenuEvent(ResourceAction::Unload));
-                    province_menu_writer.send(province::MenuEvent(ResourceAction::Unload));
+                    ui_game_menu_writer.send(GameMenuEvent(UiAction::Disable));
                 }
                 if ui.button(rich_text(
-                    "Multiplayer".to_string(),
+                    "Menu".to_string(),
                     Module(&module),
                     &font)).clicked() {
-
-                }
-                if ui.button(rich_text(
-                    "Settings".to_string(),
-                    Module(&module),
-                    &font)).clicked() {
-
-                }
-                if ui.button(rich_text(
-                    "Exit".to_string(),
-                    Module(&module),
-                    &font)).clicked() {
-                    exit.send(AppExit);
+                    ui_game_menu_writer.send(GameMenuEvent(UiAction::Disable));
+                    ui_game_menu_writer.send(GameMenuEvent(UiAction::Unload));
+                    ui_menu_writer.send(ui::MenuEvent(ResourceAction::Load));
+                    province_menu_writer.send(province::MenuEvent(ResourceAction::Load));
                 }
             });
     }

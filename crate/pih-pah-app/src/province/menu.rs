@@ -11,6 +11,9 @@ struct OrbitLight {
     angle: f32,
 }
 
+#[derive(Component)]
+struct Affiliation;
+
 #[derive(Event)]
 pub struct MenuEvent(pub ResourceAction);
 
@@ -30,6 +33,7 @@ fn handle_action(
     mut commands: Commands,
     mut mesh: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    affiliation_query: Query<Entity, With<Affiliation>>,
 ) {
     for MenuEvent(action) in reader.read() {
         match action {
@@ -37,7 +41,7 @@ fn handle_action(
                 load(&mut commands, &mut mesh, &mut materials);
             },
             ResourceAction::Unload => {
-                unload();
+                unload(&mut commands, &affiliation_query);
             },
         }
     }
@@ -55,7 +59,7 @@ fn load(
             ..default()
         },
         ..Default::default()
-    });
+    }).insert(Affiliation);
 
     commands.spawn((
         PointLightBundle {
@@ -72,7 +76,7 @@ fn load(
             speed: 1.0,
             angle: 0.0,
         },
-    ));
+    )).insert(Affiliation);
 
     commands.spawn((
         PbrBundle {
@@ -82,7 +86,7 @@ fn load(
             ..Default::default()
         },
         Name::new("Terrain"),
-    ));
+    )).insert(Affiliation);
 
     commands.spawn((
         PbrBundle {
@@ -92,11 +96,16 @@ fn load(
             ..Default::default()
         },
         Name::new("Cube"),
-    ));
+    )).insert(Affiliation);
 }
 
-fn unload() {
-
+fn unload(
+    commands: &mut Commands,
+    affiliation_query: &Query<Entity, With<Affiliation>>,
+) {
+    for entity in affiliation_query.iter() {
+        commands.entity(entity).despawn();
+    }
 }
 
 fn update_light_position(time: Res<Time>, mut query: Query<(&mut OrbitLight, &mut Transform)>) {
