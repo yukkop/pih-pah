@@ -1,13 +1,13 @@
-use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 use crate::{province, ui};
+use crate::province::ShootingRangeEvent;
 use crate::ui::{rich_text, TRANSPARENT, UiAction};
 use crate::util::ResourceAction;
 use crate::util::i18n::Uniq::Module;
 
 lazy_static::lazy_static! {
-    static ref module: &'static str = module_path!().splitn(3, ':').nth(2).unwrap_or(module_path!());
+    static ref MODULE: &'static str = module_path!().splitn(3, ':').nth(2).unwrap_or(module_path!());
 }
 
 #[derive(Event)]
@@ -77,6 +77,7 @@ fn handle_state(
     mut ui_menu_writer: EventWriter<ui::MenuEvent>,
     mut province_menu_writer: EventWriter<province::MenuEvent>,
     mut ui_game_menu_writer: EventWriter<GameMenuEvent>,
+    mut province_shooting_range_writer: EventWriter<ShootingRangeEvent>,
 ) {
     let ctx = context.ctx_mut();
 
@@ -88,7 +89,7 @@ fn handle_state(
     if state.is_active {
         egui::Window::new(rich_text(
             "Menu".to_string(),
-            Module(&module),
+            Module(&MODULE),
             &font))
             .frame(*TRANSPARENT)
             .anchor(egui::Align2::LEFT_BOTTOM, [10., -10.])
@@ -98,16 +99,17 @@ fn handle_state(
             .show(ctx, |ui| {
                 if ui.button(rich_text(
                     "Back".to_string(),
-                    Module(&module),
+                    Module(&MODULE),
                     &font)).clicked() {
                     ui_game_menu_writer.send(GameMenuEvent(UiAction::Disable));
                 }
                 if ui.button(rich_text(
                     "Menu".to_string(),
-                    Module(&module),
+                    Module(&MODULE),
                     &font)).clicked() {
                     ui_game_menu_writer.send(GameMenuEvent(UiAction::Disable));
                     ui_game_menu_writer.send(GameMenuEvent(UiAction::Unload));
+                    province_shooting_range_writer.send(ShootingRangeEvent(ResourceAction::Unload));
                     ui_menu_writer.send(ui::MenuEvent(ResourceAction::Load));
                     province_menu_writer.send(province::MenuEvent(ResourceAction::Load));
                 }

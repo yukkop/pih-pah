@@ -1,7 +1,5 @@
 use std::sync::Arc;
 use hmac::{Hmac, Mac};
-use hmac::digest::crypto_common::KeySizeUser;
-use hmac::digest::generic_array::GenericArray;
 use sha2::Sha256;
 
 const HASH_LENGTH: usize = 25;
@@ -12,7 +10,7 @@ pub enum Language {
 }
 
 lazy_static::lazy_static! {
-    pub static ref language: Language = Language::En;
+    pub static ref LANGUAGE: Language = Language::En;
 }
 
 pub enum Uniq {
@@ -26,7 +24,7 @@ pub fn trans(
 ) -> String {
     let _id = match uniq {
         Uniq::Module(module) => {
-            hash_string(text.as_str(), module, 25)
+            hash_string(text.as_str(), module, HASH_LENGTH)
         }
         Uniq::Id(id) => {
             id.to_string()

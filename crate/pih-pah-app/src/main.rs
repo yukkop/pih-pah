@@ -2,6 +2,7 @@ use bevy::window::WindowResolution;
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_xpbd_3d::prelude::PhysicsPlugins;
 use pih_pah_app::world::WorldPlugins;
 
 #[cfg(not(any(feature = "wayland", feature = "x11", feature = "windows")))]
@@ -35,6 +36,7 @@ fn main() {
       .add_plugins(WorldInspectorPlugin::default());
   }
 
+  app.add_plugins(PhysicsPlugins::default());
   app.add_plugins(WorldPlugins);
 
   app.run();

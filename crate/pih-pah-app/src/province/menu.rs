@@ -29,8 +29,8 @@ impl Plugin for MenuPlugins {
 }
 
 fn handle_action(
-    mut reader: EventReader<MenuEvent>,
     mut commands: Commands,
+    mut reader: EventReader<MenuEvent>,
     mut mesh: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     affiliation_query: Query<Entity, With<Affiliation>>,
