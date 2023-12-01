@@ -2,6 +2,8 @@ use bevy::prelude::*;
 use std::f32::consts::PI;
 use crate::util::ResourceAction;
 
+use super::{ProvincePlugins, ProvinceState};
+
 #[derive(Component)]
 pub struct Affiliation;
 
@@ -14,43 +16,27 @@ struct OrbitLight {
     angle: f32,
 }
 
-#[derive(Event)]
-pub struct MenuEvent(pub ResourceAction);
-
 pub struct MenuPlugins;
 
 impl Plugin for MenuPlugins {
     fn build(&self, app: &mut App) {
         app
-            .add_event::<MenuEvent>()
-            .add_systems(Update, handle_action)
-            .add_systems(Update, update_light_position);
-    }
-}
-
-fn handle_action(
-    mut commands: Commands,
-    mut reader: EventReader<MenuEvent>,
-    mut mesh: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    affiliation_query: Query<Entity, With<Affiliation>>,
-) {
-    for MenuEvent(action) in reader.read() {
-        match action {
-            ResourceAction::Load => {
-                load(&mut commands, &mut mesh, &mut materials);
-            },
-            ResourceAction::Unload => {
-                unload(&mut commands, &affiliation_query);
-            },
-        }
+            .add_systems(
+                OnEnter(ProvinceState::Menu),
+                load)
+            .add_systems(
+                Update, 
+                update_light_position.run_if(in_state(ProvinceState::Menu)))
+            .add_systems(
+                OnExit(ProvinceState::Menu),
+                unload);
     }
 }
 
 fn load(
-    commands: &mut Commands,
-    mesh: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
+    mut commands: Commands,
+    mut mesh: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     commands.spawn(Camera3dBundle {
         transform: Transform::from_xyz(5., 2.5,  5.).looking_at(Vec3::ZERO, Vec3::Y),
@@ -100,8 +86,8 @@ fn load(
 }
 
 fn unload(
-    commands: &mut Commands,
-    affiliation_query: &Query<Entity, With<Affiliation>>,
+    mut commands: Commands,
+    affiliation_query: Query<Entity, With<Affiliation>>,
 ) {
     for entity in affiliation_query.iter() {
         commands.entity(entity).despawn();

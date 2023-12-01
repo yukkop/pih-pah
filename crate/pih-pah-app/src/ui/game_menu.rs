@@ -1,8 +1,9 @@
+use bevy::app::PluginsState;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 use crate::lobby::LobbyState;
 use crate::{province, ui};
-use crate::province::ShootingRangeEvent;
+use crate::province::ProvinceState;
 use crate::ui::{rich_text, TRANSPARENT, UiAction};
 use crate::util::ResourceAction;
 use crate::util::i18n::Uniq::Module;
@@ -73,13 +74,12 @@ fn handle_action(
 }
 
 fn handle_state(
-    mut next_state: ResMut<NextState<LobbyState>>,
+    mut next_state_lobby: ResMut<NextState<LobbyState>>,
+    mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut context: EguiContexts,
     state: Res<State>,
     mut ui_menu_writer: EventWriter<ui::MenuEvent>,
-    mut province_menu_writer: EventWriter<province::MenuEvent>,
     mut ui_game_menu_writer: EventWriter<GameMenuEvent>,
-    mut province_shooting_range_writer: EventWriter<ShootingRangeEvent>,
 ) {
     let ctx = context.ctx_mut();
 
@@ -109,12 +109,11 @@ fn handle_state(
                     "Menu".to_string(),
                     Module(&MODULE),
                     &font)).clicked() {
-                    next_state.set(LobbyState::None);
+                    next_state_lobby.set(LobbyState::None);
                     ui_game_menu_writer.send(GameMenuEvent(UiAction::Disable));
                     ui_game_menu_writer.send(GameMenuEvent(UiAction::Unload));
-                    province_shooting_range_writer.send(ShootingRangeEvent(ResourceAction::Unload));
                     ui_menu_writer.send(ui::MenuEvent(ResourceAction::Load));
-                    province_menu_writer.send(province::MenuEvent(ResourceAction::Load));
+                    next_state_province.set(ProvinceState::Menu);
                 }
             });
     }

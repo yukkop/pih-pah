@@ -24,10 +24,8 @@ impl Plugin for WorldPlugins {
 
 fn setup(
     mut ui_menu_writer: EventWriter<ui::MenuEvent>,
-    mut province_menu_writer: EventWriter<province::MenuEvent>,
 ) {
     ui_menu_writer.send(ui::MenuEvent(ResourceAction::Load));
-    province_menu_writer.send(province::MenuEvent(ResourceAction::Load));
 }
 
 #[derive(Component)]

@@ -2,8 +2,7 @@ use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 use crate::lobby::LobbyState;
-use crate::province;
-use crate::province::ShootingRangeEvent;
+use crate::province::{self, ProvinceState};
 use crate::ui::{GameMenuEvent, rich_text, TRANSPARENT, UiAction};
 use crate::util::ResourceAction;
 use crate::util::i18n::Uniq::Module;
@@ -57,14 +56,13 @@ fn handle_action(
 }
 
 fn handle_state(
-    mut next_state: ResMut<NextState<LobbyState>>,
+    mut next_state_lobby: ResMut<NextState<LobbyState>>,
+    mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut context: EguiContexts,
     mut exit: EventWriter<AppExit>,
     state: Res<State>,
     mut ui_menu_writer: EventWriter<MenuEvent>,
-    mut province_menu_writer: EventWriter<province::MenuEvent>,
     mut ui_game_menu_writer: EventWriter<GameMenuEvent>,
-    mut province_shooting_range_writer: EventWriter<ShootingRangeEvent>,
 ) {
     let ctx = context.ctx_mut();
 
@@ -88,11 +86,10 @@ fn handle_state(
                     "Shooting range".to_string(),
                     Module(&MODULE),
                     &font)).clicked() {
-                    next_state.set(LobbyState::Single);
+                    next_state_lobby.set(LobbyState::Single);
                     ui_game_menu_writer.send(GameMenuEvent(UiAction::Load));
-                    province_shooting_range_writer.send(ShootingRangeEvent(ResourceAction::Load));
                     ui_menu_writer.send(MenuEvent(ResourceAction::Unload));
-                    province_menu_writer.send(province::MenuEvent(ResourceAction::Unload));
+                    next_state_province.set(ProvinceState::ShootingRange);
                 }
                 if ui.button(rich_text(
                     "Multiplayer".to_string(),
