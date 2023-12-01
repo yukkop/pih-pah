@@ -1,11 +1,9 @@
 use bevy::prelude::*;
+use crate::character::spawn_character;
 use crate::util::ResourceAction;
 use crate::world::PromisedScene;
 
-const PRIMARY_CAMERA_ORDER: isize = 3;
-
-#[derive(Component)]
-struct Affiliation;
+use super::Affiliation;
 
 #[derive(Event)]
 pub struct ShootingRangeEvent(pub ResourceAction);
@@ -42,15 +40,6 @@ fn load(
     commands: &mut Commands,
     asset_server: &Res<AssetServer>,
 ) {
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(5., 2.5,  5.).looking_at(Vec3::ZERO, Vec3::Y),
-        camera: Camera {
-            order: PRIMARY_CAMERA_ORDER,
-            ..default()
-        },
-        ..Default::default()
-    }).insert(Affiliation);
-
     commands.spawn((
         PointLightBundle {
             point_light: PointLight {

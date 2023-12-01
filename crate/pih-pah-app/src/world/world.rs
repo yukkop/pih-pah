@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use bevy_xpbd_3d::prelude::{Collider, RigidBody};
 use crate::{province, ui};
+use crate::character::CharacterPlugins;
+use crate::lobby::{LobbyPlugins, PlayerInput};
 use crate::province::ProvincePlugins;
 use crate::sound::SoundPlugins;
 use crate::ui::{UiAction, UiPlugins};
@@ -14,7 +16,7 @@ pub struct WorldPlugins;
 impl Plugin for WorldPlugins {
     fn build(&self, app: &mut App) {
         app
-            .add_plugins((SoundPlugins, ProvincePlugins, UiPlugins))
+            .add_plugins((SoundPlugins, ProvincePlugins, UiPlugins, LobbyPlugins, CharacterPlugins))
             .add_systems(Startup, setup)
             .add_systems(Update, (input, process_scene));
     }
@@ -28,12 +30,27 @@ fn setup(
     province_menu_writer.send(province::MenuEvent(ResourceAction::Load));
 }
 
+#[derive(Component)]
+pub struct Me;
+
 fn input(
     keyboard_input: Res<Input<KeyCode>>,
     mut ui_game_menu_writer: EventWriter<ui::GameMenuEvent>,
+    mut player_input_query: Query<&mut PlayerInput, With<Me>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Escape) {
         ui_game_menu_writer.send(ui::GameMenuEvent(UiAction::Toggle));
+    }
+
+    if let Ok(mut player_input) = player_input_query.get_single_mut() {
+        player_input.left = keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::Left);
+        player_input.right = keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right);
+        player_input.up = keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
+        player_input.down = keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
+        player_input.turn_left = keyboard_input.pressed(KeyCode::Q);
+        player_input.turn_right = keyboard_input.pressed(KeyCode::E);
+        player_input.jump = keyboard_input.just_pressed(KeyCode::Space);
+        player_input.sprint = keyboard_input.pressed(KeyCode::ControlLeft);
     }
 }
 
@@ -46,7 +63,6 @@ fn process_scene(
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for (entity, children) in scene_query.iter() {
-        println!("{:#?}", name_query.get(entity));
         for child in children {
             process_scene_child(&mut commands, *child, &parent_query, &name_query, &mesh_handle_query, &mut meshes);
         }

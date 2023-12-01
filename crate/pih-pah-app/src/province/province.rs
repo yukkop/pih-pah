@@ -2,6 +2,15 @@ use bevy::prelude::*;
 use crate::province::menu::MenuPlugins;
 use crate::province::ShootingRangePlugins;
 
+#[derive(Component)]
+pub struct Affiliation;
+
+// TODO implementation instead of load & unload actions
+enum ProvinceState {
+    Menu,
+    ShootingRange
+}
+
 pub struct ProvincePlugins;
 
 impl Plugin for ProvincePlugins {

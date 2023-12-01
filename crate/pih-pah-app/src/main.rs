@@ -17,7 +17,7 @@ fn main() {
   let mut app = App::new();
 
   if !is_debug {
-    app.add_plugins((DefaultPlugins, EguiPlugin));
+    app.add_plugins((DefaultPlugins.set(AssetPlugin { file_path: "asset".into(), ..default() }), EguiPlugin));
   } else {
     let window_plugin_override = WindowPlugin {
       primary_window: Some(Window {

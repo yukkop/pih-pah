@@ -2,6 +2,8 @@ use bevy::prelude::*;
 use std::f32::consts::PI;
 use crate::util::ResourceAction;
 
+use super::Affiliation;
+
 const PRIMARY_CAMERA_ORDER: isize = 3;
 
 #[derive(Component)]
@@ -10,9 +12,6 @@ struct OrbitLight {
     speed: f32,
     angle: f32,
 }
-
-#[derive(Component)]
-struct Affiliation;
 
 #[derive(Event)]
 pub struct MenuEvent(pub ResourceAction);
