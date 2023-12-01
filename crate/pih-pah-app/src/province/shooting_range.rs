@@ -1,9 +1,10 @@
 use bevy::prelude::*;
-use crate::character::spawn_character;
 use crate::util::ResourceAction;
 use crate::world::PromisedScene;
 
-use super::Affiliation;
+#[derive(Component)]
+pub struct Affiliation;
+
 
 #[derive(Event)]
 pub struct ShootingRangeEvent(pub ResourceAction);

@@ -1,4 +1,4 @@
-use bevy::window::WindowResolution;
+use bevy::window::{WindowResolution, PresentMode};
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -23,6 +23,7 @@ fn main() {
       primary_window: Some(Window {
         title: "pih-pah".into(),
         resolution: WindowResolution::default(),
+        present_mode: PresentMode::AutoNoVsync,
         position: WindowPosition::new(IVec2::new(960, 0)),
         // Tells wasm to resize the window according to the available canvas
         fit_canvas_to_parent: true,
@@ -36,7 +37,7 @@ fn main() {
       .add_plugins(WorldInspectorPlugin::default());
   }
 
-  app.add_plugins(PhysicsPlugins::default());
+  app.add_plugins(PhysicsPlugins::new(Update));
   app.add_plugins(WorldPlugins);
 
   app.run();

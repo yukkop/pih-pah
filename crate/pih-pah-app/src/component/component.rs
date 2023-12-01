@@ -1,4 +1,4 @@
-use bevy::app::App;
+use bevy::app::{App, Update};
 use bevy::prelude::{Component, Plugin, Vec3};
 
 #[derive(Component)]
@@ -14,7 +14,7 @@ pub struct ComponentPlugins;
 
 impl Plugin for ComponentPlugins {
     fn build(&self, app: &mut App) {
-        app;
+        app.add_systems(Update, (respawn, despawn));
     }
 }
 

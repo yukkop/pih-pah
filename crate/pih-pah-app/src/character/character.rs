@@ -19,14 +19,29 @@ pub struct CharacterPlugins;
 impl Plugin for CharacterPlugins {
     fn build(&self, app: &mut App) {
         app
-           .add_systems(
-               FixedUpdate,
-               move_characters.run_if(not(in_state(LobbyState::None))))
-           .add_systems(
-               Update,
-               tied_camera_follow.run_if(not(in_state(LobbyState::None))));
-           // .add_systems(FixedUpdate, move_characters);
+          .add_systems(
+              FixedUpdate,
+              move_characters.run_if(not(in_state(LobbyState::None))))
+          .add_systems(
+              PostUpdate,
+              tied_camera_follow.run_if(not(in_state(LobbyState::None))));
     }
+}
+
+fn tied_camera_follow(
+  mut tied_camera_query: Query<(&TiedCamera, &mut Transform)>,
+  view_direction_query: Query<&PlayerViewDirection, With<Me>>,
+  transform_query: Query<&Transform, Without<TiedCamera>>,
+) {
+  for (TiedCamera(target) , mut transform) in tied_camera_query.iter_mut() {
+      if let Ok(target_transform) = transform_query.get(*target) {
+          transform.translation = target_transform.translation;
+          transform.rotation = view_direction_query.single().0;
+      }
+      else {
+          warn!("Tied camera cannot follow object ({:?}) without transform", target)
+      }
+  }
 }
 
 fn move_characters(
@@ -67,23 +82,9 @@ fn move_characters(
             PLAYER_CAMERA_ROTATION_SPEED * turn, /* * delta_seconds */
         );
         view_direction.0 *= rotation;
-    }
-}
 
-fn tied_camera_follow(
-    mut tied_camera_query: Query<(&TiedCamera, &mut Transform)>,
-    view_direction_query: Query<&PlayerViewDirection, With<Me>>,
-    transform_query: Query<&Transform, Without<TiedCamera>>,
-) {
-    for (TiedCamera(target) , mut transform) in tied_camera_query.iter_mut() {
-        if let Ok(target_transform) = transform_query.get(*target) {
-            transform.translation = target_transform.translation;
-            transform.rotation = view_direction_query.single().0;
-        }
-        else {
-            warn!("Tied camera cannot follow object ({:?}) without transform", target)
-        }
     }
+
 }
 
 extend_commands!(
@@ -117,9 +118,6 @@ extend_commands!(
   }
 );
 
-/// The camera is anchored to the object but
-/// features stabilization to maintain a consistent viewing angle,
-/// irrespective of the object's position.
 extend_commands!(
   spawn_tied_camera(target: Entity),
   |world: &mut World, entity_id: Entity, target: Entity| {

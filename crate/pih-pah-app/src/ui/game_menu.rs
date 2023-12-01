@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
+use crate::lobby::LobbyState;
 use crate::{province, ui};
 use crate::province::ShootingRangeEvent;
 use crate::ui::{rich_text, TRANSPARENT, UiAction};
@@ -72,6 +73,7 @@ fn handle_action(
 }
 
 fn handle_state(
+    mut next_state: ResMut<NextState<LobbyState>>,
     mut context: EguiContexts,
     state: Res<State>,
     mut ui_menu_writer: EventWriter<ui::MenuEvent>,
@@ -107,6 +109,7 @@ fn handle_state(
                     "Menu".to_string(),
                     Module(&MODULE),
                     &font)).clicked() {
+                    next_state.set(LobbyState::None);
                     ui_game_menu_writer.send(GameMenuEvent(UiAction::Disable));
                     ui_game_menu_writer.send(GameMenuEvent(UiAction::Unload));
                     province_shooting_range_writer.send(ShootingRangeEvent(ResourceAction::Unload));

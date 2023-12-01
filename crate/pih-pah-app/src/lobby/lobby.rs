@@ -1,11 +1,9 @@
 use bevy::math::{Quat, Vec3};
-use bevy::prelude::{Color, Commands, Component, Entity, IntoSystemSet, Resource, States};
+use bevy::prelude::{Color, Component, Entity, Resource, States};
 use renet::ClientId;
 use serde::{Deserialize, Serialize};
 use bevy::app::{App, Plugin};
-use bevy::prelude::*;
 use std::collections::HashMap;
-use crate::extend_commands;
 use crate::lobby::single::SingleLobbyPlugins;
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
