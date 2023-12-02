@@ -151,11 +151,16 @@ fn handle_state(
                             ui.label("Port:");
                             ui.text_edit_singleline(&mut state.host_port);
                         });
+                        ui.horizontal(|ui| {
+                            ui.label("Username:");
+                            ui.text_edit_singleline(&mut state.username);
+                        });
                         if ui.button(rich_text(
                             "Create".to_string(),
                             Module(&MODULE),
                             &font)).clicked() {
                                 host_resource.address = Some(format!("127.0.0.1:{}", state.host_port.clone()));
+                                host_resource.username = Some(state.username.clone());
                                 state.is_multiplayer = false;
                                 next_state_lobby.set(LobbyState::Host);
                                 next_state_province.set(ProvinceState::ShootingRange);

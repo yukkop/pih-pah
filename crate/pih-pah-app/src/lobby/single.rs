@@ -11,7 +11,7 @@ use crate::character::{spawn_character, spawn_tied_camera, TiedCamera};
 use crate::lobby::LobbyState;
 use crate::world::Me;
 
-use super::PlayerInput;
+use super::{PlayerInput, PlayerId};
 
 pub struct SingleLobbyPlugins;
 
@@ -31,7 +31,7 @@ fn setup(
 ) {
     let a = Vec3::new(0., 10., 0.);
     let entity = commands
-        .spawn_character(ClientId::from_raw(0), Color::RED, a).insert(Me).id();
+        .spawn_character(PlayerId::Host, Color::RED, a).insert(Me).id();
     commands.spawn_tied_camera(entity);
 }
 

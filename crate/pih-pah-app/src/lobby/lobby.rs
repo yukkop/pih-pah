@@ -21,6 +21,21 @@ pub enum LobbyState {
     Client = 3,
 }
 
+#[derive(Debug, Serialize, Deserialize, Component)]
+pub enum ServerMessages {
+  InitConnection {
+    id: ClientId,
+  },
+  PlayerConnected {
+    id: PlayerId,
+    color: Color,
+    username: String,
+  },
+  PlayerDisconnected {
+    id: PlayerId,
+  },
+}
+
 #[derive(Resource)]
 pub struct Username(pub String);
 
@@ -66,6 +81,7 @@ pub struct ClientResource {
 #[derive(Debug, Default, Resource)]
 pub struct HostResource {
     pub address: Option<String>,
+    pub username: Option<String>,
 }
 
 pub struct LobbyPlugins;
@@ -82,8 +98,23 @@ impl Plugin for LobbyPlugins {
 
 #[derive(Debug, Default, Resource)]
 pub struct Lobby {
-    pub players: HashMap<ClientId, PlayerData>,
+    pub players: HashMap<PlayerId, PlayerData>,
     pub players_seq: usize,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, Serialize, Deserialize)]
+pub enum PlayerId {
+    Host,
+    Client(ClientId),
+}
+
+impl PlayerId {
+    pub fn client_id(&self) -> Option<ClientId> {
+        match self {
+            PlayerId::Host => None,
+            PlayerId::Client(id) => Some(*id),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -107,19 +138,19 @@ pub struct PlayerInput {
 
 #[derive(Debug, Component)]
 pub struct Character {
-    pub id: ClientId,
+    pub id: PlayerId,
 }
 
-#[derive(Resource, Default, Debug/*, Serialize, Deserialize*/)]
+#[derive(Resource, Default, Debug, Serialize, Deserialize)]
 pub struct PlayerTransportData {
     pub position: Vec3,
     pub rotation: Quat,
     pub tied_camera_rotation: Quat,
 }
 
-#[derive(Resource, Default, Debug/*, Serialize, Deserialize*/)]
+#[derive(Resource, Default, Debug, Serialize, Deserialize)]
 pub struct TransportData {
-    pub data: HashMap<ClientId, PlayerTransportData>,
+    pub data: HashMap<PlayerId, PlayerTransportData>,
 }
 
 #[derive(Debug, Component, Default)]

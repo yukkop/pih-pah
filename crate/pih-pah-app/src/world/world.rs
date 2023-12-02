@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use bevy::prelude::*;
 use bevy_xpbd_3d::prelude::{Collider, RigidBody};
 use crate::ui;
@@ -10,6 +12,9 @@ use crate::ui::{UiAction, UiPlugins};
 #[derive(Component)]
 pub struct PromisedScene;
 
+#[derive(Component)]
+pub struct LinkId(Arc<String>);
+
 pub struct WorldPlugins;
 
 impl Plugin for WorldPlugins {
@@ -21,7 +26,11 @@ impl Plugin for WorldPlugins {
                 Update,
                 process_scene.run_if(
                     not(in_state(LobbyState::None))
-                    .and_then(not(in_state(LobbyState::Client)))));
+                    .and_then(not(in_state(LobbyState::Client)))))
+            .add_systems(
+                Update,
+                process_scene_simplified.run_if(
+                    in_state(LobbyState::Client)));
     }
 }
 
@@ -46,6 +55,48 @@ fn input(
         player_input.turn_right = keyboard_input.pressed(KeyCode::E);
         player_input.jump = keyboard_input.just_pressed(KeyCode::Space);
         player_input.sprint = keyboard_input.pressed(KeyCode::ControlLeft);
+    }
+}
+
+fn process_scene_simplified(
+    mut commands: Commands,
+    scene_query: Query<(Entity, &Children), With<PromisedScene>>,
+    parent_query: Query<&Children>,
+    name_query: Query<&Name>,
+) {
+    for (entity, children) in scene_query.iter() {
+        for child in children {
+            process_scene_child_simplified(&mut commands, *child, &parent_query, &name_query);
+        }
+        commands.entity(entity).remove::<PromisedScene>();
+    }
+}
+
+fn process_scene_child_simplified(
+    commands: &mut Commands,
+    entity: Entity,
+    parent_query: &Query<&Children>,
+    name_query: &Query<&Name>,
+) {
+    if let Ok(name) = name_query.get(entity) {
+        if name.find("[").is_some() {
+            let name = name.split('.').next().unwrap_or(name);
+            let params = name.split('[').nth(1).unwrap()
+                .split(']').next().unwrap().split(';');
+            for param in params {
+                let mut split = param.split(":");
+                let name = split.next().unwrap();
+                let val = split.next().unwrap();
+                if name == "id" {
+                    commands.entity(entity).insert(LinkId(val.to_string().into()));
+                }
+            }
+        }
+    }
+    if let Ok(children) = parent_query.get(entity) {
+        for child in children {
+            process_scene_child_simplified(commands, *child, parent_query, name_query);
+        }
     }
 }
 
@@ -97,6 +148,9 @@ fn process_scene_child(
                             commands_entity.insert(RigidBody::Static);
                         }
                     }
+                }
+                else if name == "id" {
+                    commands.entity(entity).insert(LinkId(val.to_string().into()));
                 }
             }
         }

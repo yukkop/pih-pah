@@ -5,31 +5,36 @@ use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
 use bevy::ecs::query::With;
 use bevy::ecs::schedule::{OnExit, Condition};
-use bevy::ecs::system::{Query, Res, ResMut};
+use bevy::ecs::system::{Query, Res, ResMut, Resource};
 use bevy::hierarchy::DespawnRecursiveExt;
-use bevy::math::Vec3;
+use bevy::math::{Vec3, Quat};
 use bevy::prelude::{Color, Commands, in_state, IntoSystemConfigs, OnEnter};
+use bevy::transform::components::Transform;
 use bevy_renet::RenetClientPlugin;
 use bevy_renet::transport::NetcodeClientPlugin;
 use renet::transport::{ClientAuthentication, NetcodeClientTransport};
 use renet::{ClientId, ConnectionConfig, RenetClient, DefaultChannel};
-use crate::character::{spawn_character, spawn_tied_camera, TiedCamera, spawn_character_shell};
-use crate::lobby::LobbyState;
+use crate::character::{spawn_tied_camera, TiedCamera, spawn_character_shell};
+use crate::lobby::{LobbyState, PlayerId};
 use crate::world::Me;
 
-use super::{PlayerInput, PROTOCOL_ID, ClientResource, Username};
+#[derive(Default, Debug, Resource)]
+pub struct OwnId(Option<ClientId>);
+
+use super::{PlayerInput, PROTOCOL_ID, ClientResource, Username, Lobby, TransportData, ServerMessages, PlayerData};
 
 pub struct ClientLobbyPlugins;
 
 impl Plugin for ClientLobbyPlugins {
     fn build(&self, app: &mut App) {
         app
+            .init_resource::<OwnId>()
             .add_plugins((RenetClientPlugin, NetcodeClientPlugin))
             .add_systems(OnEnter(LobbyState::Client),
                         (setup, new_renet_client))
             .add_systems(
                 Update,
-                client_send_input
+                (client_send_input, client_sync_players)
                     .run_if(in_state(LobbyState::Client)
                     .and_then(bevy_renet::client_connected())))
             .add_systems(OnExit(LobbyState::Client),
@@ -77,10 +82,12 @@ fn setup(
     mut commands: Commands,
 ) {
     // me
-    let a = Vec3::new(0., 10., 0.);
-    let entity = commands
-        .spawn_character_shell(ClientId::from_raw(0), Color::RED, a).insert(Me).id();
-    commands.spawn_tied_camera(entity);
+    // let a = Vec3::new(0., 10., 0.);
+    // let entity = commands
+    //     .spawn_character_shell(ClientId::from_raw(0), Color::RED, a).insert(Me).id();
+    // commands.spawn_tied_camera(entity);
+    commands.init_resource::<Lobby>();
+    commands.init_resource::<TransportData>();
 }
 
 fn teardown(
@@ -95,3 +102,87 @@ fn teardown(
         commands.entity(entity).despawn_recursive();
     }
 }
+
+pub fn client_sync_players(
+    mut commands: Commands,
+    mut client: ResMut<RenetClient>,
+    mut transport_data: ResMut<TransportData>,
+    mut lobby: ResMut<Lobby>,
+    mut own_id: ResMut<OwnId>,
+    mut tied_camera_query: Query<&mut Transform, With<TiedCamera>>,
+  ) {
+    // player existence manager
+    while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
+      let server_message = bincode::deserialize(&message).unwrap();
+      match server_message {
+        ServerMessages::InitConnection { id } => {
+          if own_id.0.is_some() {
+            panic!("Yeah, I knew it. The server only had to initialize me once. Redo it, you idiot.");
+          } else {
+            *own_id = OwnId(Some(id));
+          }
+        }
+        ServerMessages::PlayerConnected {
+          id: player_id,
+          color,
+          username,
+        } => {
+          let name = "noname";
+  
+          let player_entity = commands.spawn_character_shell(color, Vec3::new(0., 10., 0.)).id();
+          if let PlayerId::Client(id) = player_id {
+            if Some(id) == own_id.0 {
+                commands.entity(player_entity).insert(Me);
+                commands.spawn_tied_camera(player_entity);
+                log::info!("{name} ({id}), welcome.");
+            } else {
+                log::info!("Player {} ({}) connected.", name, id);
+            }
+          } else {
+            log::info!("Host {} ({:?}).", name, player_id);
+          }
+
+  
+          lobby.players.insert(
+              player_id,
+            PlayerData {
+              entity: player_entity,
+              color,
+              username,
+            },
+          );
+        }
+        ServerMessages::PlayerDisconnected { id } => {
+          let name = "noname";
+  
+          log::info!("Player {} ({:?}) disconnected.", name, id);
+          if let Some(player_data) = lobby.players.remove(&id) {
+            commands.entity(player_data.entity).despawn();
+          }
+        }
+      }
+    }
+  
+    // players movements
+    while let Some(message) = client.receive_message(DefaultChannel::Unreliable) {
+      transport_data.data = bincode::deserialize(&message).unwrap();
+      for (player_id, data) in transport_data.data.iter() {
+        if let Some(player_data) = lobby.players.get(player_id) {
+          let transform = Transform {
+            translation: data.position,
+            rotation: data.rotation,
+            ..Default::default()
+          };
+          commands.entity(player_data.entity).insert(transform);
+          if let PlayerId::Client(id) = player_id {
+            if Some(id) == own_id.0.as_ref() {
+                if let Ok(mut camera_transform) = tied_camera_query.get_single_mut() {
+                camera_transform.translation = transform.translation;
+                camera_transform.rotation = data.tied_camera_rotation;
+                }
+            }
+          }
+        }
+      }
+    }
+  }

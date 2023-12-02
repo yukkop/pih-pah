@@ -9,7 +9,12 @@ use pih_pah_app::world::WorldPlugins;
 compile_error!("Either 'wayland' or 'x11' or 'windows' feature must be enabled flag.");
 
 fn main() {
+  std::env::set_var(
+    "RUST_LOG",
+    std::env::var("RUST_LOG").unwrap_or(String::from("info")),
+  );
   env_logger::init();
+  info!("Starting pih-pah");
   let _args: Vec<String> = std::env::args().collect();
 
   let is_debug = std::env::var("DEBUG").is_ok();
@@ -35,6 +40,7 @@ fn main() {
     app.add_plugins((DefaultPlugins.set(window_plugin_override).set(AssetPlugin { file_path: "asset".into(), ..default() }), EguiPlugin))
       .add_plugins(WorldInspectorPlugin::default());
   }
+  info!("Starting pih-pah");
 
   app.add_plugins(PhysicsPlugins::new(Update));
   app.add_plugins(WorldPlugins);

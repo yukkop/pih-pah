@@ -3,7 +3,7 @@ use bevy_xpbd_3d::prelude::*;
 use renet::ClientId;
 use serde::{Serialize, Deserialize};
 use crate::extend_commands;
-use crate::lobby::{LobbyState, PlayerInput, PlayerViewDirection};
+use crate::lobby::{LobbyState, PlayerInput, PlayerViewDirection, PlayerId};
 use crate::lobby::Character;
 use crate::world::Me;
 
@@ -38,7 +38,9 @@ fn tied_camera_follow(
   for (TiedCamera(target) , mut transform) in tied_camera_query.iter_mut() {
       if let Ok(target_transform) = transform_query.get(*target) {
           transform.translation = target_transform.translation;
-          transform.rotation = view_direction_query.single().0;
+          if let Ok(view_dirrection) = view_direction_query.get_single() {
+            transform.rotation = view_dirrection.0;
+          }
       }
       else {
           warn!("Tied camera cannot follow object ({:?}) without transform", target)
@@ -90,8 +92,8 @@ fn move_characters(
 }
 
 extend_commands!(
-  spawn_character(client_id: ClientId, color: Color, spawn_point: Vec3),
-  |world: &mut World, entity_id: Entity, client_id: ClientId, color: Color, spawn_point: Vec3| {
+  spawn_character(player_id: PlayerId, color: Color, spawn_point: Vec3),
+  |world: &mut World, entity_id: Entity, player_id: PlayerId, color: Color, spawn_point: Vec3| {
 
     let mesh = world
       .resource_mut::<Assets<Mesh>>()
@@ -115,14 +117,14 @@ extend_commands!(
        Collider::cuboid(PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE),
      ))
      .insert(PlayerInput::default())
-     .insert(Character { id: client_id })
+     .insert(Character { id: player_id })
      .insert(PlayerViewDirection(Quat::default()));
   }
 );
 
 extend_commands!(
-  spawn_character_shell(client_id: ClientId, color: Color, spawn_point: Vec3),
-  |world: &mut World, entity_id: Entity, client_id: ClientId, color: Color, spawn_point: Vec3| {
+  spawn_character_shell(color: Color, spawn_point: Vec3),
+  |world: &mut World, entity_id: Entity, color: Color, spawn_point: Vec3| {
 
     let mesh = world
       .resource_mut::<Assets<Mesh>>()
@@ -143,7 +145,6 @@ extend_commands!(
        },
      ))
      .insert(PlayerInput::default())
-     .insert(Character { id: client_id })
      .insert(PlayerViewDirection(Quat::default()));
   }
 );
