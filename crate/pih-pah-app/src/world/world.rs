@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_xpbd_3d::prelude::{Collider, RigidBody};
 use crate::ui;
 use crate::character::CharacterPlugins;
-use crate::lobby::{LobbyPlugins, PlayerInput};
+use crate::lobby::{LobbyPlugins, PlayerInput, LobbyState};
 use crate::province::ProvincePlugins;
 use crate::sound::SoundPlugins;
 use crate::ui::{UiAction, UiPlugins};
@@ -16,7 +16,12 @@ impl Plugin for WorldPlugins {
     fn build(&self, app: &mut App) {
         app
             .add_plugins((SoundPlugins, ProvincePlugins, UiPlugins, LobbyPlugins, CharacterPlugins))
-            .add_systems(Update, (input, process_scene));
+            .add_systems(Update, input)
+            .add_systems(
+                Update,
+                process_scene.run_if(
+                    not(in_state(LobbyState::None))
+                    .and_then(not(in_state(LobbyState::Client)))));
     }
 }
 

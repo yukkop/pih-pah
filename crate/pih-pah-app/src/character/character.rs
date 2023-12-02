@@ -21,7 +21,9 @@ impl Plugin for CharacterPlugins {
         app
           .add_systems(
               FixedUpdate,
-              move_characters.run_if(not(in_state(LobbyState::None))))
+              move_characters.run_if(
+                not(in_state(LobbyState::None))
+                .and_then(not(in_state(LobbyState::Client)))))
           .add_systems(
               PostUpdate,
               tied_camera_follow.run_if(not(in_state(LobbyState::None))));
@@ -117,6 +119,36 @@ extend_commands!(
      .insert(PlayerViewDirection(Quat::default()));
   }
 );
+
+extend_commands!(
+  spawn_character_shell(client_id: ClientId, color: Color, spawn_point: Vec3),
+  |world: &mut World, entity_id: Entity, client_id: ClientId, color: Color, spawn_point: Vec3| {
+
+    let mesh = world
+      .resource_mut::<Assets<Mesh>>()
+      // TODO: Have a resource with shared mesh list instead of adding meshes each time
+      .add(Mesh::from(shape::Cube { size: PLAYER_SIZE }));
+    let material = world
+      .resource_mut::<Assets<StandardMaterial>>()
+      .add(color.into());
+
+    world
+     .entity_mut(entity_id)
+     .insert((
+       PbrBundle {
+          mesh,
+          material,
+          transform: Transform::from_xyz(spawn_point.x, spawn_point.y, spawn_point.z),
+          ..Default::default()
+       },
+     ))
+     .insert(PlayerInput::default())
+     .insert(Character { id: client_id })
+     .insert(PlayerViewDirection(Quat::default()));
+  }
+);
+
+
 
 extend_commands!(
   spawn_tied_camera(target: Entity),

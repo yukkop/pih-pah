@@ -9,23 +9,27 @@ use bevy::ecs::system::{Query, Res};
 use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::math::Vec3;
 use bevy::prelude::{Color, Commands, in_state, IntoSystemConfigs, OnEnter};
+use bevy_renet::RenetServerPlugin;
+use bevy_renet::transport::NetcodeServerPlugin;
 use renet::transport::{NetcodeServerTransport, ServerConfig, ServerAuthentication};
 use renet::{ClientId, RenetServer, ConnectionConfig};
 use crate::character::{spawn_character, spawn_tied_camera, TiedCamera};
 use crate::lobby::LobbyState;
 use crate::world::Me;
 
-use super::{PlayerInput, Lobby, TransportData, PROTOCOL_ID, MultiplayerResource};
+use super::{PlayerInput, Lobby, TransportData, PROTOCOL_ID, HostResource};
 
 pub struct HostLobbyPlugins;
 
 impl Plugin for HostLobbyPlugins {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(LobbyState::Host),
-                        setup);
-        app.add_systems(Update,
-                        update.run_if(in_state(LobbyState::Host)));
-        app.add_systems(OnExit(LobbyState::Host),
+        app
+            .add_plugins((RenetServerPlugin, NetcodeServerPlugin))
+            .add_systems(OnEnter(LobbyState::Host),
+                        setup)
+            .add_systems(Update,
+                        update.run_if(in_state(LobbyState::Host)))
+            .add_systems(OnExit(LobbyState::Host),
                         teardown);
     }
 }
@@ -53,7 +57,7 @@ pub fn new_renet_server(addr: &str) -> (RenetServer, NetcodeServerTransport) {
 
 fn setup(
     mut commands: Commands,
-    multiplayer_resource: Res<MultiplayerResource>,
+    multiplayer_resource: Res<HostResource>,
 ) {
     // me
     let a = Vec3::new(0., 10., 0.);

@@ -1,13 +1,13 @@
 use bevy::math::{Quat, Vec3};
 use bevy::prelude::{Color, Component, Entity, Resource, States};
-use bevy_renet::RenetServerPlugin;
-use bevy_renet::transport::NetcodeServerPlugin;
 use renet::ClientId;
+use renet::transport::NETCODE_USER_DATA_BYTES;
 use serde::{Deserialize, Serialize};
 use bevy::app::{App, Plugin};
 use std::collections::HashMap;
 use crate::lobby::single::SingleLobbyPlugins;
 
+use super::client::ClientLobbyPlugins;
 use super::host::HostLobbyPlugins;
 
 pub const PROTOCOL_ID: u64 = 7;
@@ -21,8 +21,50 @@ pub enum LobbyState {
     Client = 3,
 }
 
+#[derive(Resource)]
+pub struct Username(pub String);
+
+impl Default for Username {
+  fn default() -> Self {
+    Self("noname".to_string())
+  }
+}
+
+
+impl Username {
+    pub fn to_netcode_data(&self) -> Result<[u8; NETCODE_USER_DATA_BYTES], Box<dyn std::error::Error>> {
+      let mut data = [0u8; NETCODE_USER_DATA_BYTES];
+      if self.0.len() > NETCODE_USER_DATA_BYTES - 8 {
+        let err = Err(From::from(format!("Your username to long")));
+        log::error!("{:?}", err);
+        return err;
+      }
+      data[0..8].copy_from_slice(&(self.0.len() as u64).to_le_bytes());
+      data[8..self.0.len() + 8].copy_from_slice(self.0.as_bytes());
+  
+      Ok(data)
+    }
+
+    pub fn from_user_data(user_data: &[u8; NETCODE_USER_DATA_BYTES]) -> Result<String, Box<dyn std::error::Error>> {
+      let mut buffer = [0u8; 8];
+      buffer.copy_from_slice(&user_data[0..8]);
+      let mut len = u64::from_le_bytes(buffer) as usize;
+      len = len.min(NETCODE_USER_DATA_BYTES - 8);
+      let data = user_data[8..len + 8].to_vec();
+      let username = String::from_utf8(data)?;
+  
+      Ok(username)
+    }
+  }
+
 #[derive(Debug, Default, Resource)]
-pub struct MultiplayerResource {
+pub struct ClientResource {
+    pub address: Option<String>,
+    pub username: Option<String>,
+}
+
+#[derive(Debug, Default, Resource)]
+pub struct HostResource {
     pub address: Option<String>,
 }
 
@@ -32,9 +74,9 @@ impl Plugin for LobbyPlugins {
     fn build(&self, app: &mut App) {
         app
             .add_state::<LobbyState>()
-            .init_resource::<MultiplayerResource>()
-            .add_plugins((RenetServerPlugin, NetcodeServerPlugin))
-            .add_plugins((SingleLobbyPlugins, HostLobbyPlugins));
+            .init_resource::<HostResource>()
+            .init_resource::<ClientResource>()
+            .add_plugins((SingleLobbyPlugins, HostLobbyPlugins, ClientLobbyPlugins));
     }
 }
 

@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use bevy::window::Window;
 use bevy_egui::egui::{Align2, Layout, Align, Direction};
 use bevy_egui::{egui, EguiContexts};
-use crate::lobby::{LobbyState, MultiplayerResource};
+use crate::lobby::{LobbyState, HostResource, ClientResource};
 use crate::province::ProvinceState;
 use crate::ui::{rich_text, TRANSPARENT};
 use crate::util::i18n::Uniq::Module;
@@ -27,6 +27,7 @@ struct State {
     multiplayer_state: MultiplayerState,
     host_port: String,
     join_address: String,
+    username: String,
 }
 
 impl Default for State {
@@ -36,6 +37,7 @@ impl Default for State {
             multiplayer_state: MultiplayerState::Create,
             host_port: "5000".to_string(),
             join_address: "127.0.0.1:5000".to_string(),
+            username: "noname".to_string(),
         }
     }
 }
@@ -60,7 +62,8 @@ fn handle_state(
     mut exit: EventWriter<AppExit>,
     mut state: ResMut<State>,
     mut windows: Query<&Window>, 
-    mut multiplayer_resource: ResMut<MultiplayerResource>,
+    mut host_resource: ResMut<HostResource>,
+    mut client_resource: ResMut<ClientResource>,
 ) {
     let window = windows.single_mut();
     let window_size = egui::vec2(window.width() as f32, window.height() as f32);
@@ -149,10 +152,10 @@ fn handle_state(
                             ui.text_edit_singleline(&mut state.host_port);
                         });
                         if ui.button(rich_text(
-                            "Connect".to_string(),
+                            "Create".to_string(),
                             Module(&MODULE),
                             &font)).clicked() {
-                                multiplayer_resource.address = Some(format!("127.0.0.1:{}", state.host_port.clone()));
+                                host_resource.address = Some(format!("127.0.0.1:{}", state.host_port.clone()));
                                 state.is_multiplayer = false;
                                 next_state_lobby.set(LobbyState::Host);
                                 next_state_province.set(ProvinceState::ShootingRange);
@@ -176,11 +179,16 @@ fn handle_state(
                             ui.label("Address:");
                             ui.text_edit_singleline(&mut state.join_address);
                         });
+                        ui.horizontal(|ui| {
+                            ui.label("Username:");
+                            ui.text_edit_singleline(&mut state.username);
+                        });
                         if ui.button(rich_text(
-                            "Create".to_string(),
+                            "Connect".to_string(),
                             Module(&MODULE),
                             &font)).clicked() {
-                                multiplayer_resource.address = Some(state.join_address.clone());
+                                client_resource.address = Some(state.join_address.clone());
+                                client_resource.username = Some(state.username.clone());
                                 state.is_multiplayer = false;
                                 state.multiplayer_state = MultiplayerState::Create;
                                 next_state_lobby.set(LobbyState::Client);
