@@ -28,7 +28,6 @@ pub struct ClientLobbyPlugins;
 impl Plugin for ClientLobbyPlugins {
     fn build(&self, app: &mut App) {
         app
-            .init_resource::<OwnId>()
             .add_plugins((RenetClientPlugin, NetcodeClientPlugin))
             .add_systems(OnEnter(LobbyState::Client),
                         (setup, new_renet_client))
@@ -87,6 +86,7 @@ fn setup(
     //     .spawn_character_shell(ClientId::from_raw(0), Color::RED, a).insert(Me).id();
     // commands.spawn_tied_camera(entity);
     commands.init_resource::<Lobby>();
+    commands.init_resource::<OwnId>();
     commands.init_resource::<TransportData>();
 }
 
@@ -101,6 +101,9 @@ fn teardown(
     for entity in char_query.iter() {
         commands.entity(entity).despawn_recursive();
     }
+    commands.remove_resource::<Lobby>();
+    commands.remove_resource::<OwnId>();
+    commands.remove_resource::<TransportData>();
 }
 
 pub fn client_sync_players(

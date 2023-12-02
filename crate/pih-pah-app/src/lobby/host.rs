@@ -106,6 +106,8 @@ fn teardown(
     for entity in char_query.iter() {
         commands.entity(entity).despawn_recursive();
     }
+    commands.remove_resource::<Lobby>();
+    commands.remove_resource::<TransportData>();
 }
 
 pub fn generate_player_color(player_number: u32) -> Color {
