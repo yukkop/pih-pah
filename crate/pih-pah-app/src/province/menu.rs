@@ -1,11 +1,9 @@
 use bevy::prelude::*;
 use std::f32::consts::PI;
-use crate::util::ResourceAction;
-
-use super::{ProvincePlugins, ProvinceState};
+use super::ProvinceState;
 
 #[derive(Component)]
-pub struct Affiliation;
+struct Affiliation;
 
 const PRIMARY_CAMERA_ORDER: isize = 3;
 

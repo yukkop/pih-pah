@@ -1,25 +1,40 @@
 use bevy::math::{Quat, Vec3};
 use bevy::prelude::{Color, Component, Entity, Resource, States};
+use bevy_renet::RenetServerPlugin;
+use bevy_renet::transport::NetcodeServerPlugin;
 use renet::ClientId;
 use serde::{Deserialize, Serialize};
 use bevy::app::{App, Plugin};
 use std::collections::HashMap;
 use crate::lobby::single::SingleLobbyPlugins;
 
+use super::host::HostLobbyPlugins;
+
+pub const PROTOCOL_ID: u64 = 7;
+
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
 pub enum LobbyState {
     #[default]
-    None,
-    Single,
-    Host,
-    Client
+    None = 0,
+    Single = 1,
+    Host = 2,
+    Client = 3,
+}
+
+#[derive(Debug, Default, Resource)]
+pub struct MultiplayerResource {
+    pub address: Option<String>,
 }
 
 pub struct LobbyPlugins;
 
 impl Plugin for LobbyPlugins {
     fn build(&self, app: &mut App) {
-        app.add_state::<LobbyState>().add_plugins(SingleLobbyPlugins);
+        app
+            .add_state::<LobbyState>()
+            .init_resource::<MultiplayerResource>()
+            .add_plugins((RenetServerPlugin, NetcodeServerPlugin))
+            .add_plugins((SingleLobbyPlugins, HostLobbyPlugins));
     }
 }
 

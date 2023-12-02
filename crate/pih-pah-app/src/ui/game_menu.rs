@@ -1,12 +1,13 @@
-use bevy::app::PluginsState;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 use crate::lobby::LobbyState;
-use crate::{province, ui};
+use crate::ui;
 use crate::province::ProvinceState;
 use crate::ui::{rich_text, TRANSPARENT, UiAction};
 use crate::util::ResourceAction;
 use crate::util::i18n::Uniq::Module;
+
+use super::UiState;
 
 lazy_static::lazy_static! {
     static ref MODULE: &'static str = module_path!().splitn(3, ':').nth(2).unwrap_or(module_path!());
@@ -18,14 +19,12 @@ pub struct GameMenuEvent(pub UiAction);
 #[derive(Resource)]
 struct State {
     is_active: bool,
-    is_loaded: bool,
 }
 
 impl Default for State {
     fn default() -> Self {
         Self {
             is_active: false,
-            is_loaded: false,
         }
     }
 }
@@ -37,8 +36,7 @@ impl Plugin for GameMenuPlugins {
         app
             .add_event::<GameMenuEvent>()
             .init_resource::<State>()
-            .add_systems(Update, handle_action)
-            .add_systems(Update, handle_state);
+            .add_systems(Update, (handle_action, handle_state).run_if(in_state(UiState::GameMenu)));
     }
 }
 
@@ -48,26 +46,14 @@ fn handle_action(
 ) {
     for GameMenuEvent(action) in reader.read() {
         match action {
-            UiAction::Load => {
-                state.is_loaded = true;
-            },
-            UiAction::Unload => {
-                state.is_loaded = false;
-            },
             UiAction::Enable => {
-                if state.is_loaded {
-                    state.is_active = true;
-                }
+                state.is_active = true;
             }
             UiAction::Disable => {
-                if state.is_loaded {
-                    state.is_active = false;
-                }
+                state.is_active = false;
             }
             UiAction::Toggle => {
-                if state.is_loaded {
-                    state.is_active = !state.is_active;
-                }
+                state.is_active = !state.is_active;
             }
         }
     }
@@ -75,10 +61,10 @@ fn handle_action(
 
 fn handle_state(
     mut next_state_lobby: ResMut<NextState<LobbyState>>,
+    mut next_state_ui: ResMut<NextState<UiState>>,
     mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut context: EguiContexts,
     state: Res<State>,
-    mut ui_menu_writer: EventWriter<ui::MenuEvent>,
     mut ui_game_menu_writer: EventWriter<GameMenuEvent>,
 ) {
     let ctx = context.ctx_mut();
@@ -111,8 +97,7 @@ fn handle_state(
                     &font)).clicked() {
                     next_state_lobby.set(LobbyState::None);
                     ui_game_menu_writer.send(GameMenuEvent(UiAction::Disable));
-                    ui_game_menu_writer.send(GameMenuEvent(UiAction::Unload));
-                    ui_menu_writer.send(ui::MenuEvent(ResourceAction::Load));
+                    next_state_ui.set(UiState::Menu);
                     next_state_province.set(ProvinceState::Menu);
                 }
             });

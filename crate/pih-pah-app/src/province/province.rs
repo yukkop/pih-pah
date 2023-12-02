@@ -5,8 +5,8 @@ use crate::province::ShootingRangePlugins;
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
 pub enum ProvinceState {
     #[default]
-    Menu,
-    ShootingRange
+    Menu = 0,
+    ShootingRange = 1,
 }
 
 pub struct ProvincePlugins;

@@ -1,11 +1,10 @@
 use bevy::prelude::*;
-use crate::util::ResourceAction;
 use crate::world::PromisedScene;
 
 use super::ProvinceState;
 
 #[derive(Component)]
-pub struct Affiliation;
+struct Affiliation;
 
 
 pub struct ShootingRangePlugins;

@@ -1,12 +1,11 @@
 use bevy::prelude::*;
 use bevy_xpbd_3d::prelude::{Collider, RigidBody};
-use crate::{province, ui};
+use crate::ui;
 use crate::character::CharacterPlugins;
 use crate::lobby::{LobbyPlugins, PlayerInput};
 use crate::province::ProvincePlugins;
 use crate::sound::SoundPlugins;
 use crate::ui::{UiAction, UiPlugins};
-use crate::util::ResourceAction;
 
 #[derive(Component)]
 pub struct PromisedScene;
@@ -17,15 +16,8 @@ impl Plugin for WorldPlugins {
     fn build(&self, app: &mut App) {
         app
             .add_plugins((SoundPlugins, ProvincePlugins, UiPlugins, LobbyPlugins, CharacterPlugins))
-            .add_systems(Startup, setup)
             .add_systems(Update, (input, process_scene));
     }
-}
-
-fn setup(
-    mut ui_menu_writer: EventWriter<ui::MenuEvent>,
-) {
-    ui_menu_writer.send(ui::MenuEvent(ResourceAction::Load));
 }
 
 #[derive(Component)]
