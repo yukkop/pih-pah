@@ -9,7 +9,7 @@ use crate::world::Me;
 
 pub const PLAYER_MOVE_SPEED: f32 = 0.07;
 pub const PLAYER_CAMERA_ROTATION_SPEED: f32 = 0.015;
-pub const PLAYER_SIZE: f32 = 1.0;
+pub const PLAYER_SIZE: f32 = 3.0;
 
 #[derive(Component, Debug, Serialize, Deserialize)]
 pub struct TiedCamera(Entity);

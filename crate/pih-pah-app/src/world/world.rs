@@ -1,5 +1,4 @@
-use std::sync::Arc;
-
+use serde::{Deserialize, Serialize};
 use bevy::prelude::*;
 use bevy_xpbd_3d::prelude::{Collider, RigidBody};
 use crate::ui;
@@ -12,8 +11,8 @@ use crate::ui::{UiAction, UiPlugins};
 #[derive(Component)]
 pub struct PromisedScene;
 
-#[derive(Component)]
-pub struct LinkId(Arc<String>);
+#[derive(Component, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct LinkId(String);
 
 pub struct WorldPlugins;
 

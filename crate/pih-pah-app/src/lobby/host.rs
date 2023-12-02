@@ -10,6 +10,7 @@ use bevy::ecs::system::{Query, Res, ResMut};
 use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::math::Vec3;
 use bevy::prelude::{Color, Commands, in_state, IntoSystemConfigs, OnEnter};
+use bevy::transform::components::Transform;
 use bevy_renet::RenetServerPlugin;
 use bevy_renet::transport::NetcodeServerPlugin;
 use bevy_xpbd_3d::components::{Position, Rotation};
@@ -17,9 +18,9 @@ use renet::transport::{NetcodeServerTransport, ServerConfig, ServerAuthenticatio
 use renet::{ClientId, RenetServer, ConnectionConfig, ServerEvent, DefaultChannel};
 use crate::character::{spawn_character, spawn_tied_camera, TiedCamera};
 use crate::lobby::{LobbyState, ServerMessages, Username, PlayerData, PlayerId};
-use crate::world::Me;
+use crate::world::{Me, LinkId};
 
-use super::{PlayerInput, Lobby, TransportData, PROTOCOL_ID, HostResource, PlayerViewDirection, Character, PlayerTransportData, lobby};
+use super::{PlayerInput, Lobby, TransportDataResource, PROTOCOL_ID, HostResource, PlayerViewDirection, Character, PlayerTransportData, lobby, ObjectTransportData};
 
 pub struct HostLobbyPlugins;
 
@@ -64,7 +65,7 @@ fn setup(
     // me
 
     // server
-    commands.init_resource::<TransportData>();
+    commands.init_resource::<TransportDataResource>();
 
     let mut lobby = Lobby::default();
     lobby.players_seq += 1;
@@ -107,7 +108,7 @@ fn teardown(
         commands.entity(entity).despawn_recursive();
     }
     commands.remove_resource::<Lobby>();
-    commands.remove_resource::<TransportData>();
+    commands.remove_resource::<TransportDataResource>();
 }
 
 pub fn generate_player_color(player_number: u32) -> Color {
@@ -202,11 +203,14 @@ pub fn server_update_system(
 
     pub fn server_sync_players(
         mut server: ResMut<RenetServer>,
-        mut data: ResMut<TransportData>,
-        query: Query<(&Position, &Rotation, &PlayerViewDirection, &Character)>,
+          // TODO a nahooya tut resours, daun
+        mut data: ResMut<TransportDataResource>,
+        character_query: Query<(&Position, &Rotation, &PlayerViewDirection, &Character)>,
+        moveble_object_query: Query<(&Transform, &LinkId)>,
       ) {
-        for (position, rotation, view_direction, character) in query.iter() {
-          data.data.insert(
+        let data = &mut data.data;
+        for (position, rotation, view_direction, character) in character_query.iter() {
+          data.players.insert(
             character.id,
             PlayerTransportData {
               position: position.0.into(),
@@ -215,9 +219,20 @@ pub fn server_update_system(
             },
           );
         }
+
+        for (transform, link_id) in moveble_object_query.iter() {
+          data.objects.insert(
+            link_id.clone(), 
+            ObjectTransportData {
+              position: transform.translation.into(),
+              rotation: transform.rotation.into(),
+            }
+          );
+        }
       
-        let sync_message = bincode::serialize(&data.data).unwrap();
+        let sync_message = bincode::serialize(&data).unwrap();
         server.broadcast_message(DefaultChannel::Unreliable, sync_message);
       
-        data.data.clear();
+        data.players.clear();
+        data.objects.clear();
       }

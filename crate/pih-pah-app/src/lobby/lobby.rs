@@ -1,4 +1,3 @@
-use bevy::ecs::schedule::OnEnter;
 use bevy::math::{Quat, Vec3};
 use bevy::prelude::{Color, Component, Entity, Resource, States};
 use renet::ClientId;
@@ -7,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use bevy::app::{App, Plugin};
 use std::collections::HashMap;
 use crate::lobby::single::SingleLobbyPlugins;
+use crate::world::LinkId;
 
 use super::client::ClientLobbyPlugins;
 use super::host::HostLobbyPlugins;
@@ -150,8 +150,20 @@ pub struct PlayerTransportData {
 }
 
 #[derive(Resource, Default, Debug, Serialize, Deserialize)]
+pub struct ObjectTransportData {
+    pub position: Vec3,
+    pub rotation: Quat,
+}
+
+#[derive(Resource, Default, Debug, Serialize, Deserialize)]
 pub struct TransportData {
-    pub data: HashMap<PlayerId, PlayerTransportData>,
+    pub players: HashMap<PlayerId, PlayerTransportData>,
+    pub objects: HashMap<LinkId, ObjectTransportData>,
+}
+
+#[derive(Resource, Default, Debug, Serialize, Deserialize)]
+pub struct TransportDataResource {
+    pub data: TransportData,
 }
 
 #[derive(Debug, Component, Default)]

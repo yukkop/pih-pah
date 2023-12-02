@@ -3,6 +3,7 @@ use bevy::prelude::{Component, Plugin, Vec3};
 
 #[derive(Component)]
 pub struct Respawn(Vec3);
+
 #[derive(Component)]
 pub struct Despawn();
 

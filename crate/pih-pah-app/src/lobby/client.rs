@@ -12,16 +12,17 @@ use bevy::prelude::{Color, Commands, in_state, IntoSystemConfigs, OnEnter};
 use bevy::transform::components::Transform;
 use bevy_renet::RenetClientPlugin;
 use bevy_renet::transport::NetcodeClientPlugin;
+use bevy_xpbd_3d::components::{Position, Rotation};
 use renet::transport::{ClientAuthentication, NetcodeClientTransport};
 use renet::{ClientId, ConnectionConfig, RenetClient, DefaultChannel};
 use crate::character::{spawn_tied_camera, TiedCamera, spawn_character_shell};
 use crate::lobby::{LobbyState, PlayerId};
-use crate::world::Me;
+use crate::world::{Me, LinkId};
 
 #[derive(Default, Debug, Resource)]
 pub struct OwnId(Option<ClientId>);
 
-use super::{PlayerInput, PROTOCOL_ID, ClientResource, Username, Lobby, TransportData, ServerMessages, PlayerData};
+use super::{PlayerInput, PROTOCOL_ID, ClientResource, Username, Lobby, TransportDataResource, ServerMessages, PlayerData};
 
 pub struct ClientLobbyPlugins;
 
@@ -87,7 +88,7 @@ fn setup(
     // commands.spawn_tied_camera(entity);
     commands.init_resource::<Lobby>();
     commands.init_resource::<OwnId>();
-    commands.init_resource::<TransportData>();
+    commands.init_resource::<TransportDataResource>();
 }
 
 fn teardown(
@@ -103,16 +104,17 @@ fn teardown(
     }
     commands.remove_resource::<Lobby>();
     commands.remove_resource::<OwnId>();
-    commands.remove_resource::<TransportData>();
+    commands.remove_resource::<TransportDataResource>();
 }
 
 pub fn client_sync_players(
     mut commands: Commands,
     mut client: ResMut<RenetClient>,
-    mut transport_data: ResMut<TransportData>,
+    mut transport_data: ResMut<TransportDataResource>,
     mut lobby: ResMut<Lobby>,
     mut own_id: ResMut<OwnId>,
     mut tied_camera_query: Query<&mut Transform, With<TiedCamera>>,
+    lincked_obj_query: Query<(Entity, &LinkId)>,
   ) {
     // player existence manager
     while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
@@ -166,16 +168,17 @@ pub fn client_sync_players(
       }
     }
   
-    // players movements
+    // movements
     while let Some(message) = client.receive_message(DefaultChannel::Unreliable) {
       transport_data.data = bincode::deserialize(&message).unwrap();
-      for (player_id, data) in transport_data.data.iter() {
+      for (player_id, data) in transport_data.data.players.iter() {
         if let Some(player_data) = lobby.players.get(player_id) {
           let transform = Transform {
             translation: data.position,
             rotation: data.rotation,
             ..Default::default()
           };
+          // TODO: why transform to default?
           commands.entity(player_data.entity).insert(transform);
           if let PlayerId::Client(id) = player_id {
             if Some(id) == own_id.0.as_ref() {
@@ -184,6 +187,19 @@ pub fn client_sync_players(
                 camera_transform.rotation = data.tied_camera_rotation;
                 }
             }
+          }
+        }
+      }
+
+      for (link_id, data) in transport_data.data.objects.iter() {
+        for (entity, id) in lincked_obj_query.iter() {
+          if id == link_id {
+            let transform = Transform {
+              translation: data.position,
+              rotation: data.rotation,
+              ..Default::default()
+            };
+            commands.entity(entity).insert(transform);
           }
         }
       }
