@@ -215,9 +215,9 @@ pub fn server_sync_players(
         data.players.insert(
             character.id,
             PlayerTransportData {
-                position: position.0.into(),
-                rotation: rotation.0.into(),
-                tied_camera_rotation: view_direction.0.into(),
+                position: position.0,
+                rotation: rotation.0,
+                tied_camera_rotation: view_direction.0,
             },
         );
     }
@@ -226,8 +226,8 @@ pub fn server_sync_players(
         data.objects.insert(
             link_id.clone(),
             ObjectTransportData {
-                position: transform.translation.into(),
-                rotation: transform.rotation.into(),
+                position: transform.translation,
+                rotation: transform.rotation,
             },
         );
     }

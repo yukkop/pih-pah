@@ -1,3 +1,5 @@
+#![allow(clippy::module_inception)]
+
 mod menu;
 mod province;
 mod shooting_range;

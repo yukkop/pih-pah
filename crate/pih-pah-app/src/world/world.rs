@@ -92,7 +92,7 @@ fn process_scene_child_simplified(
     name_query: &Query<&Name>,
 ) {
     if let Ok(name) = name_query.get(entity) {
-        if name.find("[").is_some() {
+        if name.find('[').is_some() {
             let name = name.split('.').next().unwrap_or(name);
             let params = name
                 .split('[')
@@ -103,13 +103,13 @@ fn process_scene_child_simplified(
                 .unwrap()
                 .split(';');
             for param in params {
-                let mut split = param.split(":");
+                let mut split = param.split(':');
                 let name = split.next().unwrap();
                 let val = split.next().unwrap();
                 if name == "id" {
                     commands
                         .entity(entity)
-                        .insert(LinkId(val.to_string().into()));
+                        .insert(LinkId(val.to_string()));
                 }
             }
         }
@@ -156,7 +156,7 @@ fn process_scene_child(
     meshes: &mut ResMut<Assets<Mesh>>,
 ) {
     if let Ok(name) = name_query.get(entity) {
-        if name.find("[").is_some() {
+        if name.find('[').is_some() {
             let name = name.split('.').next().unwrap_or(name);
             let params = name
                 .split('[')
@@ -167,7 +167,7 @@ fn process_scene_child(
                 .unwrap()
                 .split(';');
             for param in params {
-                let mut split = param.split(":");
+                let mut split = param.split(':');
                 let name = split.next().unwrap();
                 if let Some(val) = split.next() {
                     if name == "c" {
@@ -188,7 +188,7 @@ fn process_scene_child(
                     } else if name == "id" {
                         commands
                             .entity(entity)
-                            .insert(LinkId(val.to_string().into()));
+                            .insert(LinkId(val.to_string()));
                     } else if name == "m" {
                         commands.entity(entity).insert(Mass(val.parse().unwrap()));
                     }

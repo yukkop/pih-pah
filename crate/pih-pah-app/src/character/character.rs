@@ -139,7 +139,7 @@ extend_commands!(
     };
     let material = world
       .resource_mut::<Assets<StandardMaterial>>()
-      .add(material.into());
+      .add(material);
 
     world
      .entity_mut(entity_id)

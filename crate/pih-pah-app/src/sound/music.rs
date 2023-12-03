@@ -45,7 +45,7 @@ fn play_music(
     audio_sources: Res<Assets<AudioSource>>,
 ) {
     if music_timer.tick(time.delta()).just_finished() {
-        if menu_music.duration == None {
+        if menu_music.duration.is_none() {
             if let Some(audio_source) = audio_sources.get(&menu_music.audio_handle) {
                 let duration = audio_source.sound.duration();
                 menu_music.duration = Some(duration);

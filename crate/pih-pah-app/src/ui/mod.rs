@@ -1,3 +1,5 @@
+#![allow(clippy::module_inception)]
+
 mod egui_frame_preset;
 mod game_menu;
 mod menu;

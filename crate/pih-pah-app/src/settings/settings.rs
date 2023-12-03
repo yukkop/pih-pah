@@ -39,21 +39,21 @@ fn setup(mut commands: Commands) {
     let settings = {
         if yaml_path.exists() {
             let file = File::open(&yaml_path)
-                .expect(format!("Failed to open exist settings file ({:#?})", &yaml_path).as_str());
+                .unwrap_or_else(|_| panic!("Failed to open exist settings file ({:#?})", &yaml_path));
             serde_yaml::from_reader(file)
-                .expect(format!("Failed to read settings file ({:#?})", &yaml_path).as_str())
+                .unwrap_or_else(|_| panic!("Failed to read settings file ({:#?})", &yaml_path))
         } else if yml_path.exists() {
             let file = File::open(&yml_path)
-                .expect(format!("Failed to open exist settings file ({:#?})", &yml_path).as_str());
+                .unwrap_or_else(|_| panic!("Failed to open exist settings file ({:#?})", &yml_path));
             serde_yaml::from_reader(&file)
-                .expect(format!("Failed to read settings file ({:#?})", &yml_path).as_str())
+                .unwrap_or_else(|_| panic!("Failed to read settings file ({:#?})", &yml_path))
         } else {
             let mut file: File = File::create(&yaml_path)
-                .expect(format!("Failed to create settings file ({:#?})", &yaml_path).as_str());
+                .unwrap_or_else(|_| panic!("Failed to create settings file ({:#?})", &yaml_path));
 
             let settings = Settings::default();
             serde_yaml::to_writer(&mut file, &settings)
-                .expect(format!("Failed to write to settings file ({:#?})", &yaml_path).as_str());
+                .unwrap_or_else(|_| panic!("Failed to write to settings file ({:#?})", &yaml_path));
 
             settings
         }

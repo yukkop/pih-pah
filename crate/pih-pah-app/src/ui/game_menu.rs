@@ -14,15 +14,9 @@ lazy_static::lazy_static! {
 #[derive(Event)]
 pub struct GameMenuEvent(pub UiAction);
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 struct State {
     is_active: bool,
-}
-
-impl Default for State {
-    fn default() -> Self {
-        Self { is_active: false }
-    }
 }
 
 pub struct GameMenuPlugins;

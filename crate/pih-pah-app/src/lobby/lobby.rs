@@ -52,7 +52,7 @@ impl Username {
     ) -> Result<[u8; NETCODE_USER_DATA_BYTES], Box<dyn std::error::Error>> {
         let mut data = [0u8; NETCODE_USER_DATA_BYTES];
         if self.0.len() > NETCODE_USER_DATA_BYTES - 8 {
-            let err = Err(From::from(format!("Your username to long")));
+            let err = Err(From::from("Your username to long"));
             log::error!("{:?}", err);
             return err;
         }

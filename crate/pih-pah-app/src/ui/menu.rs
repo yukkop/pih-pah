@@ -108,6 +108,7 @@ fn menu(
         });
 }
 
+#[allow(clippy::too_many_arguments)]
 fn multiplayer_window(
     mut next_state_lobby: ResMut<NextState<LobbyState>>,
     mut next_state_ui: ResMut<NextState<UiState>>,
@@ -119,7 +120,7 @@ fn multiplayer_window(
     mut client_resource: ResMut<ClientResource>,
 ) {
     let window = windows.single_mut();
-    let window_size = egui::vec2(window.width() as f32, window.height() as f32);
+    let window_size = egui::vec2(window.width(), window.height());
 
     let ctx = context.ctx_mut();
 
@@ -217,7 +218,7 @@ fn multiplayer_window(
 
 fn settings_window(mut context: EguiContexts, state: ResMut<State>, mut windows: Query<&Window>) {
     let window = windows.single_mut();
-    let window_size = egui::vec2(window.width() as f32, window.height() as f32);
+    let window_size = egui::vec2(window.width(), window.height());
 
     let ctx = context.ctx_mut();
 
