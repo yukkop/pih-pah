@@ -107,9 +107,7 @@ fn process_scene_child_simplified(
                 let name = split.next().unwrap();
                 let val = split.next().unwrap();
                 if name == "id" {
-                    commands
-                        .entity(entity)
-                        .insert(LinkId(val.to_string()));
+                    commands.entity(entity).insert(LinkId(val.to_string()));
                 }
             }
         }
@@ -186,17 +184,15 @@ fn process_scene_child(
                             }
                         }
                     } else if name == "id" {
-                        commands
-                            .entity(entity)
-                            .insert(LinkId(val.to_string()));
+                        commands.entity(entity).insert(LinkId(val.to_string()));
                     } else if name == "m" {
                         commands.entity(entity).insert(Mass(val.parse().unwrap()));
                     }
                 } else if name == "r" {
-                        let transform = transform_query.get(entity).unwrap();
-                        commands
-                            .entity(entity)
-                            .insert(Respawn::new(transform.translation));
+                    let transform = transform_query.get(entity).unwrap();
+                    commands
+                        .entity(entity)
+                        .insert(Respawn::new(transform.translation));
                 }
             }
         }

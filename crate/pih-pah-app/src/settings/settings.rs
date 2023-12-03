@@ -38,13 +38,15 @@ fn setup(mut commands: Commands) {
 
     let settings = {
         if yaml_path.exists() {
-            let file = File::open(&yaml_path)
-                .unwrap_or_else(|_| panic!("Failed to open exist settings file ({:#?})", &yaml_path));
+            let file = File::open(&yaml_path).unwrap_or_else(|_| {
+                panic!("Failed to open exist settings file ({:#?})", &yaml_path)
+            });
             serde_yaml::from_reader(file)
                 .unwrap_or_else(|_| panic!("Failed to read settings file ({:#?})", &yaml_path))
         } else if yml_path.exists() {
-            let file = File::open(&yml_path)
-                .unwrap_or_else(|_| panic!("Failed to open exist settings file ({:#?})", &yml_path));
+            let file = File::open(&yml_path).unwrap_or_else(|_| {
+                panic!("Failed to open exist settings file ({:#?})", &yml_path)
+            });
             serde_yaml::from_reader(&file)
                 .unwrap_or_else(|_| panic!("Failed to read settings file ({:#?})", &yml_path))
         } else {
