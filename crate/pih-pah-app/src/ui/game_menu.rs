@@ -97,8 +97,8 @@ fn handle_state(
                     &font)).clicked() {
                     next_state_lobby.set(LobbyState::None);
                     ui_game_menu_writer.send(GameMenuEvent(UiAction::Disable));
-                    next_state_ui.set(UiState::Menu);
                     next_state_province.set(ProvinceState::Menu);
+                    next_state_ui.set(UiState::Menu);
                 }
             });
     }

@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use bevy::prelude::*;
 use bevy_xpbd_3d::prelude::{Collider, RigidBody};
 use crate::component::{ComponentPlugins, Respawn};
+use crate::settings::SettingsPlugins;
 use crate::ui;
 use crate::character::CharacterPlugins;
 use crate::lobby::{LobbyPlugins, PlayerInput, LobbyState};
@@ -21,7 +22,7 @@ pub struct WorldPlugins;
 impl Plugin for WorldPlugins {
     fn build(&self, app: &mut App) {
         app
-            .add_plugins((SoundPlugins, ProvincePlugins, UiPlugins, LobbyPlugins, CharacterPlugins, ComponentPlugins))
+            .add_plugins((SettingsPlugins, SoundPlugins, ProvincePlugins, UiPlugins, LobbyPlugins, CharacterPlugins, ComponentPlugins))
             .add_systems(Update, input)
             .add_systems(
                 Update,

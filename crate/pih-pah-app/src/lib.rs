@@ -4,5 +4,6 @@ pub mod province;
 pub mod component;
 pub mod ui;
 pub mod world;
+pub mod settings;
 pub mod util;
 pub mod character;
