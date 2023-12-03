@@ -1,6 +1,6 @@
+use super::ProvinceState;
 use bevy::prelude::*;
 use std::f32::consts::PI;
-use super::ProvinceState;
 
 #[derive(Component)]
 struct Affiliation;
@@ -18,16 +18,12 @@ pub struct MenuPlugins;
 
 impl Plugin for MenuPlugins {
     fn build(&self, app: &mut App) {
-        app
+        app.add_systems(OnEnter(ProvinceState::Menu), load)
             .add_systems(
-                OnEnter(ProvinceState::Menu),
-                load)
-            .add_systems(
-                Update, 
-                update_light_position.run_if(in_state(ProvinceState::Menu)))
-            .add_systems(
-                OnExit(ProvinceState::Menu),
-                unload);
+                Update,
+                update_light_position.run_if(in_state(ProvinceState::Menu)),
+            )
+            .add_systems(OnExit(ProvinceState::Menu), unload);
     }
 }
 
@@ -36,57 +32,62 @@ fn load(
     mut mesh: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(5., 2.5,  5.).looking_at(Vec3::ZERO, Vec3::Y),
-        camera: Camera {
-            order: PRIMARY_CAMERA_ORDER,
-            ..default()
-        },
-        ..Default::default()
-    }).insert(Affiliation);
-
-    commands.spawn((
-        PointLightBundle {
-            point_light: PointLight {
-                intensity: 5000.0,
-                shadows_enabled: true,
+    commands
+        .spawn(Camera3dBundle {
+            transform: Transform::from_xyz(5., 2.5, 5.).looking_at(Vec3::ZERO, Vec3::Y),
+            camera: Camera {
+                order: PRIMARY_CAMERA_ORDER,
                 ..default()
             },
-            transform: Transform::from_xyz(0., 8.0, 0.),
-            ..default()
-        },
-        OrbitLight {
-            radius: 8.0,
-            speed: 1.0,
-            angle: 0.0,
-        },
-    )).insert(Affiliation);
-
-    commands.spawn((
-        PbrBundle {
-            mesh: mesh.add(Mesh::from(shape::Plane::from_size(5.0))),
-            material: materials.add(Color::GREEN.into()),
-        transform: Transform::from_xyz(0., 0., 0.),
             ..Default::default()
-        },
-        Name::new("Terrain"),
-    )).insert(Affiliation);
+        })
+        .insert(Affiliation);
 
-    commands.spawn((
-        PbrBundle {
-            mesh: mesh.add(Mesh::from(shape::Cube::new(1.0))),
-            material: materials.add(Color::GRAY.into()),
-            transform: Transform::from_xyz(0., 0.5, 0.),
-            ..Default::default()
-        },
-        Name::new("Cube"),
-    )).insert(Affiliation);
+    commands
+        .spawn((
+            PointLightBundle {
+                point_light: PointLight {
+                    intensity: 5000.0,
+                    shadows_enabled: true,
+                    ..default()
+                },
+                transform: Transform::from_xyz(0., 8.0, 0.),
+                ..default()
+            },
+            OrbitLight {
+                radius: 8.0,
+                speed: 1.0,
+                angle: 0.0,
+            },
+        ))
+        .insert(Affiliation);
+
+    commands
+        .spawn((
+            PbrBundle {
+                mesh: mesh.add(Mesh::from(shape::Plane::from_size(5.0))),
+                material: materials.add(Color::GREEN.into()),
+                transform: Transform::from_xyz(0., 0., 0.),
+                ..Default::default()
+            },
+            Name::new("Terrain"),
+        ))
+        .insert(Affiliation);
+
+    commands
+        .spawn((
+            PbrBundle {
+                mesh: mesh.add(Mesh::from(shape::Cube::new(1.0))),
+                material: materials.add(Color::GRAY.into()),
+                transform: Transform::from_xyz(0., 0.5, 0.),
+                ..Default::default()
+            },
+            Name::new("Cube"),
+        ))
+        .insert(Affiliation);
 }
 
-fn unload(
-    mut commands: Commands,
-    affiliation_query: Query<Entity, With<Affiliation>>,
-) {
+fn unload(mut commands: Commands, affiliation_query: Query<Entity, With<Affiliation>>) {
     for entity in affiliation_query.iter() {
         commands.entity(entity).despawn();
     }

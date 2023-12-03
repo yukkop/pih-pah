@@ -1,10 +1,10 @@
-use std::sync::Arc;
-use bevy::prelude::*;
-use bevy_egui::{egui, EguiContext, EguiContexts};
-use bevy_egui::egui::FontId;
-use crate::ui::GameMenuPlugins;
 use crate::ui::menu::MenuPlugins;
+use crate::ui::GameMenuPlugins;
 use crate::util::i18n::{trans, Uniq};
+use bevy::prelude::*;
+use bevy_egui::egui::FontId;
+use bevy_egui::{egui, EguiContexts};
+use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
 pub enum UiState {
@@ -26,8 +26,7 @@ pub struct UiPlugins;
 
 impl Plugin for UiPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_state::<UiState>()
+        app.add_state::<UiState>()
             .add_plugins((MenuPlugins, GameMenuPlugins))
             .add_systems(Startup, (setup, set_egui_debug));
     }
@@ -35,11 +34,11 @@ impl Plugin for UiPlugins {
 
 fn set_egui_debug(mut context: EguiContexts) {
     context.ctx_mut().set_style(egui::Style {
-      debug: egui::style::DebugOptions {
-        debug_on_hover: true,
+        debug: egui::style::DebugOptions {
+            debug_on_hover: true,
+            ..default()
+        },
         ..default()
-      },
-      ..default()
     });
 }
 
@@ -47,6 +46,4 @@ pub fn rich_text(text: impl Into<Arc<String>>, uniq: Uniq, font: &FontId) -> egu
     egui::RichText::new(trans(text.into(), uniq)).font(font.clone())
 }
 
-fn setup() {
-
-}
+fn setup() {}

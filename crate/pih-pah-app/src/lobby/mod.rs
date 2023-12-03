@@ -1,7 +1,7 @@
 mod lobby;
 
-pub mod single;
 pub mod client;
 pub mod host;
+pub mod single;
 
 pub use lobby::*;

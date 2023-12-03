@@ -1,15 +1,15 @@
-use bevy_xpbd_3d::components::Mass;
-use serde::{Deserialize, Serialize};
-use bevy::prelude::*;
-use bevy_xpbd_3d::prelude::{Collider, RigidBody};
-use crate::component::{ComponentPlugins, Respawn};
-use crate::settings::SettingsPlugins;
-use crate::ui;
 use crate::character::CharacterPlugins;
-use crate::lobby::{LobbyPlugins, PlayerInput, LobbyState};
+use crate::component::{ComponentPlugins, Respawn};
+use crate::lobby::{LobbyPlugins, LobbyState, PlayerInput};
 use crate::province::ProvincePlugins;
+use crate::settings::SettingsPlugins;
 use crate::sound::SoundPlugins;
+use crate::ui;
 use crate::ui::{UiAction, UiPlugins};
+use bevy::prelude::*;
+use bevy_xpbd_3d::components::Mass;
+use bevy_xpbd_3d::prelude::{Collider, RigidBody};
+use serde::{Deserialize, Serialize};
 
 #[derive(Component)]
 pub struct PromisedScene;
@@ -21,18 +21,26 @@ pub struct WorldPlugins;
 
 impl Plugin for WorldPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_plugins((SettingsPlugins, SoundPlugins, ProvincePlugins, UiPlugins, LobbyPlugins, CharacterPlugins, ComponentPlugins))
-            .add_systems(Update, input)
-            .add_systems(
-                Update,
-                process_scene.run_if(
-                    not(in_state(LobbyState::None))
-                    .and_then(not(in_state(LobbyState::Client)))))
-            .add_systems(
-                Update,
-                process_scene_simplified.run_if(
-                    in_state(LobbyState::Client)));
+        app.add_plugins((
+            SettingsPlugins,
+            SoundPlugins,
+            ProvincePlugins,
+            UiPlugins,
+            LobbyPlugins,
+            CharacterPlugins,
+            ComponentPlugins,
+        ))
+        .add_systems(Update, input)
+        .add_systems(
+            Update,
+            process_scene.run_if(
+                not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
+            ),
+        )
+        .add_systems(
+            Update,
+            process_scene_simplified.run_if(in_state(LobbyState::Client)),
+        );
     }
 }
 
@@ -49,10 +57,13 @@ fn input(
     }
 
     if let Ok(mut player_input) = player_input_query.get_single_mut() {
-        player_input.left = keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::Left);
-        player_input.right = keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right);
+        player_input.left =
+            keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::Left);
+        player_input.right =
+            keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right);
         player_input.up = keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
-        player_input.down = keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
+        player_input.down =
+            keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
         player_input.turn_left = keyboard_input.pressed(KeyCode::Q);
         player_input.turn_right = keyboard_input.pressed(KeyCode::E);
         player_input.jump = keyboard_input.just_pressed(KeyCode::Space);
@@ -83,14 +94,22 @@ fn process_scene_child_simplified(
     if let Ok(name) = name_query.get(entity) {
         if name.find("[").is_some() {
             let name = name.split('.').next().unwrap_or(name);
-            let params = name.split('[').nth(1).unwrap()
-                .split(']').next().unwrap().split(';');
+            let params = name
+                .split('[')
+                .nth(1)
+                .unwrap()
+                .split(']')
+                .next()
+                .unwrap()
+                .split(';');
             for param in params {
                 let mut split = param.split(":");
                 let name = split.next().unwrap();
                 let val = split.next().unwrap();
                 if name == "id" {
-                    commands.entity(entity).insert(LinkId(val.to_string().into()));
+                    commands
+                        .entity(entity)
+                        .insert(LinkId(val.to_string().into()));
                 }
             }
         }
@@ -113,7 +132,15 @@ fn process_scene(
 ) {
     for (entity, children) in scene_query.iter() {
         for child in children {
-            process_scene_child(&mut commands, *child, &parent_query, &name_query, &mesh_handle_query, &transform_query, &mut meshes);
+            process_scene_child(
+                &mut commands,
+                *child,
+                &parent_query,
+                &name_query,
+                &mesh_handle_query,
+                &transform_query,
+                &mut meshes,
+            );
         }
         commands.entity(entity).remove::<PromisedScene>();
     }
@@ -131,8 +158,14 @@ fn process_scene_child(
     if let Ok(name) = name_query.get(entity) {
         if name.find("[").is_some() {
             let name = name.split('.').next().unwrap_or(name);
-            let params = name.split('[').nth(1).unwrap()
-                .split(']').next().unwrap().split(';');
+            let params = name
+                .split('[')
+                .nth(1)
+                .unwrap()
+                .split(']')
+                .next()
+                .unwrap()
+                .split(';');
             for param in params {
                 let mut split = param.split(":");
                 let name = split.next().unwrap();
@@ -152,26 +185,33 @@ fn process_scene_child(
                                 commands_entity.insert(RigidBody::Static);
                             }
                         }
-                    }
-                    else if name == "id" {
-                        commands.entity(entity).insert(LinkId(val.to_string().into()));
-                    }
-                    else if name == "m" {
+                    } else if name == "id" {
+                        commands
+                            .entity(entity)
+                            .insert(LinkId(val.to_string().into()));
+                    } else if name == "m" {
                         commands.entity(entity).insert(Mass(val.parse().unwrap()));
                     }
-                }
-                else {
-                    if name == "r" {
+                } else if name == "r" {
                         let transform = transform_query.get(entity).unwrap();
-                        commands.entity(entity).insert(Respawn::new(transform.translation));
-                    }
+                        commands
+                            .entity(entity)
+                            .insert(Respawn::new(transform.translation));
                 }
             }
         }
     }
     if let Ok(children) = parent_query.get(entity) {
         for child in children {
-            process_scene_child(commands, *child, parent_query, name_query, mesh_handle_query, transform_query, meshes);
+            process_scene_child(
+                commands,
+                *child,
+                parent_query,
+                name_query,
+                mesh_handle_query,
+                transform_query,
+                meshes,
+            );
         }
     }
 }

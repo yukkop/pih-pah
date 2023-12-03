@@ -1,4 +1,4 @@
-use bevy_egui::egui::{self, containers::Frame, Color32, epaint};
+use bevy_egui::egui::{self, containers::Frame, epaint, Color32};
 
 lazy_static::lazy_static! {
   pub static ref TRANSPARENT: Frame = Frame {

@@ -1,11 +1,11 @@
-use bevy::{ecs::system::EntityCommands, prelude::*};
-use bevy_xpbd_3d::prelude::*;
-use serde::{Serialize, Deserialize};
 use crate::component::Respawn;
 use crate::extend_commands;
-use crate::lobby::{LobbyState, PlayerInput, PlayerViewDirection, PlayerId};
 use crate::lobby::Character;
+use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerViewDirection};
 use crate::world::Me;
+use bevy::{ecs::system::EntityCommands, prelude::*};
+use bevy_xpbd_3d::prelude::*;
+use serde::{Deserialize, Serialize};
 
 pub const PLAYER_MOVE_SPEED: f32 = 0.07;
 pub const PLAYER_CAMERA_ROTATION_SPEED: f32 = 0.015;
@@ -18,34 +18,37 @@ pub struct CharacterPlugins;
 
 impl Plugin for CharacterPlugins {
     fn build(&self, app: &mut App) {
-        app
-          .add_systems(
-              FixedUpdate,
-              move_characters.run_if(
-                not(in_state(LobbyState::None))
-                .and_then(not(in_state(LobbyState::Client)))))
-          .add_systems(
-              PostUpdate,
-              tied_camera_follow.run_if(not(in_state(LobbyState::None))));
+        app.add_systems(
+            FixedUpdate,
+            move_characters.run_if(
+                not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
+            ),
+        )
+        .add_systems(
+            PostUpdate,
+            tied_camera_follow.run_if(not(in_state(LobbyState::None))),
+        );
     }
 }
 
 fn tied_camera_follow(
-  mut tied_camera_query: Query<(&TiedCamera, &mut Transform)>,
-  view_direction_query: Query<&PlayerViewDirection, With<Me>>,
-  transform_query: Query<&Transform, Without<TiedCamera>>,
+    mut tied_camera_query: Query<(&TiedCamera, &mut Transform)>,
+    view_direction_query: Query<&PlayerViewDirection, With<Me>>,
+    transform_query: Query<&Transform, Without<TiedCamera>>,
 ) {
-  for (TiedCamera(target) , mut transform) in tied_camera_query.iter_mut() {
-      if let Ok(target_transform) = transform_query.get(*target) {
-          transform.translation = target_transform.translation;
-          if let Ok(view_dirrection) = view_direction_query.get_single() {
-            transform.rotation = view_dirrection.0;
-          }
-      }
-      else {
-          warn!("Tied camera cannot follow object ({:?}) without transform", target)
-      }
-  }
+    for (TiedCamera(target), mut transform) in tied_camera_query.iter_mut() {
+        if let Ok(target_transform) = transform_query.get(*target) {
+            transform.translation = target_transform.translation;
+            if let Ok(view_dirrection) = view_direction_query.get_single() {
+                transform.rotation = view_dirrection.0;
+            }
+        } else {
+            warn!(
+                "Tied camera cannot follow object ({:?}) without transform",
+                target
+            )
+        }
+    }
 }
 
 fn move_characters(
@@ -86,9 +89,7 @@ fn move_characters(
             PLAYER_CAMERA_ROTATION_SPEED * turn, /* * delta_seconds */
         );
         view_direction.0 *= rotation;
-
     }
-
 }
 
 extend_commands!(
@@ -154,8 +155,6 @@ extend_commands!(
      .insert(PlayerViewDirection(Quat::default()));
   }
 );
-
-
 
 extend_commands!(
   spawn_tied_camera(target: Entity),

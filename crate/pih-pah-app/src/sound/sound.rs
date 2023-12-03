@@ -1,6 +1,6 @@
+use crate::sound::music::MusicPlugins;
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
-use crate::sound::music::MusicPlugins;
 
 pub struct SoundPlugins;
 

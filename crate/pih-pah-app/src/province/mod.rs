@@ -1,7 +1,7 @@
-mod province;
 mod menu;
+mod province;
 mod shooting_range;
 
-pub use province::*;
 pub use menu::*;
+pub use province::*;
 pub use shooting_range::*;

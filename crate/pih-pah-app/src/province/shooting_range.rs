@@ -1,28 +1,23 @@
-use bevy::prelude::*;
 use crate::world::PromisedScene;
+use bevy::prelude::*;
 
 use super::ProvinceState;
 
 #[derive(Component)]
 struct Affiliation;
 
-
 pub struct ShootingRangePlugins;
 
 impl Plugin for ShootingRangePlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_systems(OnEnter(ProvinceState::ShootingRange), load)
+        app.add_systems(OnEnter(ProvinceState::ShootingRange), load)
             .add_systems(OnExit(ProvinceState::ShootingRange), unload);
     }
 }
 
-fn load(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-) {
-    commands.spawn((
-        PointLightBundle {
+fn load(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands
+        .spawn((PointLightBundle {
             point_light: PointLight {
                 intensity: 1500.,
                 shadows_enabled: true,
@@ -32,23 +27,18 @@ fn load(
             },
             transform: Transform::from_xyz(0., 40., 0.),
             ..default()
-        },
-    )).insert(Affiliation);
+        },))
+        .insert(Affiliation);
 
     let scene = asset_server.load("test_province.glb#Scene0");
 
-    commands.spawn(SceneBundle{
-        scene,
-        ..default()
-    })
-    .insert(PromisedScene)
-    .insert(Affiliation);
+    commands
+        .spawn(SceneBundle { scene, ..default() })
+        .insert(PromisedScene)
+        .insert(Affiliation);
 }
 
-fn unload(
-    mut commands: Commands,
-    affiliation_query: Query<Entity, With<Affiliation>>,
-) {
+fn unload(mut commands: Commands, affiliation_query: Query<Entity, With<Affiliation>>) {
     for entity in affiliation_query.iter() {
         commands.entity(entity).despawn_recursive();
     }

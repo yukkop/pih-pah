@@ -1,9 +1,9 @@
-pub mod sound;
+pub mod character;
+pub mod component;
 pub mod lobby;
 pub mod province;
-pub mod component;
-pub mod ui;
-pub mod world;
 pub mod settings;
+pub mod sound;
+pub mod ui;
 pub mod util;
-pub mod character;
+pub mod world;

@@ -1,11 +1,9 @@
+use crate::lobby::LobbyState;
+use crate::province::ProvinceState;
+use crate::ui::{rich_text, UiAction, TRANSPARENT};
+use crate::util::i18n::Uniq::Module;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
-use crate::lobby::LobbyState;
-use crate::ui;
-use crate::province::ProvinceState;
-use crate::ui::{rich_text, TRANSPARENT, UiAction};
-use crate::util::ResourceAction;
-use crate::util::i18n::Uniq::Module;
 
 use super::UiState;
 
@@ -23,9 +21,7 @@ struct State {
 
 impl Default for State {
     fn default() -> Self {
-        Self {
-            is_active: false,
-        }
+        Self { is_active: false }
     }
 }
 
@@ -33,17 +29,16 @@ pub struct GameMenuPlugins;
 
 impl Plugin for GameMenuPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_event::<GameMenuEvent>()
+        app.add_event::<GameMenuEvent>()
             .init_resource::<State>()
-            .add_systems(Update, (handle_action, handle_state).run_if(in_state(UiState::GameMenu)));
+            .add_systems(
+                Update,
+                (handle_action, handle_state).run_if(in_state(UiState::GameMenu)),
+            );
     }
 }
 
-fn handle_action(
-    mut reader: EventReader<GameMenuEvent>,
-    mut state: ResMut<State>,
-) {
+fn handle_action(mut reader: EventReader<GameMenuEvent>, mut state: ResMut<State>) {
     for GameMenuEvent(action) in reader.read() {
         match action {
             UiAction::Enable => {
@@ -75,26 +70,23 @@ fn handle_state(
     };
 
     if state.is_active {
-        egui::Window::new(rich_text(
-            "Menu".to_string(),
-            Module(&MODULE),
-            &font))
+        egui::Window::new(rich_text("Menu".to_string(), Module(&MODULE), &font))
             .frame(*TRANSPARENT)
             .anchor(egui::Align2::LEFT_BOTTOM, [10., -10.])
             .collapsible(false)
             .resizable(false)
             .movable(false)
             .show(ctx, |ui| {
-                if ui.button(rich_text(
-                    "Back".to_string(),
-                    Module(&MODULE),
-                    &font)).clicked() {
+                if ui
+                    .button(rich_text("Back".to_string(), Module(&MODULE), &font))
+                    .clicked()
+                {
                     ui_game_menu_writer.send(GameMenuEvent(UiAction::Disable));
                 }
-                if ui.button(rich_text(
-                    "Menu".to_string(),
-                    Module(&MODULE),
-                    &font)).clicked() {
+                if ui
+                    .button(rich_text("Menu".to_string(), Module(&MODULE), &font))
+                    .clicked()
+                {
                     next_state_lobby.set(LobbyState::None);
                     ui_game_menu_writer.send(GameMenuEvent(UiAction::Disable));
                     next_state_province.set(ProvinceState::Menu);

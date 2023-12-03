@@ -1,12 +1,12 @@
-use std::sync::Arc;
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
+use std::sync::Arc;
 
 const HASH_LENGTH: usize = 25;
 
 pub enum Language {
     Ru,
-    En
+    En,
 }
 
 lazy_static::lazy_static! {
@@ -15,20 +15,13 @@ lazy_static::lazy_static! {
 
 pub enum Uniq {
     Module(&'static str),
-    Id(&'static str)
+    Id(&'static str),
 }
 
-pub fn trans(
-    text: Arc<String>,
-    uniq: Uniq
-) -> String {
+pub fn trans(text: Arc<String>, uniq: Uniq) -> String {
     let _id = match uniq {
-        Uniq::Module(module) => {
-            hash_string(text.as_str(), module, HASH_LENGTH)
-        }
-        Uniq::Id(id) => {
-            id.to_string()
-        }
+        Uniq::Module(module) => hash_string(text.as_str(), module, HASH_LENGTH),
+        Uniq::Id(id) => id.to_string(),
     };
 
     // TODO get from hashmap translated data or translate by internet resources
