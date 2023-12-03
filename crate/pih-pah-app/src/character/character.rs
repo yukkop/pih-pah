@@ -1,7 +1,7 @@
 use bevy::{ecs::system::EntityCommands, prelude::*};
 use bevy_xpbd_3d::prelude::*;
-use renet::ClientId;
 use serde::{Serialize, Deserialize};
+use crate::component::Respawn;
 use crate::extend_commands;
 use crate::lobby::{LobbyState, PlayerInput, PlayerViewDirection, PlayerId};
 use crate::lobby::Character;
@@ -9,7 +9,7 @@ use crate::world::Me;
 
 pub const PLAYER_MOVE_SPEED: f32 = 0.07;
 pub const PLAYER_CAMERA_ROTATION_SPEED: f32 = 0.015;
-pub const PLAYER_SIZE: f32 = 3.0;
+pub const PLAYER_SIZE: f32 = 2.0;
 
 #[derive(Component, Debug, Serialize, Deserialize)]
 pub struct TiedCamera(Entity);
@@ -116,6 +116,7 @@ extend_commands!(
        Position::from_xyz(spawn_point.x, spawn_point.y, spawn_point.z),
        Collider::cuboid(PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE),
      ))
+     .insert(Respawn::new(spawn_point))
      .insert(PlayerInput::default())
      .insert(Character { id: player_id })
      .insert(PlayerViewDirection(Quat::default()));
@@ -130,9 +131,14 @@ extend_commands!(
       .resource_mut::<Assets<Mesh>>()
       // TODO: Have a resource with shared mesh list instead of adding meshes each time
       .add(Mesh::from(shape::Cube { size: PLAYER_SIZE }));
+    let material = StandardMaterial {
+      unlit: true,
+      base_color: color,
+      ..default()
+    };
     let material = world
       .resource_mut::<Assets<StandardMaterial>>()
-      .add(color.into());
+      .add(material.into());
 
     world
      .entity_mut(entity_id)

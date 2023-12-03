@@ -24,11 +24,13 @@ fn load(
     commands.spawn((
         PointLightBundle {
             point_light: PointLight {
-                intensity: 5000.0,
+                intensity: 1500.,
                 shadows_enabled: true,
+                radius: 100.,
+                range: 60.,
                 ..default()
             },
-            transform: Transform::from_xyz(0., 8.0, 0.),
+            transform: Transform::from_xyz(0., 40., 0.),
             ..default()
         },
     )).insert(Affiliation);

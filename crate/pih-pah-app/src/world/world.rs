@@ -1,6 +1,8 @@
+use bevy_xpbd_3d::components::Mass;
 use serde::{Deserialize, Serialize};
 use bevy::prelude::*;
 use bevy_xpbd_3d::prelude::{Collider, RigidBody};
+use crate::component::{ComponentPlugins, Respawn};
 use crate::ui;
 use crate::character::CharacterPlugins;
 use crate::lobby::{LobbyPlugins, PlayerInput, LobbyState};
@@ -19,7 +21,7 @@ pub struct WorldPlugins;
 impl Plugin for WorldPlugins {
     fn build(&self, app: &mut App) {
         app
-            .add_plugins((SoundPlugins, ProvincePlugins, UiPlugins, LobbyPlugins, CharacterPlugins))
+            .add_plugins((SoundPlugins, ProvincePlugins, UiPlugins, LobbyPlugins, CharacterPlugins, ComponentPlugins))
             .add_systems(Update, input)
             .add_systems(
                 Update,
@@ -105,11 +107,12 @@ fn process_scene(
     parent_query: Query<&Children>,
     name_query: Query<&Name>,
     mesh_handle_query: Query<&Handle<Mesh>>,
+    transform_query: Query<&Transform>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for (entity, children) in scene_query.iter() {
         for child in children {
-            process_scene_child(&mut commands, *child, &parent_query, &name_query, &mesh_handle_query, &mut meshes);
+            process_scene_child(&mut commands, *child, &parent_query, &name_query, &mesh_handle_query, &transform_query, &mut meshes);
         }
         commands.entity(entity).remove::<PromisedScene>();
     }
@@ -121,6 +124,7 @@ fn process_scene_child(
     parent_query: &Query<&Children>,
     name_query: &Query<&Name>,
     mesh_handle_query: &Query<&Handle<Mesh>>,
+    transform_query: &Query<&Transform>,
     meshes: &mut ResMut<Assets<Mesh>>,
 ) {
     if let Ok(name) = name_query.get(entity) {
@@ -131,32 +135,42 @@ fn process_scene_child(
             for param in params {
                 let mut split = param.split(":");
                 let name = split.next().unwrap();
-                let val = split.next().unwrap();
-                if name == "c" {
-                    let collider_handler = mesh_handle_query.get(entity).unwrap();
-                    if let Some(mesh) = meshes.get(collider_handler) {
-                        let collider = Collider::trimesh_from_mesh(mesh).unwrap();
-                        commands.entity(entity).insert(collider);
+                if let Some(val) = split.next() {
+                    if name == "c" {
+                        let collider_handler = mesh_handle_query.get(entity).unwrap();
+                        if let Some(mesh) = meshes.get(collider_handler) {
+                            let collider = Collider::trimesh_from_mesh(mesh).unwrap();
+                            commands.entity(entity).insert(collider);
 
-                        if val == "d" {
-                            let mut commands_entity = commands.entity(entity);
-                            commands_entity.insert(RigidBody::Dynamic);
-                        }
-                        if val == "s" {
-                            let mut commands_entity = commands.entity(entity);
-                            commands_entity.insert(RigidBody::Static);
+                            if val == "d" {
+                                let mut commands_entity = commands.entity(entity);
+                                commands_entity.insert(RigidBody::Dynamic);
+                            }
+                            if val == "s" {
+                                let mut commands_entity = commands.entity(entity);
+                                commands_entity.insert(RigidBody::Static);
+                            }
                         }
                     }
+                    else if name == "id" {
+                        commands.entity(entity).insert(LinkId(val.to_string().into()));
+                    }
+                    else if name == "m" {
+                        commands.entity(entity).insert(Mass(val.parse().unwrap()));
+                    }
                 }
-                else if name == "id" {
-                    commands.entity(entity).insert(LinkId(val.to_string().into()));
+                else {
+                    if name == "r" {
+                        let transform = transform_query.get(entity).unwrap();
+                        commands.entity(entity).insert(Respawn::new(transform.translation));
+                    }
                 }
             }
         }
     }
     if let Ok(children) = parent_query.get(entity) {
         for child in children {
-            process_scene_child(commands, *child, parent_query, name_query, mesh_handle_query, meshes);
+            process_scene_child(commands, *child, parent_query, name_query, mesh_handle_query, transform_query, meshes);
         }
     }
 }
