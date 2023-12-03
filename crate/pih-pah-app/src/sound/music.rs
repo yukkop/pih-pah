@@ -3,6 +3,8 @@ use bevy_kira_audio::prelude::*;
 use rand::{thread_rng, Rng};
 use std::time::Duration;
 
+use crate::settings::ApplySettings;
+
 const MINIMAL_DELAY: f32 = 15.;
 const MAXIMAL_DELAY: f32 = 90.;
 const MENU_MUSIC_PATH: &str = "lightslategray_blue.wav";
@@ -12,7 +14,8 @@ struct MusicTimer(Timer);
 
 #[derive(Default, Resource)]
 pub struct MenuMusic {
-    audio_handle: Handle<AudioSource>,
+    source_handle: Handle<AudioSource>,
+    pub instance_handle: Handle<AudioInstance>,
     duration: Option<Duration>,
 }
 
@@ -34,7 +37,7 @@ fn setup(
 ) {
     commands.insert_resource(MusicTimer(Timer::from_seconds(0.0, TimerMode::Repeating)));
     let audio_source: Handle<AudioSource> = asset_server.load(MENU_MUSIC_PATH);
-    menu_music.audio_handle = audio_source;
+    menu_music.source_handle = audio_source;
 }
 
 fn play_music(
@@ -43,10 +46,11 @@ fn play_music(
     mut music_timer: ResMut<MusicTimer>,
     mut menu_music: ResMut<MenuMusic>,
     audio_sources: Res<Assets<AudioSource>>,
+    mut event: EventWriter<ApplySettings>,
 ) {
     if music_timer.tick(time.delta()).just_finished() {
         if menu_music.duration.is_none() {
-            if let Some(audio_source) = audio_sources.get(&menu_music.audio_handle) {
+            if let Some(audio_source) = audio_sources.get(&menu_music.source_handle) {
                 let duration = audio_source.sound.duration();
                 menu_music.duration = Some(duration);
             } else {
@@ -54,11 +58,13 @@ fn play_music(
             }
         }
 
-        audio.play(menu_music.audio_handle.clone());
+        menu_music.instance_handle = audio.play(menu_music.source_handle.clone()).handle();
 
         let delay = thread_rng().gen_range(MINIMAL_DELAY..MAXIMAL_DELAY)
             + menu_music.duration.unwrap().as_secs_f32();
         music_timer.set_duration(Duration::from_secs_f32(delay));
         music_timer.reset();
+
+        event.send(ApplySettings);
     }
 }

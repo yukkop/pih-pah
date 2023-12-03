@@ -105,9 +105,10 @@ fn process_scene_child_simplified(
             for param in params {
                 let mut split = param.split(':');
                 let name = split.next().unwrap();
-                let val = split.next().unwrap();
-                if name == "id" {
-                    commands.entity(entity).insert(LinkId(val.to_string()));
+                if let Some(val) = split.next() {
+                    if name == "id" {
+                        commands.entity(entity).insert(LinkId(val.to_string()));
+                    }
                 }
             }
         }
