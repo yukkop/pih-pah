@@ -1,10 +1,22 @@
-use std::{env, fs::{File, OpenOptions}, sync::Arc, path::PathBuf, io::Write};
+use std::{
+    env,
+    fs::{File, OpenOptions},
+    io::Write,
+    path::PathBuf,
+    sync::Arc,
+};
 
 use bevy::{
-    app::{App, Plugin, Update, PostStartup},
-    ecs::{system::{Commands, Resource, Res, ResMut}, event::{Event, EventReader}}, asset::Assets, log::warn, prelude::Deref,
+    app::{App, Last, Plugin, PostStartup},
+    asset::Assets,
+    ecs::{
+        event::{Event, EventReader},
+        system::{Commands, Res, ResMut, Resource},
+    },
+    log::warn,
+    prelude::Deref,
 };
-use bevy_kira_audio::{AudioInstance, prelude::Volume, AudioTween};
+use bevy_kira_audio::{prelude::Volume, AudioInstance, AudioTween};
 use serde::{self, Deserialize, Serialize};
 
 use crate::sound::MenuMusic;
@@ -40,12 +52,11 @@ pub struct SettingsPlugins;
 
 impl Plugin for SettingsPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .init_resource::<AppliedSettings>()
+        app.init_resource::<AppliedSettings>()
             .add_event::<ApplySettings>()
             .add_event::<ExemptSettings>()
             .add_systems(PostStartup, setup)
-            .add_systems(Update, (apply_settings, exempt_settings));
+            .add_systems(Last, (apply_settings, exempt_settings));
     }
 }
 
@@ -71,9 +82,11 @@ fn apply_settings(
 ) {
     for _ in event.read() {
         if let Some(instance) = audio_sources.get_mut(&menu_music.instance_handle) {
-            instance.set_volume(Volume::Amplitude(settings.music_volume / 10.), AudioTween::default());
-        }
-        else {
+            instance.set_volume(
+                Volume::Amplitude(settings.music_volume / 10.),
+                AudioTween::default(),
+            );
+        } else {
             warn!("Failed to get music source");
         }
 
@@ -82,16 +95,26 @@ fn apply_settings(
         });
 
         let settings_path = settings_path.as_ref().as_ref();
-        let mut file = OpenOptions::new().write(true).open(settings_path)
-            .unwrap_or_else(|err| panic!("Failed to create settings file ({:#?}) \n error: {:#?}", settings_path, err));
+        let mut file = OpenOptions::new()
+            .write(true)
+            .open(settings_path)
+            .unwrap_or_else(|err| {
+                panic!(
+                    "Failed to create settings file ({:#?}) \n error: {:#?}",
+                    settings_path, err
+                )
+            });
         file.write_all(serde_yaml::to_string(settings.as_ref()).unwrap().as_bytes())
-            .unwrap_or_else(|err| panic!("Failed to write to settings file ({:#?}) \n error: {:#?}", settings_path, err));
+            .unwrap_or_else(|err| {
+                panic!(
+                    "Failed to write to settings file ({:#?}) \n error: {:#?}",
+                    settings_path, err
+                )
+            });
     }
 }
 
-fn setup(
-    mut commands: Commands,
-) {
+fn setup(mut commands: Commands) {
     let exe_path = env::current_exe().expect("Failed to find executable path");
 
     let exe_dir = exe_path
@@ -104,31 +127,53 @@ fn setup(
     let settings = {
         if yaml_path.exists() {
             let file = File::open(&yaml_path).unwrap_or_else(|err| {
-                panic!("Failed to open exist settings file ({:#?}) \n error: {:#?}", &yaml_path, err)
+                panic!(
+                    "Failed to open exist settings file ({:#?}) \n error: {:#?}",
+                    &yaml_path, err
+                )
             });
 
             commands.insert_resource(SettingsPath(yaml_path.clone().into()));
 
-            serde_yaml::from_reader(file)
-                .unwrap_or_else(|err| panic!("Failed to read settings file ({:#?}) \n error: {:#?}", &yaml_path, err))
+            serde_yaml::from_reader(file).unwrap_or_else(|err| {
+                panic!(
+                    "Failed to read settings file ({:#?}) \n error: {:#?}",
+                    &yaml_path, err
+                )
+            })
         } else if yml_path.exists() {
             let file = File::open(&yml_path).unwrap_or_else(|err| {
-                panic!("Failed to open exist settings file ({:#?}) \n error: {:#?}", &yml_path, err)
+                panic!(
+                    "Failed to open exist settings file ({:#?}) \n error: {:#?}",
+                    &yml_path, err
+                )
             });
-            
+
             commands.insert_resource(SettingsPath(yml_path.clone().into()));
 
-            serde_yaml::from_reader(&file)
-                .unwrap_or_else(|err| panic!("Failed to read settings file ({:#?}) \n error: {:#?}", &yml_path, err))
+            serde_yaml::from_reader(&file).unwrap_or_else(|err| {
+                panic!(
+                    "Failed to read settings file ({:#?}) \n error: {:#?}",
+                    &yml_path, err
+                )
+            })
         } else {
-            let mut file: File = File::create(&yaml_path)
-                .unwrap_or_else(|err| panic!("Failed to create settings file ({:#?}) \n error: {:#?}", &yaml_path, err));
+            let mut file: File = File::create(&yaml_path).unwrap_or_else(|err| {
+                panic!(
+                    "Failed to create settings file ({:#?}) \n error: {:#?}",
+                    &yaml_path, err
+                )
+            });
 
             commands.insert_resource(SettingsPath(yaml_path.clone().into()));
 
             let settings = Settings::default();
-            serde_yaml::to_writer(&mut file, &settings)
-                .unwrap_or_else(|err| panic!("Failed to write to settings file ({:#?}) \n error: {:#?}", &yaml_path, err));
+            serde_yaml::to_writer(&mut file, &settings).unwrap_or_else(|err| {
+                panic!(
+                    "Failed to write to settings file ({:#?}) \n error: {:#?}",
+                    &yaml_path, err
+                )
+            });
 
             settings
         }

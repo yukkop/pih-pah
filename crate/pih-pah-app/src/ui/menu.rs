@@ -1,6 +1,6 @@
 use crate::lobby::{ClientResource, HostResource, LobbyState};
 use crate::province::ProvinceState;
-use crate::settings::{ApplySettings, Settings, ExemptSettings};
+use crate::settings::{ApplySettings, ExemptSettings, Settings};
 use crate::ui::{rich_text, TRANSPARENT};
 use crate::util::i18n::Uniq::Module;
 use bevy::app::AppExit;
@@ -51,24 +51,19 @@ pub struct MenuPlugins;
 
 impl Plugin for MenuPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .init_resource::<State>()
+        app.init_resource::<State>()
             .add_state::<WindowState>()
+            .add_systems(Update, menu.run_if(in_state(UiState::Menu)))
             .add_systems(
                 Update,
-                menu.run_if(in_state(UiState::Menu)),
+                settings_window
+                    .run_if(in_state(UiState::Menu).and_then(in_state(WindowState::Settings))),
             )
+            .add_systems(OnExit(WindowState::Settings), exempt_setting)
             .add_systems(
                 Update,
-                settings_window.run_if(in_state(UiState::Menu).and_then(in_state(WindowState::Settings))),
-            )
-            .add_systems(
-                OnExit(WindowState::Settings),
-                exempt_setting,
-            )
-            .add_systems(
-                Update,
-                multiplayer_window.run_if(in_state(UiState::Menu).and_then(in_state(WindowState::Multiplayer))),
+                multiplayer_window
+                    .run_if(in_state(UiState::Menu).and_then(in_state(WindowState::Multiplayer))),
             );
     }
 }
@@ -270,7 +265,7 @@ fn settings_window(
             });
             ui.horizontal(|ui| {
                 if ui
-                    .button(rich_text("Back".to_string(), Module(&MODULE), &font))
+                    .button(rich_text("Cansel".to_string(), Module(&MODULE), &font))
                     .clicked()
                 {
                     next_state_menu_window.set(WindowState::None);
@@ -281,12 +276,17 @@ fn settings_window(
                 {
                     settings_applying.send(ApplySettings);
                 }
+                if ui
+                    .button(rich_text("Ok".to_string(), Module(&MODULE), &font))
+                    .clicked()
+                {
+                    settings_applying.send(ApplySettings);
+                    next_state_menu_window.set(WindowState::None);
+                }
             });
         });
 }
 
-fn exempt_setting(
-    mut event: EventWriter<ExemptSettings>,
-) {
+fn exempt_setting(mut event: EventWriter<ExemptSettings>) {
     event.send(ExemptSettings);
 }
