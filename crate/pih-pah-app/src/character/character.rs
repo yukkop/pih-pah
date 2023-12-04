@@ -26,7 +26,7 @@ impl Plugin for CharacterPlugins {
         )
         .add_systems(
             PostUpdate,
-            tied_camera_follow.run_if(not(in_state(LobbyState::None))),
+            tied_camera_follow.run_if(not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client)))),
         );
     }
 }
