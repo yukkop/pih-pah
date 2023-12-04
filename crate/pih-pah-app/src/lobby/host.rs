@@ -3,6 +3,7 @@ use std::time::SystemTime;
 
 use crate::character::{spawn_character, spawn_tied_camera, TiedCamera};
 use crate::lobby::{LobbyState, PlayerData, PlayerId, ServerMessages, Username};
+use crate::province::SpawnPoint;
 use crate::world::{LinkId, Me};
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
@@ -11,7 +12,6 @@ use bevy::ecs::query::With;
 use bevy::ecs::schedule::OnExit;
 use bevy::ecs::system::{Query, Res, ResMut};
 use bevy::hierarchy::DespawnRecursiveExt;
-use bevy::math::Vec3;
 use bevy::prelude::{in_state, Color, Commands, IntoSystemConfigs, OnEnter};
 use bevy::transform::components::Transform;
 use bevy_renet::transport::NetcodeServerPlugin;
@@ -61,7 +61,7 @@ pub fn new_renet_server(addr: &str) -> (RenetServer, NetcodeServerTransport) {
     (server, transport)
 }
 
-fn setup(mut commands: Commands, host_resource: Res<HostResource>) {
+fn setup(mut commands: Commands, host_resource: Res<HostResource>, spawn_point: Res<SpawnPoint>) {
     // me
 
     // server
@@ -71,9 +71,8 @@ fn setup(mut commands: Commands, host_resource: Res<HostResource>) {
     lobby.players_seq += 1;
     let color = generate_player_color(lobby.players_seq as u32);
 
-    let a = Vec3::new(0., 10., 0.);
     let player_entity = commands
-        .spawn_character(PlayerId::Host, color, a)
+        .spawn_character(PlayerId::Host, color, spawn_point.random_point())
         .insert(Me)
         .id();
     commands.spawn_tied_camera(player_entity);
@@ -122,6 +121,7 @@ pub fn server_update_system(
     mut lobby: ResMut<Lobby>,
     mut server: ResMut<RenetServer>,
     transport: Res<NetcodeServerTransport>,
+    spawn_point: Res<SpawnPoint>,
 ) {
     for event in server_events.read() {
         match event {
@@ -138,7 +138,11 @@ pub fn server_update_system(
 
                 // Spawn player cube
                 let player_entity = commands
-                    .spawn_character(PlayerId::Client(*client_id), color, Vec3::new(0., 10., 0.))
+                    .spawn_character(
+                        PlayerId::Client(*client_id),
+                        color,
+                        spawn_point.random_point(),
+                    )
                     .id();
 
                 // We could send an InitState with all the players id and positions for the multiplayer

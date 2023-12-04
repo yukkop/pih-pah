@@ -1,8 +1,10 @@
 use crate::lobby::LobbyState;
 use crate::province::ProvinceState;
+use crate::settings::{ApplySettings, ExemptSettings, Settings};
 use crate::ui::{rich_text, UiAction, TRANSPARENT};
 use crate::util::i18n::Uniq::Module;
 use bevy::prelude::*;
+use bevy_egui::egui::Align2;
 use bevy_egui::{egui, EguiContexts};
 
 use super::UiState;
@@ -14,9 +16,28 @@ lazy_static::lazy_static! {
 #[derive(Event)]
 pub struct GameMenuEvent(pub UiAction);
 
-#[derive(Resource, Default)]
+#[derive(Resource)]
 struct State {
     is_active: bool,
+    selected_map: ProvinceState,
+    selected_map_applied: ProvinceState,
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self {
+            is_active: false,
+            selected_map: ProvinceState::ShootingRange,
+            selected_map_applied: ProvinceState::ShootingRange,
+        }
+    }
+}
+
+#[derive(Default, Debug, Hash, States, PartialEq, Eq, Clone, Copy)]
+enum WindowState {
+    #[default]
+    None,
+    Settings,
 }
 
 pub struct GameMenuPlugins;
@@ -24,11 +45,18 @@ pub struct GameMenuPlugins;
 impl Plugin for GameMenuPlugins {
     fn build(&self, app: &mut App) {
         app.add_event::<GameMenuEvent>()
+            .add_state::<WindowState>()
             .init_resource::<State>()
             .add_systems(
                 Update,
-                (handle_action, handle_state).run_if(in_state(UiState::GameMenu)),
-            );
+                (handle_action, menu).run_if(in_state(UiState::GameMenu)),
+            )
+            .add_systems(
+                Update,
+                settings_window
+                    .run_if(in_state(UiState::GameMenu).and_then(in_state(WindowState::Settings))),
+            )
+            .add_systems(OnExit(WindowState::Settings), exempt_setting);
     }
 }
 
@@ -48,12 +76,13 @@ fn handle_action(mut reader: EventReader<GameMenuEvent>, mut state: ResMut<State
     }
 }
 
-fn handle_state(
+fn menu(
     mut next_state_lobby: ResMut<NextState<LobbyState>>,
     mut next_state_ui: ResMut<NextState<UiState>>,
+    mut next_state_menu_window: ResMut<NextState<WindowState>>,
     mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut context: EguiContexts,
-    state: Res<State>,
+    mut state: ResMut<State>,
     mut ui_game_menu_writer: EventWriter<GameMenuEvent>,
 ) {
     let ctx = context.ctx_mut();
@@ -75,17 +104,109 @@ fn handle_state(
                     .button(rich_text("Back".to_string(), Module(&MODULE), &font))
                     .clicked()
                 {
+                    next_state_menu_window.set(WindowState::None);
                     ui_game_menu_writer.send(GameMenuEvent(UiAction::Disable));
+                }
+                if ui
+                    .button(rich_text("Settings".to_string(), Module(&MODULE), &font))
+                    .clicked()
+                {
+                    next_state_menu_window.set(WindowState::Settings);
                 }
                 if ui
                     .button(rich_text("Menu".to_string(), Module(&MODULE), &font))
                     .clicked()
                 {
+                    state.is_active = false;
+                    next_state_menu_window.set(WindowState::None);
                     next_state_lobby.set(LobbyState::None);
-                    ui_game_menu_writer.send(GameMenuEvent(UiAction::Disable));
                     next_state_province.set(ProvinceState::Menu);
                     next_state_ui.set(UiState::Menu);
                 }
             });
     }
+}
+
+fn settings_window(
+    mut next_state_menu_window: ResMut<NextState<WindowState>>,
+    mut next_state_province: ResMut<NextState<ProvinceState>>,
+    mut context: EguiContexts,
+    mut windows: Query<&Window>,
+    mut settings: ResMut<Settings>,
+    mut state: ResMut<State>,
+    mut settings_applying: EventWriter<ApplySettings>,
+) {
+    let window = windows.single_mut();
+    let window_size = egui::vec2(window.width(), window.height());
+
+    let ctx = context.ctx_mut();
+
+    let font = egui::FontId {
+        family: egui::FontFamily::Monospace,
+        ..default()
+    };
+
+    let egui_window_size = egui::vec2(400.0, 200.0); // Set your desired egui window size
+
+    let center_position = egui::pos2(window_size.x / 2.0, window_size.y / 2.0);
+
+    egui::Window::new(rich_text("Settings".to_string(), Module(&MODULE), &font))
+        .pivot(Align2::CENTER_CENTER)
+        .fixed_size(egui_window_size)
+        .fixed_pos(center_position)
+        .collapsible(false)
+        .resizable(false)
+        .movable(false)
+        .show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.label(format!("Music: {}", settings.music_volume));
+                ui.add(egui::Slider::new(&mut settings.music_volume, 0.0..=200.0).text("%"));
+            });
+            ui.horizontal(|ui| {
+                egui::ComboBox::from_label("Map")
+                    .selected_text(format!("{}", state.selected_map))
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(
+                            &mut state.selected_map,
+                            ProvinceState::ShootingRange,
+                            ProvinceState::ShootingRange.to_string(),
+                        );
+                        ui.selectable_value(
+                            &mut state.selected_map,
+                            ProvinceState::GravityHell,
+                            ProvinceState::GravityHell.to_string(),
+                        );
+                    });
+            });
+            ui.horizontal(|ui| {
+                if ui
+                    .button(rich_text("Cansel".to_string(), Module(&MODULE), &font))
+                    .clicked()
+                {
+                    next_state_menu_window.set(WindowState::None);
+                }
+                if ui
+                    .button(rich_text("Apply".to_string(), Module(&MODULE), &font))
+                    .clicked()
+                {
+                    settings_applying.send(ApplySettings);
+                    state.selected_map_applied = state.selected_map;
+                    next_state_province.set(state.selected_map);
+                }
+                if ui
+                    .button(rich_text("Ok".to_string(), Module(&MODULE), &font))
+                    .clicked()
+                {
+                    settings_applying.send(ApplySettings);
+                    state.selected_map_applied = state.selected_map;
+                    next_state_province.set(state.selected_map);
+                    next_state_menu_window.set(WindowState::None);
+                }
+            });
+        });
+}
+
+fn exempt_setting(mut event: EventWriter<ExemptSettings>, mut state: ResMut<State>) {
+    state.selected_map = state.selected_map_applied;
+    event.send(ExemptSettings);
 }

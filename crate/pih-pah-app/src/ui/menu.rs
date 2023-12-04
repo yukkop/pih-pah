@@ -1,3 +1,4 @@
+use crate::load::LoadEvent;
 use crate::lobby::{ClientResource, HostResource, LobbyState};
 use crate::province::ProvinceState;
 use crate::settings::{ApplySettings, ExemptSettings, Settings};
@@ -69,7 +70,7 @@ impl Plugin for MenuPlugins {
 }
 
 fn menu(
-    mut next_state_lobby: ResMut<NextState<LobbyState>>,
+    mut event_load: EventWriter<LoadEvent>,
     mut next_state_ui: ResMut<NextState<UiState>>,
     mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
@@ -98,9 +99,9 @@ fn menu(
                 ))
                 .clicked()
             {
-                next_state_lobby.set(LobbyState::Single);
                 next_state_ui.set(UiState::GameMenu);
                 next_state_province.set(ProvinceState::ShootingRange);
+                event_load.send(LoadEvent(LobbyState::Single));
             }
             if ui
                 .button(rich_text("Multiplayer".to_string(), Module(&MODULE), &font))
@@ -125,7 +126,7 @@ fn menu(
 
 #[allow(clippy::too_many_arguments)]
 fn multiplayer_window(
-    mut next_state_lobby: ResMut<NextState<LobbyState>>,
+    mut event_load: EventWriter<LoadEvent>,
     mut next_state_ui: ResMut<NextState<UiState>>,
     mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
@@ -184,7 +185,7 @@ fn multiplayer_window(
                             Some(format!("127.0.0.1:{}", state.host_port.clone()));
                         host_resource.username = Some(state.username.clone());
                         next_state_menu_window.set(WindowState::None);
-                        next_state_lobby.set(LobbyState::Host);
+                        event_load.send(LoadEvent(LobbyState::Host));
                         next_state_province.set(ProvinceState::ShootingRange);
                         next_state_ui.set(UiState::GameMenu);
                     }
@@ -215,7 +216,7 @@ fn multiplayer_window(
                         client_resource.username = Some(state.username.clone());
                         next_state_menu_window.set(WindowState::None);
                         state.multiplayer_state = MultiplayerState::Create;
-                        next_state_lobby.set(LobbyState::Client);
+                        event_load.send(LoadEvent(LobbyState::Client));
                         next_state_province.set(ProvinceState::ShootingRange);
                         next_state_ui.set(UiState::GameMenu);
                     }

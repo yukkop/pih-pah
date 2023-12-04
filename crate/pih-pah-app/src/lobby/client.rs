@@ -133,9 +133,7 @@ pub fn client_sync_players(
             } => {
                 let name = "noname";
 
-                let player_entity = commands
-                    .spawn_character_shell(color, Vec3::new(0., 10., 0.))
-                    .id();
+                let player_entity = commands.spawn_character_shell(color, Vec3::ZERO).id();
                 if let PlayerId::Client(id) = player_id {
                     if Some(id) == own_id.0 {
                         commands.entity(player_entity).insert(Me);
