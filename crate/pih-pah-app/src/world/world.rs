@@ -195,7 +195,7 @@ fn process_scene_child(
                     let transform = transform_query.get(entity).unwrap();
                     commands
                         .entity(entity)
-                        .insert(Respawn::new(transform.translation));
+                        .insert(Respawn::from_vec3(transform.translation));
                 }
             }
         }

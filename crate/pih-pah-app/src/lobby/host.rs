@@ -2,6 +2,7 @@ use std::net::UdpSocket;
 use std::time::SystemTime;
 
 use crate::character::{spawn_character, spawn_tied_camera, TiedCamera};
+use crate::component::{Respawn, DespawnReason};
 use crate::lobby::{LobbyState, PlayerData, PlayerId, ServerMessages, Username};
 use crate::province::{SpawnPoint, ProvinceState, self};
 use crate::world::{LinkId, Me};
@@ -11,7 +12,7 @@ use bevy::ecs::event::{EventReader, Event};
 use bevy::ecs::query::With;
 use bevy::ecs::schedule::{OnExit, State};
 use bevy::ecs::system::{Query, Res, ResMut};
-use bevy::hierarchy::DespawnRecursiveExt;
+use bevy::hierarchy::{DespawnRecursiveExt, DespawnRecursive};
 use bevy::prelude::{in_state, Color, Commands, IntoSystemConfigs, OnEnter};
 use bevy::transform::components::Transform;
 use bevy_renet::transport::NetcodeServerPlugin;
@@ -215,6 +216,7 @@ pub fn server_update_system(
 
 pub fn send_change_province(
     mut change_province_event: EventReader<ChangeProvinceServerEvent>,
+    mut character_respawn_query: Query<&mut Respawn, With<Character>>,
     mut server: ResMut<RenetServer>,
 ) {
     for ChangeProvinceServerEvent(state) in change_province_event.read() {
@@ -223,6 +225,10 @@ pub fn send_change_province(
         })
         .unwrap();
         server.broadcast_message(DefaultChannel::ReliableOrdered, message);
+
+        for mut respawn in character_respawn_query.iter_mut() {
+            respawn.insert_reason(DespawnReason::Force);
+        }
     }  
 }
 

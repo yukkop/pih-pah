@@ -117,7 +117,7 @@ extend_commands!(
        Position::from_xyz(spawn_point.x, spawn_point.y, spawn_point.z),
        Collider::cuboid(PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE),
      ))
-     .insert(Respawn::new(spawn_point))
+     .insert(Respawn::from_vec3(spawn_point))
      .insert(PlayerInput::default())
      .insert(Character { id: player_id })
      .insert(PlayerViewDirection(Quat::default()));
