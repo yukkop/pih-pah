@@ -3,11 +3,12 @@ use std::time::SystemTime;
 
 use crate::character::{spawn_character_shell, spawn_tied_camera, TiedCamera};
 use crate::lobby::{LobbyState, PlayerId};
+use crate::province::ProvinceState;
 use crate::world::{LinkId, Me};
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
 use bevy::ecs::query::With;
-use bevy::ecs::schedule::{Condition, OnExit};
+use bevy::ecs::schedule::{Condition, OnExit, State, NextState};
 use bevy::ecs::system::{Query, Res, ResMut, Resource};
 use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::log::info;
@@ -114,18 +115,23 @@ pub fn client_sync_players(
     mut lobby: ResMut<Lobby>,
     mut own_id: ResMut<OwnId>,
     mut tied_camera_query: Query<&mut Transform, With<TiedCamera>>,
+    mut next_state_province: ResMut<NextState<ProvinceState>>,
     lincked_obj_query: Query<(Entity, &LinkId)>,
 ) {
     // player existence manager
     while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
         let server_message = bincode::deserialize(&message).unwrap();
         match server_message {
-            ServerMessages::InitConnection { id } => {
+            ServerMessages::InitConnection { id, province_state } => {
+                next_state_province.set(province_state);       
                 if own_id.0.is_some() {
                     panic!("Yeah, I knew it. The server only had to initialize me once. Redo it, you idiot.");
                 } else {
                     *own_id = OwnId(Some(id));
                 }
+            }
+            ServerMessages::ChangeProvince { province_state } => {
+                next_state_province.set(province_state);       
             }
             ServerMessages::PlayerConnected {
                 id: player_id,
@@ -180,7 +186,6 @@ pub fn client_sync_players(
                 // TODO: why transform to default?
                 commands.entity(player_data.entity).insert(transform);
                 if let PlayerId::Client(id) = player_id {
-                    info!("{:#?}", data.tied_camera_rotation);
                     if Some(id) == own_id.0.as_ref() {
                         if let Ok(mut camera_transform) = tied_camera_query.get_single_mut() {
                             camera_transform.translation = transform.translation;

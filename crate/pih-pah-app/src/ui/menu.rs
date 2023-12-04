@@ -1,5 +1,5 @@
 use crate::load::LoadEvent;
-use crate::lobby::{ClientResource, HostResource, LobbyState};
+use crate::lobby::{ClientResource, HostResource, LobbyState, Lobby};
 use crate::province::ProvinceState;
 use crate::settings::{ApplySettings, ExemptSettings, Settings};
 use crate::ui::{rich_text, TRANSPARENT};
@@ -128,6 +128,7 @@ fn menu(
 fn multiplayer_window(
     mut event_load: EventWriter<LoadEvent>,
     mut next_state_ui: ResMut<NextState<UiState>>,
+    mut next_state_lobby: ResMut<NextState<LobbyState>>,
     mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
     mut context: EguiContexts,
@@ -216,8 +217,7 @@ fn multiplayer_window(
                         client_resource.username = Some(state.username.clone());
                         next_state_menu_window.set(WindowState::None);
                         state.multiplayer_state = MultiplayerState::Create;
-                        event_load.send(LoadEvent(LobbyState::Client));
-                        next_state_province.set(ProvinceState::ShootingRange);
+                        next_state_lobby.set(LobbyState::Client);
                         next_state_ui.set(UiState::GameMenu);
                     }
                 }

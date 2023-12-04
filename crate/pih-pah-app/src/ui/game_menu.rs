@@ -1,4 +1,5 @@
 use crate::lobby::LobbyState;
+use crate::lobby::host::ChangeProvinceServerEvent;
 use crate::province::ProvinceState;
 use crate::settings::{ApplySettings, ExemptSettings, Settings};
 use crate::ui::{rich_text, UiAction, TRANSPARENT};
@@ -17,13 +18,13 @@ lazy_static::lazy_static! {
 pub struct GameMenuEvent(pub UiAction);
 
 #[derive(Resource)]
-struct State {
+struct EguiState {
     is_active: bool,
     selected_map: ProvinceState,
     selected_map_applied: ProvinceState,
 }
 
-impl Default for State {
+impl Default for EguiState {
     fn default() -> Self {
         Self {
             is_active: false,
@@ -46,7 +47,7 @@ impl Plugin for GameMenuPlugins {
     fn build(&self, app: &mut App) {
         app.add_event::<GameMenuEvent>()
             .add_state::<WindowState>()
-            .init_resource::<State>()
+            .init_resource::<EguiState>()
             .add_systems(
                 Update,
                 (handle_action, menu).run_if(in_state(UiState::GameMenu)),
@@ -60,7 +61,7 @@ impl Plugin for GameMenuPlugins {
     }
 }
 
-fn handle_action(mut reader: EventReader<GameMenuEvent>, mut state: ResMut<State>) {
+fn handle_action(mut reader: EventReader<GameMenuEvent>, mut state: ResMut<EguiState>) {
     for GameMenuEvent(action) in reader.read() {
         match action {
             UiAction::Enable => {
@@ -82,7 +83,7 @@ fn menu(
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
     mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut context: EguiContexts,
-    mut state: ResMut<State>,
+    mut state: ResMut<EguiState>,
     mut ui_game_menu_writer: EventWriter<GameMenuEvent>,
 ) {
     let ctx = context.ctx_mut();
@@ -133,8 +134,10 @@ fn settings_window(
     mut context: EguiContexts,
     mut windows: Query<&Window>,
     mut settings: ResMut<Settings>,
-    mut state: ResMut<State>,
+    mut state: ResMut<EguiState>,
+    lobby_state: Res<State<LobbyState>>,
     mut settings_applying: EventWriter<ApplySettings>,
+    mut change_province: EventWriter<ChangeProvinceServerEvent>,
 ) {
     let window = windows.single_mut();
     let window_size = egui::vec2(window.width(), window.height());
@@ -158,26 +161,30 @@ fn settings_window(
         .resizable(false)
         .movable(false)
         .show(ctx, |ui| {
+            ui.label(rich_text("Audio: ".to_string(), Module(&MODULE), &font));
             ui.horizontal(|ui| {
-                ui.label(format!("Music: {}", settings.music_volume));
+                ui.label(rich_text(format!("Music: {}", settings.music_volume), Module(&MODULE), &font));
                 ui.add(egui::Slider::new(&mut settings.music_volume, 0.0..=200.0).text("%"));
             });
-            ui.horizontal(|ui| {
-                egui::ComboBox::from_label("Map")
-                    .selected_text(format!("{}", state.selected_map))
-                    .show_ui(ui, |ui| {
-                        ui.selectable_value(
-                            &mut state.selected_map,
-                            ProvinceState::ShootingRange,
-                            ProvinceState::ShootingRange.to_string(),
-                        );
-                        ui.selectable_value(
-                            &mut state.selected_map,
-                            ProvinceState::GravityHell,
-                            ProvinceState::GravityHell.to_string(),
-                        );
-                    });
-            });
+            if *lobby_state.get() != LobbyState::Client {
+                ui.label(rich_text("Province: ".to_string(), Module(&MODULE), &font));
+                ui.horizontal(|ui| {
+                    egui::ComboBox::from_label(rich_text("Province".to_string(), Module(&MODULE), &font))
+                        .selected_text(format!("{}", state.selected_map))
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(
+                                &mut state.selected_map,
+                                ProvinceState::ShootingRange,
+                                ProvinceState::ShootingRange.to_string(),
+                            );
+                            ui.selectable_value(
+                                &mut state.selected_map,
+                                ProvinceState::GravityHell,
+                                ProvinceState::GravityHell.to_string(),
+                            );
+                        });
+                });
+            }
             ui.horizontal(|ui| {
                 if ui
                     .button(rich_text("Cansel".to_string(), Module(&MODULE), &font))
@@ -189,24 +196,30 @@ fn settings_window(
                     .button(rich_text("Apply".to_string(), Module(&MODULE), &font))
                     .clicked()
                 {
+                    if state.selected_map_applied != state.selected_map {
+                        state.selected_map_applied = state.selected_map;
+                        next_state_province.set(state.selected_map);
+                        change_province.send(ChangeProvinceServerEvent(state.selected_map));
+                    }
                     settings_applying.send(ApplySettings);
-                    state.selected_map_applied = state.selected_map;
-                    next_state_province.set(state.selected_map);
                 }
                 if ui
                     .button(rich_text("Ok".to_string(), Module(&MODULE), &font))
                     .clicked()
                 {
+                    if state.selected_map_applied != state.selected_map {
+                        state.selected_map_applied = state.selected_map;
+                        next_state_province.set(state.selected_map);
+                        change_province.send(ChangeProvinceServerEvent(state.selected_map));
+                    }
                     settings_applying.send(ApplySettings);
-                    state.selected_map_applied = state.selected_map;
-                    next_state_province.set(state.selected_map);
                     next_state_menu_window.set(WindowState::None);
                 }
             });
         });
 }
 
-fn exempt_setting(mut event: EventWriter<ExemptSettings>, mut state: ResMut<State>) {
+fn exempt_setting(mut event: EventWriter<ExemptSettings>, mut state: ResMut<EguiState>) {
     state.selected_map = state.selected_map_applied;
     event.send(ExemptSettings);
 }

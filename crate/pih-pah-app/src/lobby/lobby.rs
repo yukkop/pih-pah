@@ -1,4 +1,5 @@
 use crate::lobby::single::SingleLobbyPlugins;
+use crate::province::ProvinceState;
 use crate::world::LinkId;
 use bevy::app::{App, Plugin};
 use bevy::math::{Quat, Vec3};
@@ -26,6 +27,10 @@ pub enum LobbyState {
 pub enum ServerMessages {
     InitConnection {
         id: ClientId,
+        province_state: ProvinceState,
+    },
+    ChangeProvince {
+        province_state: ProvinceState,
     },
     PlayerConnected {
         id: PlayerId,
