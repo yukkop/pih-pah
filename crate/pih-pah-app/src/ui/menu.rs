@@ -98,9 +98,9 @@ fn menu(
                 ))
                 .clicked()
             {
-                next_state_lobby.set(LobbyState::Single);
                 next_state_ui.set(UiState::GameMenu);
                 next_state_province.set(ProvinceState::ShootingRange);
+                next_state_lobby.set(LobbyState::Single);
             }
             if ui
                 .button(rich_text("Multiplayer".to_string(), Module(&MODULE), &font))

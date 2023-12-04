@@ -1,11 +1,12 @@
 use crate::character::{spawn_character, spawn_tied_camera, TiedCamera};
 use crate::lobby::LobbyState;
+use crate::province::SpawnPoint;
 use crate::world::Me;
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
 use bevy::ecs::query::With;
 use bevy::ecs::schedule::OnExit;
-use bevy::ecs::system::Query;
+use bevy::ecs::system::{Query, Res};
 use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::math::Vec3;
 use bevy::prelude::{in_state, Color, Commands, IntoSystemConfigs, OnEnter};
@@ -22,10 +23,12 @@ impl Plugin for SingleLobbyPlugins {
     }
 }
 
-fn setup(mut commands: Commands) {
-    let a = Vec3::new(0., 10., 0.);
+fn setup(
+    mut commands: Commands,
+    spawn_point: Res<SpawnPoint>,
+) {
     let entity = commands
-        .spawn_character(PlayerId::Host, Color::RED, a)
+        .spawn_character(PlayerId::Host, Color::RED, spawn_point.random_point())
         .insert(Me)
         .id();
     commands.spawn_tied_camera(entity);
