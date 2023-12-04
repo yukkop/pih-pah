@@ -1,6 +1,6 @@
 use crate::lobby::LobbyState;
 use crate::province::ProvinceState;
-use crate::settings::{Settings, ApplySettings, ExemptSettings};
+use crate::settings::{ApplySettings, ExemptSettings, Settings};
 use crate::ui::{rich_text, UiAction, TRANSPARENT};
 use crate::util::i18n::Uniq::Module;
 use bevy::prelude::*;
@@ -31,7 +31,6 @@ impl Default for State {
             selected_map_applied: ProvinceState::ShootingRange,
         }
     }
-    
 }
 
 #[derive(Default, Debug, Hash, States, PartialEq, Eq, Clone, Copy)]
@@ -45,8 +44,7 @@ pub struct GameMenuPlugins;
 
 impl Plugin for GameMenuPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_event::<GameMenuEvent>()
+        app.add_event::<GameMenuEvent>()
             .add_state::<WindowState>()
             .init_resource::<State>()
             .add_systems(
@@ -55,7 +53,8 @@ impl Plugin for GameMenuPlugins {
             )
             .add_systems(
                 Update,
-                settings_window.run_if(in_state(UiState::GameMenu).and_then(in_state(WindowState::Settings))),
+                settings_window
+                    .run_if(in_state(UiState::GameMenu).and_then(in_state(WindowState::Settings))),
             )
             .add_systems(OnExit(WindowState::Settings), exempt_setting);
     }
@@ -105,6 +104,7 @@ fn menu(
                     .button(rich_text("Back".to_string(), Module(&MODULE), &font))
                     .clicked()
                 {
+                    next_state_menu_window.set(WindowState::None);
                     ui_game_menu_writer.send(GameMenuEvent(UiAction::Disable));
                 }
                 if ui
@@ -206,10 +206,7 @@ fn settings_window(
         });
 }
 
-fn exempt_setting(
-    mut event: EventWriter<ExemptSettings>,
-    mut state: ResMut<State>,
-) {
+fn exempt_setting(mut event: EventWriter<ExemptSettings>, mut state: ResMut<State>) {
     state.selected_map = state.selected_map_applied;
     event.send(ExemptSettings);
 }

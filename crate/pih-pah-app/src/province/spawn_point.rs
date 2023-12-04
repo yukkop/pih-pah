@@ -1,18 +1,16 @@
-use bevy::{math::Vec3, ecs::system::Resource, prelude::Deref};
+use bevy::{ecs::system::Resource, math::Vec3, prelude::Deref};
 use rand::Rng;
 
-#[derive(Debug, Clone, Resource, Deref)]
+#[derive(Debug, Clone, Resource, Deref, Default)]
 pub struct SpawnPoint(Vec<Vec3>);
-
-impl Default for SpawnPoint {
-    fn default() -> Self {
-        Self(vec![Vec3::ZERO])
-    }   
-}
 
 impl SpawnPoint {
     pub fn new<T: IntoVec3Vec>(spawn_points: T) -> Self {
         Self(spawn_points.into_vec3_vec())
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 
     pub fn points(&self) -> &[Vec3] {

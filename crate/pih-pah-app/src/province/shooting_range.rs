@@ -1,7 +1,7 @@
 use crate::world::PromisedScene;
 use bevy::prelude::*;
 
-use super::{ProvinceState, spawn_point::SpawnPoint};
+use super::{spawn_point::SpawnPoint, ProvinceState};
 
 #[derive(Component)]
 struct Affiliation;
@@ -16,7 +16,7 @@ impl Plugin for ShootingRangePlugins {
 }
 
 fn load(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.insert_resource(SpawnPoint::new(Vec3::new(0., 10., 0.)));
+    commands.insert_resource(SpawnPoint::new(Vec3::new(0., 30., 0.)));
 
     commands
         .spawn((PointLightBundle {

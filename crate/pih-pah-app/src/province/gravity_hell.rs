@@ -1,7 +1,7 @@
 use crate::world::PromisedScene;
-use bevy::{prelude::*, pbr::CascadeShadowConfigBuilder};
+use bevy::{pbr::CascadeShadowConfigBuilder, prelude::*};
 
-use super::{ProvinceState, spawn_point::SpawnPoint};
+use super::{spawn_point::SpawnPoint, ProvinceState};
 
 #[derive(Component)]
 struct Affiliation;
@@ -27,7 +27,7 @@ fn load(mut commands: Commands, asset_server: Res<AssetServer>) {
         },
         transform: Transform {
             translation: Vec3::new(0.0, 200.0, 0.0),
-            rotation: Quat::from_rotation_x(-(1.0_f32).atan() * 2.),
+            rotation: Quat::from_rotation_x(0.),
             ..default()
         },
         cascade_shadow_config: CascadeShadowConfigBuilder {

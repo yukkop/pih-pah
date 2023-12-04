@@ -4,9 +4,8 @@ use crate::province::menu::MenuPlugins;
 use crate::province::ShootingRangePlugins;
 use bevy::prelude::*;
 
-use super::GravityHellPlugins;
 use super::spawn_point::SpawnPoint;
-
+use super::GravityHellPlugins;
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
 pub enum ProvinceState {

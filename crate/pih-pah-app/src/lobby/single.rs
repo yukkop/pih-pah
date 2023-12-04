@@ -8,7 +8,6 @@ use bevy::ecs::query::With;
 use bevy::ecs::schedule::OnExit;
 use bevy::ecs::system::{Query, Res};
 use bevy::hierarchy::DespawnRecursiveExt;
-use bevy::math::Vec3;
 use bevy::prelude::{in_state, Color, Commands, IntoSystemConfigs, OnEnter};
 
 use super::{PlayerId, PlayerInput};
@@ -23,10 +22,7 @@ impl Plugin for SingleLobbyPlugins {
     }
 }
 
-fn setup(
-    mut commands: Commands,
-    spawn_point: Res<SpawnPoint>,
-) {
+fn setup(mut commands: Commands, spawn_point: Res<SpawnPoint>) {
     let entity = commands
         .spawn_character(PlayerId::Host, Color::RED, spawn_point.random_point())
         .insert(Me)
