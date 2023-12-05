@@ -2,17 +2,17 @@ use std::net::UdpSocket;
 use std::time::SystemTime;
 
 use crate::character::{spawn_character, spawn_tied_camera, TiedCamera};
-use crate::component::{Respawn, DespawnReason};
+use crate::component::{DespawnReason, Respawn};
 use crate::lobby::{LobbyState, PlayerData, PlayerId, ServerMessages, Username};
-use crate::province::{SpawnPoint, ProvinceState, self};
+use crate::province::{ProvinceState, SpawnPoint};
 use crate::world::{LinkId, Me};
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
-use bevy::ecs::event::{EventReader, Event};
+use bevy::ecs::event::{Event, EventReader};
 use bevy::ecs::query::With;
 use bevy::ecs::schedule::{OnExit, State};
 use bevy::ecs::system::{Query, Res, ResMut};
-use bevy::hierarchy::{DespawnRecursiveExt, DespawnRecursive};
+use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::prelude::{in_state, Color, Commands, IntoSystemConfigs, OnEnter};
 use bevy::transform::components::Transform;
 use bevy_renet::transport::NetcodeServerPlugin;
@@ -33,13 +33,17 @@ pub struct HostLobbyPlugins;
 
 impl Plugin for HostLobbyPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_event::<ChangeProvinceServerEvent>()
+        app.add_event::<ChangeProvinceServerEvent>()
             .add_plugins((RenetServerPlugin, NetcodeServerPlugin))
             .add_systems(OnEnter(LobbyState::Host), setup)
             .add_systems(
                 Update,
-                (update, server_update_system, send_change_province, server_sync_players)
+                (
+                    update,
+                    server_update_system,
+                    send_change_province,
+                    server_sync_players,
+                )
                     .run_if(in_state(LobbyState::Host)),
             )
             .add_systems(OnExit(LobbyState::Host), teardown);
@@ -133,8 +137,11 @@ pub fn server_update_system(
                 log::info!("Player {} connected.", client_id);
 
                 // TODO remove
-                let message =
-                    bincode::serialize(&ServerMessages::InitConnection { id: *client_id, province_state: *province_state.get() }).unwrap();
+                let message = bincode::serialize(&ServerMessages::InitConnection {
+                    id: *client_id,
+                    province_state: *province_state.get(),
+                })
+                .unwrap();
                 server.send_message(*client_id, DefaultChannel::ReliableOrdered, message);
 
                 lobby.players_seq += 1;
@@ -226,7 +233,7 @@ pub fn send_change_province(
         for mut respawn in character_respawn_query.iter_mut() {
             respawn.insert_reason(DespawnReason::Forced);
         }
-    }  
+    }
 }
 
 pub fn server_sync_players(

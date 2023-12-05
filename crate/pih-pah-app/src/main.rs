@@ -2,14 +2,12 @@ use std::env;
 
 use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowResolution};
+use bevy::winit::WinitWindows;
 use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_xpbd_3d::prelude::PhysicsPlugins;
 use pih_pah_app::world::WorldPlugins;
-use bevy::winit::WinitWindows;
 use winit::window::Icon;
-
-
 
 fn main() {
     std::env::set_var(
@@ -67,7 +65,7 @@ fn main() {
 fn set_window_icon(
     // we have to use `NonSend` here
     windows: NonSend<WinitWindows>,
-) { 
+) {
     let exe_path = env::current_exe().expect("Failed to find executable path");
     let exe_dir = exe_path
         .parent()
@@ -92,4 +90,3 @@ fn set_window_icon(
         window.set_window_icon(Some(icon.clone()));
     }
 }
-

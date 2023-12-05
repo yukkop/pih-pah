@@ -3,7 +3,7 @@ use std::fmt::Display;
 use crate::province::menu::MenuPlugins;
 use crate::province::ShootingRangePlugins;
 use bevy::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use super::spawn_point::SpawnPoint;
 use super::GravityHellPlugins;

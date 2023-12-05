@@ -37,8 +37,12 @@ impl<A: Into<DespawnReason>, B: Into<DespawnReason>, C: Into<DespawnReason>> Int
     }
 }
 
-impl<A: Into<DespawnReason>, B: Into<DespawnReason>, C: Into<DespawnReason>, D: Into<DespawnReason>>
-    IntoDespawnTypeVec for (A, B, C, D)
+impl<
+        A: Into<DespawnReason>,
+        B: Into<DespawnReason>,
+        C: Into<DespawnReason>,
+        D: Into<DespawnReason>,
+    > IntoDespawnTypeVec for (A, B, C, D)
 {
     fn into_despawn_type_vec(self) -> Vec<DespawnReason> {
         vec![self.0.into(), self.1.into(), self.2.into(), self.3.into()]

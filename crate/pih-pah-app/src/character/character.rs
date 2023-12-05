@@ -1,4 +1,4 @@
-use crate::component::{Respawn, DespawnReason, AxisName, UntouchedTimer, UntouchedTimerValue};
+use crate::component::{AxisName, DespawnReason, Respawn, UntouchedTimerValue};
 use crate::extend_commands;
 use crate::lobby::Character;
 use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerViewDirection};
@@ -26,7 +26,9 @@ impl Plugin for CharacterPlugins {
         )
         .add_systems(
             PostUpdate,
-            tied_camera_follow.run_if(not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client)))),
+            tied_camera_follow.run_if(
+                not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
+            ),
         );
     }
 }

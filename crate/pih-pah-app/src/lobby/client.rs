@@ -8,10 +8,9 @@ use crate::world::{LinkId, Me};
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
 use bevy::ecs::query::With;
-use bevy::ecs::schedule::{Condition, OnExit, State, NextState};
+use bevy::ecs::schedule::{Condition, NextState, OnExit};
 use bevy::ecs::system::{Query, Res, ResMut, Resource};
 use bevy::hierarchy::DespawnRecursiveExt;
-use bevy::log::info;
 use bevy::math::Vec3;
 use bevy::prelude::{in_state, Commands, IntoSystemConfigs, OnEnter};
 use bevy::transform::components::Transform;
@@ -108,6 +107,7 @@ fn teardown(
     commands.remove_resource::<TransportDataResource>();
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn client_sync_players(
     mut commands: Commands,
     mut client: ResMut<RenetClient>,
@@ -123,7 +123,7 @@ pub fn client_sync_players(
         let server_message = bincode::deserialize(&message).unwrap();
         match server_message {
             ServerMessages::InitConnection { id, province_state } => {
-                next_state_province.set(province_state);       
+                next_state_province.set(province_state);
                 if own_id.0.is_some() {
                     panic!("Yeah, I knew it. The server only had to initialize me once. Redo it, you idiot.");
                 } else {
@@ -131,7 +131,7 @@ pub fn client_sync_players(
                 }
             }
             ServerMessages::ChangeProvince { province_state } => {
-                next_state_province.set(province_state);       
+                next_state_province.set(province_state);
             }
             ServerMessages::PlayerConnected {
                 id: player_id,

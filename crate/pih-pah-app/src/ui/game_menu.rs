@@ -1,5 +1,5 @@
-use crate::lobby::LobbyState;
 use crate::lobby::host::ChangeProvinceServerEvent;
+use crate::lobby::LobbyState;
 use crate::province::ProvinceState;
 use crate::settings::{ApplySettings, ExemptSettings, Settings};
 use crate::ui::{rich_text, UiAction, TRANSPARENT};
@@ -128,6 +128,7 @@ fn menu(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn settings_window(
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
     mut next_state_province: ResMut<NextState<ProvinceState>>,
@@ -163,26 +164,34 @@ fn settings_window(
         .show(ctx, |ui| {
             ui.label(rich_text("Audio: ".to_string(), Module(&MODULE), &font));
             ui.horizontal(|ui| {
-                ui.label(rich_text(format!("Music: {}", settings.music_volume), Module(&MODULE), &font));
+                ui.label(rich_text(
+                    format!("Music: {}", settings.music_volume),
+                    Module(&MODULE),
+                    &font,
+                ));
                 ui.add(egui::Slider::new(&mut settings.music_volume, 0.0..=200.0).text("%"));
             });
             if *lobby_state.get() != LobbyState::Client {
                 ui.label(rich_text("Province: ".to_string(), Module(&MODULE), &font));
                 ui.horizontal(|ui| {
-                    egui::ComboBox::from_label(rich_text("Province".to_string(), Module(&MODULE), &font))
-                        .selected_text(format!("{}", state.selected_map))
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(
-                                &mut state.selected_map,
-                                ProvinceState::ShootingRange,
-                                ProvinceState::ShootingRange.to_string(),
-                            );
-                            ui.selectable_value(
-                                &mut state.selected_map,
-                                ProvinceState::GravityHell,
-                                ProvinceState::GravityHell.to_string(),
-                            );
-                        });
+                    egui::ComboBox::from_label(rich_text(
+                        "Province".to_string(),
+                        Module(&MODULE),
+                        &font,
+                    ))
+                    .selected_text(format!("{}", state.selected_map))
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(
+                            &mut state.selected_map,
+                            ProvinceState::ShootingRange,
+                            ProvinceState::ShootingRange.to_string(),
+                        );
+                        ui.selectable_value(
+                            &mut state.selected_map,
+                            ProvinceState::GravityHell,
+                            ProvinceState::GravityHell.to_string(),
+                        );
+                    });
                 });
             }
             ui.horizontal(|ui| {

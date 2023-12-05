@@ -1,5 +1,5 @@
 use crate::load::LoadEvent;
-use crate::lobby::{ClientResource, HostResource, LobbyState, Lobby};
+use crate::lobby::{ClientResource, HostResource, LobbyState};
 use crate::province::ProvinceState;
 use crate::settings::{ApplySettings, ExemptSettings, Settings};
 use crate::ui::{rich_text, TRANSPARENT};
