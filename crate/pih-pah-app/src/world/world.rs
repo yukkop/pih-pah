@@ -13,9 +13,10 @@ use bevy_xpbd_3d::prelude::{Collider, RigidBody, PhysicsLayer};
 use serde::{Deserialize, Serialize};
 
 #[derive(PhysicsLayer)]
-pub enum CollisionLayers {
-    Untouched,
-    Object,
+pub enum MyLayers {
+    /// Cannot touch each other
+    ActorNoclip,
+    Default,
 }
 
 #[derive(Component)]
@@ -181,7 +182,9 @@ fn process_scene_child(
                         let collider_handler = mesh_handle_query.get(entity).unwrap();
                         if let Some(mesh) = meshes.get(collider_handler) {
                             let collider = Collider::trimesh_from_mesh(mesh).unwrap();
-                            commands.entity(entity).insert(collider);
+                            commands.entity(entity)
+                                .insert(collider)
+                                .insert( CollisionLayers::new([MyLayers::Default], [MyLayers::Default, MyLayers::ActorNoclip]));
 
                             if val == "d" {
                                 let mut commands_entity = commands.entity(entity);
