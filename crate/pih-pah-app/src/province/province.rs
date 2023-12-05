@@ -3,11 +3,12 @@ use std::fmt::Display;
 use crate::province::menu::MenuPlugins;
 use crate::province::ShootingRangePlugins;
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use super::spawn_point::SpawnPoint;
 use super::GravityHellPlugins;
 
-#[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
+#[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States, Serialize, Deserialize)]
 pub enum ProvinceState {
     #[default]
     Menu = 0,

@@ -1,8 +1,8 @@
-use crate::component::Respawn;
+use crate::component::{AxisName, DespawnReason, Respawn, UntouchedTimerValue};
 use crate::extend_commands;
 use crate::lobby::Character;
 use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerViewDirection};
-use crate::world::Me;
+use crate::world::{Me, MyLayers};
 use bevy::{ecs::system::EntityCommands, prelude::*};
 use bevy_xpbd_3d::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -26,7 +26,9 @@ impl Plugin for CharacterPlugins {
         )
         .add_systems(
             PostUpdate,
-            tied_camera_follow.run_if(not(in_state(LobbyState::None))),
+            tied_camera_follow.run_if(
+                not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
+            ),
         );
     }
 }
@@ -116,8 +118,9 @@ extend_commands!(
        RigidBody::Dynamic,
        Position::from_xyz(spawn_point.x, spawn_point.y, spawn_point.z),
        Collider::cuboid(PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE),
+      CollisionLayers::new([MyLayers::Default], [MyLayers::Default, MyLayers::ActorNoclip]),
      ))
-     .insert(Respawn::new(spawn_point))
+     .insert(Respawn::new(DespawnReason::Less(-10., AxisName::Y), spawn_point, UntouchedTimerValue::Timer(10.)))
      .insert(PlayerInput::default())
      .insert(Character { id: player_id })
      .insert(PlayerViewDirection(Quat::default()));
