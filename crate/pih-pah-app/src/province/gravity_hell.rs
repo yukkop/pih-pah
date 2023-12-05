@@ -41,9 +41,12 @@ fn load(mut commands: Commands, asset_server: Res<AssetServer>) {
     let scene = asset_server.load("gravity_hell.glb#Scene0");
 
     commands
-        .spawn(SceneBundle { scene, ..default() })
-        .insert(PromisedScene)
-        .insert(Affiliation);
+        .spawn((
+            SceneBundle { scene, ..default() },
+            PromisedScene,
+            Affiliation,
+            Name::new("GravityHell"),
+        ));
 }
 
 fn unload(mut commands: Commands, affiliation_query: Query<Entity, With<Affiliation>>) {

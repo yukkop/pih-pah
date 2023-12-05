@@ -68,9 +68,6 @@ pub fn new_renet_server(addr: &str) -> (RenetServer, NetcodeServerTransport) {
 }
 
 fn setup(mut commands: Commands, host_resource: Res<HostResource>, spawn_point: Res<SpawnPoint>) {
-    // me
-
-    // server
     commands.init_resource::<TransportDataResource>();
 
     let mut lobby = Lobby::default();
@@ -227,7 +224,7 @@ pub fn send_change_province(
         server.broadcast_message(DefaultChannel::ReliableOrdered, message);
 
         for mut respawn in character_respawn_query.iter_mut() {
-            respawn.insert_reason(DespawnReason::Force);
+            respawn.insert_reason(DespawnReason::Forced);
         }
     }  
 }

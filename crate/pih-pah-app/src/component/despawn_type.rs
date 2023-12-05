@@ -1,7 +1,16 @@
 #[allow(dead_code)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DespawnReason {
-    Force,
+    Forced,
+    More(f32, AxisName),
+    Less(f32, AxisName),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum AxisName {
+    X,
+    Y,
+    Z,
 }
 
 pub trait IntoDespawnTypeVec {

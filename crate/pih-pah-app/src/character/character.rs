@@ -1,4 +1,4 @@
-use crate::component::Respawn;
+use crate::component::{Respawn, DespawnReason, AxisName};
 use crate::extend_commands;
 use crate::lobby::Character;
 use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerViewDirection};
@@ -117,7 +117,7 @@ extend_commands!(
        Position::from_xyz(spawn_point.x, spawn_point.y, spawn_point.z),
        Collider::cuboid(PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE),
      ))
-     .insert(Respawn::from_vec3(spawn_point))
+     .insert(Respawn::new(DespawnReason::Less(-10., AxisName::Y), spawn_point))
      .insert(PlayerInput::default())
      .insert(Character { id: player_id })
      .insert(PlayerViewDirection(Quat::default()));

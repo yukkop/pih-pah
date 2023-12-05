@@ -9,8 +9,14 @@ use crate::ui;
 use crate::ui::{UiAction, UiPlugins};
 use bevy::prelude::*;
 use bevy_xpbd_3d::components::Mass;
-use bevy_xpbd_3d::prelude::{Collider, RigidBody};
+use bevy_xpbd_3d::prelude::{Collider, RigidBody, PhysicsLayer};
 use serde::{Deserialize, Serialize};
+
+#[derive(PhysicsLayer)]
+pub enum CollisionLayers {
+    Untouched,
+    Object,
+}
 
 #[derive(Component)]
 pub struct PromisedScene;
