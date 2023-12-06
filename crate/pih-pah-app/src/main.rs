@@ -49,10 +49,10 @@ fn main() {
                 file_path: "asset".into(),
                 ..default()
             }),
+            DefaultInspectorConfigPlugin,
             EguiPlugin,
-        ))
-        .add_plugins(DefaultInspectorConfigPlugin)
-        .add_systems(Update, inspector_ui);
+
+        ));
     }
     info!("Starting pih-pah");
 
@@ -64,15 +64,12 @@ fn main() {
 }
 
 fn set_window_icon(
-    // we have to use `NonSend` here
     windows: NonSend<WinitWindows>,
 ) {
     let exe_path = env::current_exe().expect("Failed to find executable path");
     let exe_dir = exe_path
         .parent()
         .expect("Failed to find executable directory");
-    // here we use the `image` crate to load our icon data from a png file
-    // this is not a very bevy-native solution, but it will do
     let (icon_rgba, icon_width, icon_height) = {
         if let Ok(image) = image::open(exe_dir.join("icon-v1.png")) {
             let image = image.into_rgba8();
@@ -86,33 +83,7 @@ fn set_window_icon(
     };
     let icon = Icon::from_rgba(icon_rgba, icon_width, icon_height).unwrap();
 
-    // do it for all windows
     for window in windows.windows.values() {
         window.set_window_icon(Some(icon.clone()));
     }
-}
-
-fn inspector_ui(world: &mut World) {
-    let mut egui_context = world
-        .query_filtered::<&mut EguiContext, With<PrimaryWindow>>()
-        .single(world)
-        .clone();
-
-    egui::Window::new("UI").show(egui_context.get_mut(), |ui| {
-        egui::ScrollArea::vertical().show(ui, |ui| {
-            // equivalent to `WorldInspectorPlugin`
-            bevy_inspector::ui_for_world(world, ui);
-             
-            // works with any `Reflect` value, including `Handle`s
-            let mut any_reflect_value: i32 = 5;
-            bevy_inspector::ui_for_value(&mut any_reflect_value, ui, world);
-
-            egui::CollapsingHeader::new("Materials").show(ui, |ui| {
-                bevy_inspector::ui_for_assets::<StandardMaterial>(world, ui);
-            });
-
-            ui.heading("Entities");
-            bevy_inspector::ui_for_world_entities(world, ui);
-        });
-    });
 }

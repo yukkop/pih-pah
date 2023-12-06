@@ -2,6 +2,7 @@ use crate::component::{AxisName, DespawnReason, Respawn, UntouchedTimerValue};
 use crate::extend_commands;
 use crate::lobby::Character;
 use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerViewDirection};
+use crate::ui::MainCamera;
 use crate::world::{Me, MyLayers};
 use bevy::{ecs::system::EntityCommands, prelude::*};
 use bevy_xpbd_3d::prelude::*;
@@ -86,12 +87,27 @@ fn update_jump_normals(
 }
 
 fn jump(
-    mut query: Query<(&mut LinearVelocity, &PlayerInput, Entity, &JumpHelper)>, /* , time: Res<Time> */
+    mut query: Query<(
+        &mut LinearVelocity,
+        &PlayerViewDirection,
+        &PlayerInput,
+        Entity,
+        &JumpHelper,
+    )>, /* , time: Res<Time> */
     gravity: Res<Gravity>,
     collisions: Res<Collisions>,
 ) {
-    for (mut linear_velocity, input, player_entity, jump_direction) in query.iter_mut() {
+    for (mut linear_velocity, view_direction, input, player_entity, jump_direction) in
+        query.iter_mut()
+    {
         let jumped = input.jump;
+
+        let dx = (input.right as i8 - input.left as i8) as f32;
+        let dy = (input.down as i8 - input.up as i8) as f32;
+
+        let local_x = view_direction.0.mul_vec3(Vec3::X);
+        let local_y = view_direction.0.mul_vec3(Vec3::Z);
+
         if jumped
             && collisions
                 .collisions_with_entity(player_entity)
@@ -99,8 +115,12 @@ fn jump(
                 .is_some()
         {
             **linear_velocity +=
-                jump_direction.last_viable_normal * (-gravity.0.y * 2.0 * PLAYER_SIZE).sqrt() * 1.1; // sqrt(2gh)
-            log::debug!("character ({:#?}) jumped {:?}", player_entity, jump_direction.last_viable_normal);
+
+                ((jump_direction.last_viable_normal + local_x * dx + local_y * dy)
+                    .normalize_or_zero())
+                    * (-gravity.0.y * 2.0 * PLAYER_SIZE).sqrt()
+                    * 2.0; // sqrt(2gh)
+            log::debug!("{:?}", jump_direction.last_viable_normal);
         }
     }
 }
@@ -118,17 +138,18 @@ fn move_characters(
 
         // never use delta time in fixed update !!!
 
+        let a = 1.5_f32.powf(input.sprint as i32 as f32); 
         // move by x axis
         linear_velocity.x +=
-            dx * PLAYER_MOVE_SPEED * view_direction_x.x * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            dx * PLAYER_MOVE_SPEED * view_direction_x.x * a;
         linear_velocity.z +=
-            dx * PLAYER_MOVE_SPEED * view_direction_x.z * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            dx * PLAYER_MOVE_SPEED * view_direction_x.z * a;
 
         // move by y axis
         linear_velocity.x +=
-            dy * PLAYER_MOVE_SPEED * view_direction_y.x * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            dy * PLAYER_MOVE_SPEED * view_direction_y.x * a;
         linear_velocity.z +=
-            dy * PLAYER_MOVE_SPEED * view_direction_y.z * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            dy * PLAYER_MOVE_SPEED * view_direction_y.z * a;
 
         // camera turn
         let turn = (input.turn_right as i8 - input.turn_left as i8) as f32;
@@ -218,11 +239,13 @@ extend_commands!(
       ))
       .with_children(|parent| {
         // spawn tied camera
-        parent.spawn(Camera3dBundle {
-          transform: Transform::from_xyz(0., 10., 15.).looking_at(Vec3::ZERO, Vec3::Y),
-          ..Default::default()
-        });
+        parent.spawn((
+            Camera3dBundle {
+                transform: Transform::from_xyz(0., 10., 15.).looking_at(Vec3::ZERO, Vec3::Y),
+                ..Default::default()
+                },
+            MainCamera,
+        ));
       });
-
   }
 );
