@@ -30,7 +30,7 @@ impl Plugin for CharacterPlugins {
             ),
         )
         .add_systems(
-            PostUpdate,
+            FixedUpdate,
             jump.run_if(
                 not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
             ),
@@ -164,11 +164,8 @@ extend_commands!(
        RigidBody::Dynamic,
        Position::from_xyz(spawn_point.x, spawn_point.y, spawn_point.z),
        Collider::cuboid(PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE),
-<<<<<<< HEAD
        JumpHelper{last_viable_normal: Vec3::Y},
-=======
-      CollisionLayers::new([MyLayers::Default], [MyLayers::Default, MyLayers::ActorNoclip]),
->>>>>>> 6e7e9637f430ffbd98e980216a29b2d52852ce59
+       CollisionLayers::new([MyLayers::Default], [MyLayers::Default, MyLayers::ActorNoclip]),
      ))
      .insert(Respawn::new(DespawnReason::Less(-10., AxisName::Y), spawn_point, UntouchedTimerValue::Timer(10.)))
      .insert(PlayerInput::default())
