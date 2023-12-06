@@ -4,7 +4,7 @@ use crate::province::ProvinceState;
 use crate::settings::{ApplySettings, ExemptSettings, Settings};
 use crate::ui::{rich_text, TRANSPARENT};
 use crate::util::i18n::Uniq::Module;
-use bevy::{prelude::*, window::CursorGrabMode};
+use bevy::prelude::*;
 use bevy_egui::egui::Align2;
 use bevy_egui::{egui, EguiContexts};
 
@@ -73,11 +73,7 @@ impl Plugin for GameMenuPlugins {
                 settings_window
                     .run_if(in_state(UiState::GameMenu).and_then(in_state(WindowState::Settings))),
             )
-            .add_systems(OnExit(WindowState::Settings), exempt_setting)
-            .add_systems(OnEnter(GameMenuActionState::Enable), grab_mouse_off)
-            .add_systems(OnEnter(GameMenuActionState::Disable), grab_mouse_on)
-            .add_systems(OnEnter(UiState::Menu), grab_mouse_off)
-            .add_systems(OnEnter(UiState::GameMenu), grab_mouse_on);
+            .add_systems(OnExit(WindowState::Settings), exempt_setting);
     }
 }
 
@@ -229,24 +225,6 @@ fn settings_window(
                 }
             });
         });
-}
-
-fn grab_mouse_on(
-    mut windows: Query<&mut Window>,
-) {
-    let mut window = windows.single_mut();
-
-    window.cursor.visible = false;
-    window.cursor.grab_mode = CursorGrabMode::Locked;
-}
-
-fn grab_mouse_off(
-    mut windows: Query<&mut Window>,
-) {
-    let mut window = windows.single_mut();
-
-    window.cursor.visible = true;
-    window.cursor.grab_mode = CursorGrabMode::None;
 }
 
 fn exempt_setting(mut event: EventWriter<ExemptSettings>, mut state: ResMut<EguiState>) {

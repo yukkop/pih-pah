@@ -5,8 +5,8 @@ use crate::lobby::{LobbyPlugins, LobbyState, PlayerInput};
 use crate::province::ProvincePlugins;
 use crate::settings::SettingsPlugins;
 use crate::sound::SoundPlugins;
-use crate::ui::{self, GameMenuActionState};
-use crate::ui::{UiAction, UiPlugins};
+use crate::ui::{GameMenuActionState, MouseGrabState};
+use crate::ui::UiPlugins;
 use bevy::prelude::*;
 use bevy_xpbd_3d::components::{CollisionLayers, Mass};
 use bevy_xpbd_3d::prelude::{Collider, PhysicsLayer, RigidBody};
@@ -59,11 +59,14 @@ pub struct Me;
 fn input(
     keyboard_input: Res<Input<KeyCode>>,
     mut next_state_game_menu_action: ResMut<NextState<GameMenuActionState>>,
+    mut nex_state_mouse_grab: ResMut<NextState<MouseGrabState>>,
     game_menu_action: Res<State<GameMenuActionState>>,
+    mouse_grab_state: Res<State<MouseGrabState>>,
     mut player_input_query: Query<&mut PlayerInput, With<Me>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Escape) {
         next_state_game_menu_action.set(game_menu_action.get().clone().toggle());
+        nex_state_mouse_grab.set(mouse_grab_state.get().clone().toggle());
     }
 
     if let Ok(mut player_input) = player_input_query.get_single_mut() {
