@@ -2,6 +2,7 @@ use crate::component::{AxisName, DespawnReason, Respawn, UntouchedTimerValue};
 use crate::extend_commands;
 use crate::lobby::Character;
 use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerViewDirection};
+use crate::ui::MainCamera;
 use crate::world::{Me, MyLayers};
 use bevy::{ecs::system::EntityCommands, prelude::*};
 use bevy_xpbd_3d::prelude::*;
@@ -237,11 +238,13 @@ extend_commands!(
       ))
       .with_children(|parent| {
         // spawn tied camera
-        parent.spawn(Camera3dBundle {
-          transform: Transform::from_xyz(0., 10., 15.).looking_at(Vec3::ZERO, Vec3::Y),
-          ..Default::default()
-        });
+        parent.spawn((
+            Camera3dBundle {
+                transform: Transform::from_xyz(0., 10., 15.).looking_at(Vec3::ZERO, Vec3::Y),
+                ..Default::default()
+                },
+            MainCamera,
+        ));
       });
-
   }
 );
