@@ -86,11 +86,19 @@ fn update_jump_normals(
 }
 
 fn jump(
-    mut query: Query<(&mut LinearVelocity, &PlayerViewDirection, &PlayerInput, Entity, &JumpHelper)>, /* , time: Res<Time> */
+    mut query: Query<(
+        &mut LinearVelocity,
+        &PlayerViewDirection,
+        &PlayerInput,
+        Entity,
+        &JumpHelper,
+    )>, /* , time: Res<Time> */
     gravity: Res<Gravity>,
     collisions: Res<Collisions>,
 ) {
-    for (mut linear_velocity, view_direction, input, player_entity, jump_direction) in query.iter_mut() {
+    for (mut linear_velocity, view_direction, input, player_entity, jump_direction) in
+        query.iter_mut()
+    {
         let jumped = input.jump;
 
         let dx = (input.right as i8 - input.left as i8) as f32;
@@ -106,7 +114,10 @@ fn jump(
                 .is_some()
         {
             **linear_velocity +=
-                ((jump_direction.last_viable_normal + local_x * dx + local_y * dy).normalize_or_zero()) * (-gravity.0.y * 2.0 * PLAYER_SIZE).sqrt() * 2.0; // sqrt(2gh)
+                ((jump_direction.last_viable_normal + local_x * dx + local_y * dy)
+                    .normalize_or_zero())
+                    * (-gravity.0.y * 2.0 * PLAYER_SIZE).sqrt()
+                    * 2.0; // sqrt(2gh)
             log::info!("{:?}", jump_direction.last_viable_normal);
         }
     }
