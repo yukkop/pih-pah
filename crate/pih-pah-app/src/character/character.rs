@@ -30,7 +30,7 @@ impl Plugin for CharacterPlugins {
             ),
         )
         .add_systems(
-            FixedUpdate,
+            Update,
             jump.run_if(
                 not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
             ),
@@ -86,12 +86,19 @@ fn update_jump_normals(
 }
 
 fn jump(
-    mut query: Query<(&mut LinearVelocity, &PlayerInput, Entity, &JumpHelper)>, /* , time: Res<Time> */
+    mut query: Query<(&mut LinearVelocity, &PlayerViewDirection, &PlayerInput, Entity, &JumpHelper)>, /* , time: Res<Time> */
     gravity: Res<Gravity>,
     collisions: Res<Collisions>,
 ) {
-    for (mut linear_velocity, input, player_entity, jump_direction) in query.iter_mut() {
+    for (mut linear_velocity, view_direction, input, player_entity, jump_direction) in query.iter_mut() {
         let jumped = input.jump;
+
+        let dx = (input.right as i8 - input.left as i8) as f32;
+        let dy = (input.down as i8 - input.up as i8) as f32;
+
+        let local_x = view_direction.0.mul_vec3(Vec3::X);
+        let local_y = view_direction.0.mul_vec3(Vec3::Z);
+
         if jumped
             && collisions
                 .collisions_with_entity(player_entity)
@@ -99,7 +106,7 @@ fn jump(
                 .is_some()
         {
             **linear_velocity +=
-                jump_direction.last_viable_normal * (-gravity.0.y * 2.0 * PLAYER_SIZE).sqrt() * 1.1; // sqrt(2gh)
+                ((jump_direction.last_viable_normal + local_x * dx + local_y * dy).normalize_or_zero()) * (-gravity.0.y * 2.0 * PLAYER_SIZE).sqrt() * 2.0; // sqrt(2gh)
             log::info!("{:?}", jump_direction.last_viable_normal);
         }
     }
@@ -120,15 +127,15 @@ fn move_characters(
 
         // move by x axis
         linear_velocity.x +=
-            dx * PLAYER_MOVE_SPEED * global_x.x * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            dx * PLAYER_MOVE_SPEED * global_x.x * 4.0_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
         linear_velocity.z +=
-            dx * PLAYER_MOVE_SPEED * global_x.z * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            dx * PLAYER_MOVE_SPEED * global_x.z * 4.0_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
 
         // move by y axis
         linear_velocity.x +=
-            dy * PLAYER_MOVE_SPEED * global_y.x * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            dy * PLAYER_MOVE_SPEED * global_y.x * 4.0_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
         linear_velocity.z +=
-            dy * PLAYER_MOVE_SPEED * global_y.z * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            dy * PLAYER_MOVE_SPEED * global_y.z * 4.0_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
 
         // camera turn
         let turn = (input.turn_right as i8 - input.turn_left as i8) as f32;
