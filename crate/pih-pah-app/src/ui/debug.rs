@@ -13,6 +13,8 @@ use egui_gizmo::{Gizmo, GizmoMode, GizmoOrientation};
 use bevy::window::PrimaryWindow;
 use bevy_egui::{EguiContext, egui, EguiSet, EguiContexts};
 
+use super::{MainCamera, UiFrameRect};
+
 pub struct DebugUiPlugins;
 
 impl Plugin for DebugUiPlugins {
@@ -53,9 +55,6 @@ fn set_egui_debug(
         });
     }
 }
-
-#[derive(Component)]
-pub struct MainCamera;
 
 fn show_ui_system(world: &mut World) {
     let Ok(egui_context) = world
@@ -185,6 +184,9 @@ impl egui_dock::TabViewer for TabViewer<'_> {
         match window {
             EguiWindow::GameView => {
                 *self.viewport_rect = ui.clip_rect();
+
+                let rect = ui.min_rect();
+                self.world.resource_mut::<UiFrameRect>().set(rect);
 
                 draw_gizmo(ui, self.world, self.selected_entities, self.gizmo_mode);
             }

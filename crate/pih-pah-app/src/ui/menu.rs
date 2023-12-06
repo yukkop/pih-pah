@@ -9,8 +9,9 @@ use bevy::prelude::*;
 use bevy::window::Window;
 use bevy_egui::egui::Align2;
 use bevy_egui::{egui, EguiContexts};
+use egui::Widget;
 
-use super::UiState;
+use super::{UiState, UiBase, UiFrameRect};
 
 lazy_static::lazy_static! {
     static ref MODULE: &'static str = module_path!().splitn(3, ':').nth(2).unwrap_or(module_path!());
@@ -76,6 +77,8 @@ fn menu(
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
     mut context: EguiContexts,
     mut exit: EventWriter<AppExit>,
+    ui_frame_rect: ResMut<UiFrameRect>, 
+    mut windows: Query<&Window>,
 ) {
     let ctx = context.ctx_mut();
 
@@ -84,9 +87,12 @@ fn menu(
         ..default()
     };
 
+    let window = windows.single_mut();
+    let window_size = egui::vec2(window.width(), window.height());
+
     egui::Window::new(rich_text("Menu".to_string(), Module(&MODULE), &font))
         .frame(*TRANSPARENT)
-        .anchor(egui::Align2::LEFT_BOTTOM, [10., -10.])
+        .anchor(egui::Align2::LEFT_BOTTOM, [ui_frame_rect.min.x + 10., (window_size.y - ui_frame_rect.max.y) * -1. - 10.])
         .collapsible(false)
         .resizable(false)
         .movable(false)
@@ -133,12 +139,14 @@ fn multiplayer_window(
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
     mut context: EguiContexts,
     mut state: ResMut<State>,
-    mut windows: Query<&Window>,
+    // mut windows: Query<&Window>,
     mut host_resource: ResMut<HostResource>,
+    ui_frame_rect: ResMut<UiFrameRect>, 
     mut client_resource: ResMut<ClientResource>,
 ) {
-    let window = windows.single_mut();
-    let window_size = egui::vec2(window.width(), window.height());
+    // let window = windows.single_mut();
+    // let window_size = egui::vec2(window.width(), window.height());
+    let frame_size = ui_frame_rect.max - ui_frame_rect.min;
 
     let ctx = context.ctx_mut();
 
@@ -149,7 +157,9 @@ fn multiplayer_window(
 
     let egui_window_size = egui::vec2(400.0, 200.0); // Set your desired egui window size
 
-    let center_position = egui::pos2(window_size.x / 2.0, window_size.y / 2.0);
+    let center_position = egui::pos2(frame_size.x / 2.0, frame_size.y / 2.0);
+
+    // ui_base.0.show(ctx, |ui| {
 
     egui::Window::new(rich_text("Multiplayer".to_string(), Module(&MODULE), &font))
         .pivot(Align2::CENTER_CENTER)
@@ -158,7 +168,7 @@ fn multiplayer_window(
         .collapsible(false)
         .resizable(false)
         .movable(false)
-        .show(ctx, |ui| {
+        .show(&ctx, |ui| {
             match state.multiplayer_state {
                 MultiplayerState::Create => {
                     ui.horizontal(|ui| {
@@ -236,10 +246,12 @@ fn settings_window(
     mut context: EguiContexts,
     mut windows: Query<&Window>,
     mut settings: ResMut<Settings>,
+    ui_frame_rect: ResMut<UiFrameRect>, 
     mut settings_applying: EventWriter<ApplySettings>,
 ) {
     let window = windows.single_mut();
-    let window_size = egui::vec2(window.width(), window.height());
+    // let window_size = egui::vec2(window.width(), window.height());
+    let frame_size = ui_frame_rect.max - ui_frame_rect.min;
 
     let ctx = context.ctx_mut();
 
@@ -250,7 +262,7 @@ fn settings_window(
 
     let egui_window_size = egui::vec2(400.0, 200.0); // Set your desired egui window size
 
-    let center_position = egui::pos2(window_size.x / 2.0, window_size.y / 2.0);
+    let center_position = egui::pos2(frame_size.x / 2.0, frame_size.y / 2.0);
 
     egui::Window::new(rich_text("Settings".to_string(), Module(&MODULE), &font))
         .pivot(Align2::CENTER_CENTER)
