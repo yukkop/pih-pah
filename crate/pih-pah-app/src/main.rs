@@ -1,10 +1,10 @@
 use std::env;
 
 use bevy::prelude::*;
-use bevy::window::{PresentMode, WindowResolution};
+use bevy::window::{PresentMode, WindowResolution, PrimaryWindow};
 use bevy::winit::WinitWindows;
-use bevy_egui::EguiPlugin;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_egui::{EguiPlugin, EguiContext, egui};
+use bevy_inspector_egui::{DefaultInspectorConfigPlugin, bevy_inspector};
 use bevy_xpbd_3d::prelude::PhysicsPlugins;
 use pih_pah_app::world::WorldPlugins;
 use winit::window::Icon;
@@ -51,7 +51,8 @@ fn main() {
             }),
             EguiPlugin,
         ))
-        .add_plugins(WorldInspectorPlugin::default());
+        .add_plugins(DefaultInspectorConfigPlugin)
+        .add_systems(Update, inspector_ui);
     }
     info!("Starting pih-pah");
 
@@ -89,4 +90,29 @@ fn set_window_icon(
     for window in windows.windows.values() {
         window.set_window_icon(Some(icon.clone()));
     }
+}
+
+fn inspector_ui(world: &mut World) {
+    let mut egui_context = world
+        .query_filtered::<&mut EguiContext, With<PrimaryWindow>>()
+        .single(world)
+        .clone();
+
+    egui::Window::new("UI").show(egui_context.get_mut(), |ui| {
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            // equivalent to `WorldInspectorPlugin`
+            bevy_inspector::ui_for_world(world, ui);
+             
+            // works with any `Reflect` value, including `Handle`s
+            let mut any_reflect_value: i32 = 5;
+            bevy_inspector::ui_for_value(&mut any_reflect_value, ui, world);
+
+            egui::CollapsingHeader::new("Materials").show(ui, |ui| {
+                bevy_inspector::ui_for_assets::<StandardMaterial>(world, ui);
+            });
+
+            ui.heading("Entities");
+            bevy_inspector::ui_for_world_entities(world, ui);
+        });
+    });
 }

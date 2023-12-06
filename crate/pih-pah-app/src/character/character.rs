@@ -30,7 +30,7 @@ impl Plugin for CharacterPlugins {
             ),
         )
         .add_systems(
-            FixedUpdate,
+            Update,
             jump.run_if(
                 not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
             ),
@@ -100,7 +100,7 @@ fn jump(
         {
             **linear_velocity +=
                 jump_direction.last_viable_normal * (-gravity.0.y * 2.0 * PLAYER_SIZE).sqrt() * 1.1; // sqrt(2gh)
-            log::info!("{:?}", jump_direction.last_viable_normal);
+            log::debug!("character ({:#?}) jumped {:?}", player_entity, jump_direction.last_viable_normal);
         }
     }
 }
@@ -113,22 +113,22 @@ fn move_characters(
         let dy = (input.down as i8 - input.up as i8) as f32;
 
         // convert axises to global
-        let global_x = view_direction.0.mul_vec3(Vec3::X);
-        let global_y = view_direction.0.mul_vec3(Vec3::Z);
+        let view_direction_x = view_direction.0.mul_vec3(Vec3::X);
+        let view_direction_y = view_direction.0.mul_vec3(Vec3::Z);
 
         // never use delta time in fixed update !!!
 
         // move by x axis
         linear_velocity.x +=
-            dx * PLAYER_MOVE_SPEED * global_x.x * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            dx * PLAYER_MOVE_SPEED * view_direction_x.x * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
         linear_velocity.z +=
-            dx * PLAYER_MOVE_SPEED * global_x.z * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            dx * PLAYER_MOVE_SPEED * view_direction_x.z * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
 
         // move by y axis
         linear_velocity.x +=
-            dy * PLAYER_MOVE_SPEED * global_y.x * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            dy * PLAYER_MOVE_SPEED * view_direction_y.x * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
         linear_velocity.z +=
-            dy * PLAYER_MOVE_SPEED * global_y.z * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            dy * PLAYER_MOVE_SPEED * view_direction_y.z * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
 
         // camera turn
         let turn = (input.turn_right as i8 - input.turn_left as i8) as f32;
@@ -183,7 +183,6 @@ extend_commands!(
       // TODO: Have a resource with shared mesh list instead of adding meshes each time
       .add(Mesh::from(shape::Cube { size: PLAYER_SIZE }));
     let material = StandardMaterial {
-      unlit: true,
       base_color: color,
       ..default()
     };
