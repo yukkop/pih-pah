@@ -3,13 +3,15 @@ use crate::extend_commands;
 use crate::lobby::Character;
 use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerViewDirection};
 use crate::world::{Me, MyLayers};
-use bevy::{ecs::system::EntityCommands, prelude::*};
+use bevy::{ecs::system::EntityCommands, prelude::*, input::mouse::MouseMotion};
 use bevy_xpbd_3d::prelude::*;
 use serde::{Deserialize, Serialize};
 
 pub const PLAYER_MOVE_SPEED: f32 = 0.07;
 pub const PLAYER_CAMERA_ROTATION_SPEED: f32 = 0.015;
 pub const PLAYER_SIZE: f32 = 2.0;
+const SHIFT_ACCELERATION: f32 = 4.0_f32;
+const SENSITIVITY: f32 = 0.01;
 
 #[derive(Component, Debug, Serialize, Deserialize)]
 pub struct TiedCamera(Entity);
@@ -125,6 +127,7 @@ fn jump(
 
 fn move_characters(
     mut query: Query<(&mut LinearVelocity, &mut PlayerViewDirection, &PlayerInput)>, /* , time: Res<Time> */
+    mut mouse_motion_event: EventReader<MouseMotion>,
 ) {
     for (mut linear_velocity, mut view_direction, input) in query.iter_mut() {
         let dx = (input.right as i8 - input.left as i8) as f32;
@@ -138,18 +141,29 @@ fn move_characters(
 
         // move by x axis
         linear_velocity.x +=
-            dx * PLAYER_MOVE_SPEED * global_x.x * 4.0_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            dx * PLAYER_MOVE_SPEED * global_x.x * SHIFT_ACCELERATION.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
         linear_velocity.z +=
-            dx * PLAYER_MOVE_SPEED * global_x.z * 4.0_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            dx * PLAYER_MOVE_SPEED * global_x.z * SHIFT_ACCELERATION.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
 
         // move by y axis
         linear_velocity.x +=
-            dy * PLAYER_MOVE_SPEED * global_y.x * 4.0_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            dy * PLAYER_MOVE_SPEED * global_y.x * SHIFT_ACCELERATION.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
         linear_velocity.z +=
-            dy * PLAYER_MOVE_SPEED * global_y.z * 4.0_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            dy * PLAYER_MOVE_SPEED * global_y.z * SHIFT_ACCELERATION.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
 
         // camera turn
         let turn = (input.turn_right as i8 - input.turn_left as i8) as f32;
+        
+
+        for mouse_motion in mouse_motion_event.read(){
+            let rotation_x = Quat::from_rotation_x(
+                SENSITIVITY * mouse_motion.delta.x
+            );
+            let rotation_y = Quat::from_rotation_y(
+                SENSITIVITY * mouse_motion.delta.y
+            );
+            view_direction.0 *= rotation_x * rotation_y;
+        }
 
         let rotation = Quat::from_rotation_y(
             PLAYER_CAMERA_ROTATION_SPEED * turn, /* * delta_seconds */
