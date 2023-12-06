@@ -1,5 +1,5 @@
 use crate::world::PromisedScene;
-use bevy::prelude::*;
+use bevy::{pbr::CascadeShadowConfigBuilder, prelude::*};
 
 use super::ProvinceState;
 
@@ -17,17 +17,25 @@ impl Plugin for ShootingRangePlugins {
 
 fn load(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
-        .spawn((PointLightBundle {
-            point_light: PointLight {
-                intensity: 1500.,
+        .spawn(DirectionalLightBundle {
+            directional_light: DirectionalLight {
+                color: Color::WHITE,
+                illuminance: 4000.0,
                 shadows_enabled: true,
-                radius: 100.,
-                range: 60.,
                 ..default()
             },
-            transform: Transform::from_xyz(0., 40., 0.),
+            transform: Transform {
+                translation: Vec3::new(0.0, 200.0, 0.0),
+                rotation: Quat::from_rotation_x((-1.0_f32).atan()),
+                ..default()
+            },
+            cascade_shadow_config: CascadeShadowConfigBuilder {
+                first_cascade_far_bound: 4.0,
+                ..default()
+            }
+            .into(),
             ..default()
-        },))
+        })
         .insert(Affiliation);
 
     let scene = asset_server.load("test_province.glb#Scene0");

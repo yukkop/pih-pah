@@ -14,6 +14,11 @@ pub const PLAYER_SIZE: f32 = 2.0;
 #[derive(Component, Debug, Serialize, Deserialize)]
 pub struct TiedCamera(Entity);
 
+#[derive(Component, Debug)]
+struct JumpHelper {
+    last_viable_normal: Vec3,
+}
+
 pub struct CharacterPlugins;
 
 impl Plugin for CharacterPlugins {
@@ -26,7 +31,19 @@ impl Plugin for CharacterPlugins {
         )
         .add_systems(
             PostUpdate,
+            jump.run_if(
+                not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
+            ),
+        )
+        .add_systems(
+            PostUpdate,
             tied_camera_follow.run_if(not(in_state(LobbyState::None))),
+        )
+        .add_systems(
+            FixedUpdate,
+            update_jump_normals.run_if(
+                not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
+            ),
         );
     }
 }
@@ -51,14 +68,49 @@ fn tied_camera_follow(
     }
 }
 
+fn update_jump_normals(
+    mut query: Query<(&mut JumpHelper, Entity, &GlobalTransform)>,
+    collisions: Res<Collisions>,
+) {
+    let mut direction_vector = Vec3::ZERO;
+    for (mut jump_direction, player_entity, transform) in query.iter_mut() {
+        for collision in collisions.collisions_with_entity(player_entity) {
+            for manifold in collision.manifolds.iter() {
+                for contact in manifold.contacts.iter() {
+                    direction_vector += transform.translation() - contact.point1;
+                }
+            }
+        }
+        jump_direction.last_viable_normal = direction_vector.normalize_or_zero();
+    }
+}
+
+fn jump(
+    mut query: Query<(&mut LinearVelocity, &PlayerInput, Entity, &JumpHelper)>, /* , time: Res<Time> */
+    gravity: Res<Gravity>,
+    collisions: Res<Collisions>,
+) {
+    for (mut linear_velocity, input, player_entity, jump_direction) in query.iter_mut() {
+        let jumped = input.jump;
+        if jumped
+            && collisions
+                .collisions_with_entity(player_entity)
+                .next()
+                .is_some()
+        {
+            **linear_velocity +=
+                jump_direction.last_viable_normal * (-gravity.0.y * 2.0 * PLAYER_SIZE).sqrt() * 1.1; // sqrt(2gh)
+            log::info!("{:?}", jump_direction.last_viable_normal);
+        }
+    }
+}
+
 fn move_characters(
     mut query: Query<(&mut LinearVelocity, &mut PlayerViewDirection, &PlayerInput)>, /* , time: Res<Time> */
 ) {
     for (mut linear_velocity, mut view_direction, input) in query.iter_mut() {
         let dx = (input.right as i8 - input.left as i8) as f32;
         let dy = (input.down as i8 - input.up as i8) as f32;
-
-        let jumped = input.jump;
 
         // convert axises to global
         let global_x = view_direction.0.mul_vec3(Vec3::X);
@@ -77,10 +129,6 @@ fn move_characters(
             dy * PLAYER_MOVE_SPEED * global_y.x * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
         linear_velocity.z +=
             dy * PLAYER_MOVE_SPEED * global_y.z * 1.5_f32.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
-
-        if jumped && linear_velocity.y.abs() <= 0.03 {
-            linear_velocity.y = 5.0; //velocity = sqrt(2 * 9.8(g) * height), но лучше ставить немного больше
-        }
 
         // camera turn
         let turn = (input.turn_right as i8 - input.turn_left as i8) as f32;
@@ -116,6 +164,7 @@ extend_commands!(
        RigidBody::Dynamic,
        Position::from_xyz(spawn_point.x, spawn_point.y, spawn_point.z),
        Collider::cuboid(PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE),
+       JumpHelper{last_viable_normal: Vec3::Y},
      ))
      .insert(Respawn::new(spawn_point))
      .insert(PlayerInput::default())
