@@ -11,7 +11,7 @@ use bevy::render::camera::{CameraProjection, Viewport};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use egui_gizmo::{Gizmo, GizmoMode, GizmoOrientation};
 use bevy::window::PrimaryWindow;
-use bevy_egui::{EguiContext, egui, EguiSet};
+use bevy_egui::{EguiContext, egui, EguiSet, EguiContexts};
 
 pub struct DebugUiPlugins;
 
@@ -32,13 +32,27 @@ impl Plugin for DebugUiPlugins {
                 .add_systems(Update, set_gizmo_mode)
                 .register_type::<Option<Handle<Image>>>()
                 .register_type::<AlphaMode>();
+                // .add_systems(OnEnter, (setup, set_egui_debug));
         }
     }
 }
 
-
-
-
+fn set_egui_debug(
+    mut context: EguiContexts,
+    keyboard_input: Res<Input<KeyCode>>,
+) {
+    if keyboard_input.pressed(KeyCode::AltLeft)
+        || keyboard_input.pressed(KeyCode::AltRight) 
+    {
+        context.ctx_mut().set_style(egui::Style {
+            debug: egui::style::DebugOptions {
+                debug_on_hover: true,
+                ..default()
+            },
+            ..default()
+        });
+    }
+}
 
 #[derive(Component)]
 pub struct MainCamera;

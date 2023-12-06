@@ -1,10 +1,10 @@
 use std::env;
 
 use bevy::prelude::*;
-use bevy::window::{PresentMode, WindowResolution, PrimaryWindow};
+use bevy::window::{PresentMode, WindowResolution};
 use bevy::winit::WinitWindows;
-use bevy_egui::{EguiPlugin, EguiContext, egui};
-use bevy_inspector_egui::{DefaultInspectorConfigPlugin, bevy_inspector};
+use bevy_egui::EguiPlugin;
+use bevy_inspector_egui::DefaultInspectorConfigPlugin;
 use bevy_xpbd_3d::prelude::PhysicsPlugins;
 use pih_pah_app::world::WorldPlugins;
 use winit::window::Icon;
