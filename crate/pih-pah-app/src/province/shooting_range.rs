@@ -1,7 +1,7 @@
 use crate::world::PromisedScene;
 use bevy::{pbr::CascadeShadowConfigBuilder, prelude::*};
 
-use super::ProvinceState;
+use super::{spawn_point::SpawnPoint, ProvinceState};
 
 #[derive(Component)]
 struct Affiliation;
@@ -16,6 +16,8 @@ impl Plugin for ShootingRangePlugins {
 }
 
 fn load(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.insert_resource(SpawnPoint::new(Vec3::new(0., 30., 0.)));
+
     commands
         .spawn(DirectionalLightBundle {
             directional_light: DirectionalLight {
@@ -40,10 +42,12 @@ fn load(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     let scene = asset_server.load("test_province.glb#Scene0");
 
-    commands
-        .spawn(SceneBundle { scene, ..default() })
-        .insert(PromisedScene)
-        .insert(Affiliation);
+    commands.spawn((
+        SceneBundle { scene, ..default() },
+        PromisedScene,
+        Affiliation,
+        Name::new("ShootingRange"),
+    ));
 }
 
 fn unload(mut commands: Commands, affiliation_query: Query<Entity, With<Affiliation>>) {

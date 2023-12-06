@@ -1,12 +1,13 @@
+use std::env;
+
 use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowResolution};
+use bevy::winit::WinitWindows;
 use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_xpbd_3d::prelude::PhysicsPlugins;
 use pih_pah_app::world::WorldPlugins;
-
-#[cfg(not(any(feature = "wayland", feature = "x11", feature = "windows")))]
-compile_error!("Either 'wayland' or 'x11' or 'windows' feature must be enabled flag.");
+use winit::window::Icon;
 
 fn main() {
     std::env::set_var(
@@ -55,7 +56,37 @@ fn main() {
     info!("Starting pih-pah");
 
     app.add_plugins(PhysicsPlugins::new(Update));
+    app.add_systems(Startup, set_window_icon);
     app.add_plugins(WorldPlugins);
 
     app.run();
+}
+
+fn set_window_icon(
+    // we have to use `NonSend` here
+    windows: NonSend<WinitWindows>,
+) {
+    let exe_path = env::current_exe().expect("Failed to find executable path");
+    let exe_dir = exe_path
+        .parent()
+        .expect("Failed to find executable directory");
+    // here we use the `image` crate to load our icon data from a png file
+    // this is not a very bevy-native solution, but it will do
+    let (icon_rgba, icon_width, icon_height) = {
+        if let Ok(image) = image::open(exe_dir.join("icon-v1.png")) {
+            let image = image.into_rgba8();
+            let (width, height) = image.dimensions();
+            let rgba = image.into_raw();
+            (rgba, width, height)
+        } else {
+            warn!("Failed to load icon");
+            return;
+        }
+    };
+    let icon = Icon::from_rgba(icon_rgba, icon_width, icon_height).unwrap();
+
+    // do it for all windows
+    for window in windows.windows.values() {
+        window.set_window_icon(Some(icon.clone()));
+    }
 }

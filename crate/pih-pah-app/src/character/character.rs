@@ -1,8 +1,8 @@
-use crate::component::Respawn;
+use crate::component::{AxisName, DespawnReason, Respawn, UntouchedTimerValue};
 use crate::extend_commands;
 use crate::lobby::Character;
 use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerViewDirection};
-use crate::world::Me;
+use crate::world::{Me, MyLayers};
 use bevy::{ecs::system::EntityCommands, prelude::*};
 use bevy_xpbd_3d::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -164,9 +164,13 @@ extend_commands!(
        RigidBody::Dynamic,
        Position::from_xyz(spawn_point.x, spawn_point.y, spawn_point.z),
        Collider::cuboid(PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE),
+<<<<<<< HEAD
        JumpHelper{last_viable_normal: Vec3::Y},
+=======
+      CollisionLayers::new([MyLayers::Default], [MyLayers::Default, MyLayers::ActorNoclip]),
+>>>>>>> 6e7e9637f430ffbd98e980216a29b2d52852ce59
      ))
-     .insert(Respawn::new(spawn_point))
+     .insert(Respawn::new(DespawnReason::Less(-10., AxisName::Y), spawn_point, UntouchedTimerValue::Timer(10.)))
      .insert(PlayerInput::default())
      .insert(Character { id: player_id })
      .insert(PlayerViewDirection(Quat::default()));

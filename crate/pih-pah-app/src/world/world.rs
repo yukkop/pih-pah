@@ -1,5 +1,6 @@
 use crate::character::CharacterPlugins;
 use crate::component::{ComponentPlugins, Respawn};
+use crate::load::LoadPlugins;
 use crate::lobby::{LobbyPlugins, LobbyState, PlayerInput};
 use crate::province::ProvincePlugins;
 use crate::settings::SettingsPlugins;
@@ -7,9 +8,16 @@ use crate::sound::SoundPlugins;
 use crate::ui;
 use crate::ui::{UiAction, UiPlugins};
 use bevy::prelude::*;
-use bevy_xpbd_3d::components::Mass;
-use bevy_xpbd_3d::prelude::{Collider, RigidBody};
+use bevy_xpbd_3d::components::{CollisionLayers, Mass};
+use bevy_xpbd_3d::prelude::{Collider, PhysicsLayer, RigidBody};
 use serde::{Deserialize, Serialize};
+
+#[derive(PhysicsLayer)]
+pub enum MyLayers {
+    /// Cannot touch each other
+    ActorNoclip,
+    Default,
+}
 
 #[derive(Component)]
 pub struct PromisedScene;
@@ -22,6 +30,7 @@ pub struct WorldPlugins;
 impl Plugin for WorldPlugins {
     fn build(&self, app: &mut App) {
         app.add_plugins((
+            LoadPlugins,
             SettingsPlugins,
             SoundPlugins,
             ProvincePlugins,
@@ -173,7 +182,13 @@ fn process_scene_child(
                         let collider_handler = mesh_handle_query.get(entity).unwrap();
                         if let Some(mesh) = meshes.get(collider_handler) {
                             let collider = Collider::trimesh_from_mesh(mesh).unwrap();
-                            commands.entity(entity).insert(collider);
+                            commands
+                                .entity(entity)
+                                .insert(collider)
+                                .insert(CollisionLayers::new(
+                                    [MyLayers::Default],
+                                    [MyLayers::Default, MyLayers::ActorNoclip],
+                                ));
 
                             if val == "d" {
                                 let mut commands_entity = commands.entity(entity);
@@ -193,7 +208,7 @@ fn process_scene_child(
                     let transform = transform_query.get(entity).unwrap();
                     commands
                         .entity(entity)
-                        .insert(Respawn::new(transform.translation));
+                        .insert(Respawn::from_vec3(transform.translation));
                 }
             }
         }
