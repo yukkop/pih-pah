@@ -243,12 +243,12 @@ fn multiplayer_window(
 fn settings_window(
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
     mut context: EguiContexts,
-    mut windows: Query<&Window>,
+    // mut windows: Query<&Window>,
     mut settings: ResMut<Settings>,
     ui_frame_rect: ResMut<ViewportRect>, 
     mut settings_applying: EventWriter<ApplySettings>,
 ) {
-    let window = windows.single_mut();
+    // let window = windows.single_mut();
     // let window_size = egui::vec2(window.width(), window.height());
     let frame_size = ui_frame_rect.max - ui_frame_rect.min;
 

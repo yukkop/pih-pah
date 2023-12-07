@@ -14,12 +14,19 @@ use super::host::HostLobbyPlugins;
 
 pub const PROTOCOL_ID: u64 = 7;
 
+/// An enumeration representing the states of a lobby system.
+///
+/// The [`LobbyState`] enum is used to define the various states that a lobby system can be in.
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
 pub enum LobbyState {
+    /// Indicates that the lobby system is in no specific state (default state).
     #[default]
     None = 0,
+    /// Represents the state where a single player is present in the lobby.
     Single = 1,
+    /// Represents the state where a player is hosting the lobby.
     Host = 2,
+    /// Represents the state where a player is a client in the lobby.
     Client = 3,
 }
 

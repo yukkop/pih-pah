@@ -1,11 +1,19 @@
-#[allow(dead_code)]
+/// An enumeration representing various reasons for despawning an entity.
+///
+/// The [`DespawnReason`] enum is used to indicate different conditions or events that lead to the despawning of an entity.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DespawnReason {
+    /// Indicates that the entity was forcefully despawned. After been removed if object must respawn ([`Respawn`](crate::component::Respawn))
     Forced,
+    /// Specifies that the entity was despawned because it exceeded a certain value along a specific axis.
     More(f32, AxisName),
+    /// Specifies that the entity was despawned because it fell below a certain value along a specific axis.
     Less(f32, AxisName),
 }
 
+/// An enumeration representing axis names.
+///
+/// The [`AxisName`] enum is used to specify the names of different axes in 3D space.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum AxisName {
     X,

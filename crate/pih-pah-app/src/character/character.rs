@@ -3,7 +3,7 @@ use crate::extend_commands;
 use crate::lobby::Character;
 use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerViewDirection};
 use crate::ui::MainCamera;
-use crate::world::{Me, MyLayers};
+use crate::world::{Me, CollisionLayer};
 use bevy::{ecs::system::EntityCommands, prelude::*};
 use bevy_xpbd_3d::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -186,7 +186,7 @@ extend_commands!(
        Position::from_xyz(spawn_point.x, spawn_point.y, spawn_point.z),
        Collider::cuboid(PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE),
        JumpHelper{last_viable_normal: Vec3::Y},
-       CollisionLayers::new([MyLayers::Default], [MyLayers::Default, MyLayers::ActorNoclip]),
+       CollisionLayers::new([CollisionLayer::Default], [CollisionLayer::Default, CollisionLayer::ActorNoclip]),
      ))
      .insert(Respawn::new(DespawnReason::Less(-10., AxisName::Y), spawn_point, UntouchedTimerValue::Timer(10.)))
      .insert(PlayerInput::default())
