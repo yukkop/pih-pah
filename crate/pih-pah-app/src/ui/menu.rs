@@ -9,9 +9,8 @@ use bevy::prelude::*;
 use bevy::window::Window;
 use bevy_egui::egui::Align2;
 use bevy_egui::{egui, EguiContexts};
-use egui::Widget;
 
-use super::{UiState, UiBase, UiFrameRect};
+use super::{UiState, ViewportRect};
 
 lazy_static::lazy_static! {
     static ref MODULE: &'static str = module_path!().splitn(3, ':').nth(2).unwrap_or(module_path!());
@@ -77,7 +76,7 @@ fn menu(
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
     mut context: EguiContexts,
     mut exit: EventWriter<AppExit>,
-    ui_frame_rect: ResMut<UiFrameRect>, 
+    ui_frame_rect: ResMut<ViewportRect>, 
     mut windows: Query<&Window>,
 ) {
     let ctx = context.ctx_mut();
@@ -141,7 +140,7 @@ fn multiplayer_window(
     mut state: ResMut<State>,
     // mut windows: Query<&Window>,
     mut host_resource: ResMut<HostResource>,
-    ui_frame_rect: ResMut<UiFrameRect>, 
+    ui_frame_rect: ResMut<ViewportRect>, 
     mut client_resource: ResMut<ClientResource>,
 ) {
     // let window = windows.single_mut();
@@ -246,7 +245,7 @@ fn settings_window(
     mut context: EguiContexts,
     mut windows: Query<&Window>,
     mut settings: ResMut<Settings>,
-    ui_frame_rect: ResMut<UiFrameRect>, 
+    ui_frame_rect: ResMut<ViewportRect>, 
     mut settings_applying: EventWriter<ApplySettings>,
 ) {
     let window = windows.single_mut();

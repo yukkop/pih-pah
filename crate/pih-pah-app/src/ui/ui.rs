@@ -3,21 +3,20 @@ use crate::ui::GameMenuPlugins;
 use crate::util::i18n::{trans, Uniq};
 use bevy::prelude::*;
 use bevy_egui::egui::FontId;
-use egui::CentralPanel;
 use std::sync::Arc;
 
 use super::DebugUiPlugins;
 
 #[derive(Debug, Clone, Copy, Resource, PartialEq, Deref, DerefMut)]
-pub struct UiFrameRect(egui::Rect);
+pub struct ViewportRect(egui::Rect);
 
-impl Default for UiFrameRect {
+impl Default for ViewportRect {
     fn default() -> Self {
         Self(egui::Rect::from_min_size(Default::default(), Default::default()))
     }
 }
 
-impl UiFrameRect {
+impl ViewportRect {
     pub fn set(&mut self, rect: egui::Rect) {
         self.0 = rect;
     }
@@ -42,17 +41,13 @@ pub enum UiAction {
     Toggle = 4,
 }
 
-#[derive(Default, Resource)]
-pub struct UiBase(pub CentralPanel); 
-
 pub struct UiPlugins;
 
 impl Plugin for UiPlugins {
     fn build(&self, app: &mut App) {
         app
             .add_state::<UiState>()
-            .init_resource::<UiFrameRect>()
-            .insert_resource(UiBase(egui::CentralPanel::default()))
+            .init_resource::<ViewportRect>()
             .add_plugins((DebugUiPlugins, MenuPlugins, GameMenuPlugins))
             .add_systems(Startup, frame_rect);
     }
@@ -60,7 +55,7 @@ impl Plugin for UiPlugins {
 
 pub fn frame_rect(
     mut windows: Query<&Window>,
-    mut ui_frame_rect: ResMut<UiFrameRect>,
+    mut ui_frame_rect: ResMut<ViewportRect>,
 ) {
     let window = windows.single_mut();
     let window_size = egui::vec2(window.width(), window.height());

@@ -14,6 +14,11 @@ fn main() {
         "RUST_LOG",
         std::env::var("RUST_LOG").unwrap_or(String::from("info")),
     );
+    std::env::set_var(
+        "DEBUG",
+        std::env::var("DEBUG").unwrap_or(String::from("")),
+    );
+
     env_logger::init();
     info!("Starting pih-pah");
     let _args: Vec<String> = std::env::args().collect();

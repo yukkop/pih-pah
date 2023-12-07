@@ -8,52 +8,205 @@ use bevy_inspector_egui::bevy_inspector::{
 };
 use bevy::reflect::TypeRegistry;
 use bevy::render::camera::{CameraProjection, Viewport};
+use egui::{Align2, Pos2};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use egui_gizmo::{Gizmo, GizmoMode, GizmoOrientation};
 use bevy::window::PrimaryWindow;
 use bevy_egui::{EguiContext, egui, EguiSet, EguiContexts};
 
-use super::{MainCamera, UiFrameRect};
+use crate::util::i18n::Uniq;
+
+use super::{MainCamera, ViewportRect, rich_text};
+
+lazy_static::lazy_static! {
+    static ref MODULE: &'static str = module_path!().splitn(3, ':').nth(2).unwrap_or(module_path!());
+}
+
+#[derive(Default, Debug, Hash, States, PartialEq, Eq, Clone, Copy)]
+pub enum DebugFrameState {
+    Enable,
+    #[default]
+    Disable,
+}
+
+impl DebugFrameState {
+    pub fn toggle(&mut self) -> Self {
+        match self {
+            DebugFrameState::Enable => *self = DebugFrameState::Disable,
+            DebugFrameState::Disable => *self = DebugFrameState::Enable,
+        }
+        *self
+    }
+}
+
+#[derive(Default, Debug, Hash, States, PartialEq, Eq, Clone, Copy)]
+pub enum DebugState {
+    #[default]
+    Enable,
+    Disable,
+}
+
+impl DebugState {
+    pub fn toggle(&mut self) -> Self {
+        match self {
+            DebugState::Enable => *self = DebugState::Disable,
+            DebugState::Disable => *self = DebugState::Enable,
+        }
+        *self
+    }
+}
+
+#[derive(Debug, Default, Event)]
+pub struct DebugMenuEvent;
+
+#[derive(Default, Debug, Hash, States, PartialEq, Eq, Clone, Copy)]
+enum DebugMenuState {
+    Enable,
+    #[default]
+    Disable,
+}
 
 pub struct DebugUiPlugins;
 
 impl Plugin for DebugUiPlugins {
     fn build(&self, app: &mut App) {
+        app
+            .add_event::<DebugMenuEvent>()
+            .add_state::<DebugFrameState>()
+            .add_state::<DebugState>()
+            .add_state::<DebugMenuState>();
         let is_debug = std::env::var("DEBUG").is_ok();
-
+        
         if is_debug {
             app
                 .insert_resource(UiState::new())
                 .add_systems(
                     PostUpdate,
-                    show_ui_system
+                    show_ui_system.run_if(in_state(DebugState::Enable))
                         .before(EguiSet::ProcessOutput)
                         .before(bevy::transform::TransformSystem::TransformPropagate),
                 )
-                .add_systems(PostUpdate, set_camera_viewport.after(show_ui_system))
-                .add_systems(Update, set_gizmo_mode)
+                .add_systems(PostUpdate, set_camera_viewport.run_if(in_state(DebugState::Enable)).after(show_ui_system))
+                .add_systems(Update, (set_gizmo_mode, push_window_menu_event).run_if(in_state(DebugState::Enable)))
+                .add_systems(Update, push_window_menu.run_if(in_state(DebugState::Enable).and_then(in_state(DebugMenuState::Enable))))
+                .add_systems(OnEnter(DebugState::Disable), (exit_debug, set_camera_viewport.after(exit_debug)))
                 .register_type::<Option<Handle<Image>>>()
+                .add_systems(OnEnter(DebugFrameState::Enable), debug_frame_enable)
+                .add_systems(OnEnter(DebugFrameState::Disable), debug_frame_disable)
                 .register_type::<AlphaMode>();
-                // .add_systems(OnEnter, (setup, set_egui_debug));
         }
     }
 }
 
-fn set_egui_debug(
-    mut context: EguiContexts,
-    keyboard_input: Res<Input<KeyCode>>,
+fn push_window_menu_event(
+    mut next_state_debug_menu: ResMut<NextState<DebugMenuState>>,
+    mut debug_menu_event: EventReader<DebugMenuEvent>,
+    windows: Query<&Window>,
+    mut ui_state: ResMut<UiState>,
 ) {
-    if keyboard_input.pressed(KeyCode::AltLeft)
-        || keyboard_input.pressed(KeyCode::AltRight) 
-    {
-        context.ctx_mut().set_style(egui::Style {
-            debug: egui::style::DebugOptions {
-                debug_on_hover: true,
-                ..default()
-            },
-            ..default()
-        });
+    for _ in debug_menu_event.read() {
+        if let Some(position) = windows.single().physical_cursor_position() {
+            ui_state.menu_pos = position;
+        } 
+        else {
+            let window = windows.single();
+            let window_size = egui::vec2(window.width(), window.height());
+            ui_state.menu_pos = Vec2::new(window_size.x / 2.0, window_size.y / 2.0);
+        }
+        next_state_debug_menu.set(DebugMenuState::Enable);
     }
+}
+
+fn push_window_menu(
+    mut next_state_debug_menu: ResMut<NextState<DebugMenuState>>,
+    mut ui_state: ResMut<UiState>,
+    mut context: EguiContexts,
+    windows: Query<&Window>,
+) {
+    let font = egui::FontId {
+        family: egui::FontFamily::Monospace,
+        ..default()
+    };
+
+
+    let ctx = context.ctx_mut();
+    egui::Window::new("Mouse moved")
+        .anchor(Align2::LEFT_TOP, [ui_state.menu_pos.x - 10., ui_state.menu_pos.y - 35.])
+        .collapsible(false)
+        .movable(false)
+        .show(ctx, |ui| {
+            let new_window = {
+                if ui.button(rich_text("ViewPort".to_string(), Uniq::Module(&MODULE), &font)).clicked() {
+                    Some(EguiWindow::GameView)
+                }
+                else if ui.button(rich_text("Hierarchy".to_string(), Uniq::Module(&MODULE), &font)).clicked() {
+                    Some(EguiWindow::Hierarchy)
+                }
+                else if ui.button(rich_text("Resources".to_string(), Uniq::Module(&MODULE), &font)).clicked() {
+                    Some(EguiWindow::Resources)
+                }
+                else if ui.button(rich_text("Assets".to_string(), Uniq::Module(&MODULE), &font)).clicked() {
+                    Some(EguiWindow::Assets)
+                }
+                else if ui.button(rich_text("Inspector".to_string(), Uniq::Module(&MODULE), &font)).clicked() {
+                    Some(EguiWindow::Inspector)
+                }
+                else {
+                    None
+                }
+            };
+
+            if let Some(new_window) = new_window {
+                ui_state.new_window(new_window);
+            }
+
+            // TODO this is clip more that we need
+            let rect = ui.clip_rect();
+            if let Some(position) = windows.single().cursor_position() {
+                if !rect.contains(Pos2 { x: position.x, y: position.y }) {
+                    next_state_debug_menu.set(DebugMenuState::Disable);
+                }
+            }
+            else {
+                next_state_debug_menu.set(DebugMenuState::Disable);
+            } 
+        });
+
+    
+    
+}
+
+fn exit_debug(
+    mut viewport_rect: ResMut<ViewportRect>,
+    windows: Query<&Window>,
+) {
+    let window = windows.single();
+    let window_size = egui::vec2(window.width(), window.height());
+    viewport_rect.set(egui::Rect::from_min_size(Default::default(), window_size));
+}
+
+fn debug_frame_disable(
+    mut context: EguiContexts,
+) {
+    context.ctx_mut().set_style(egui::Style {
+        debug: egui::style::DebugOptions {
+            debug_on_hover: false,
+            ..default()
+        },
+        ..default()
+    });
+}
+
+fn debug_frame_enable(
+    mut context: EguiContexts,
+) {
+    context.ctx_mut().set_style(egui::Style {
+        debug: egui::style::DebugOptions {
+            debug_on_hover: true,
+            ..default()
+        },
+        ..default()
+    });
 }
 
 fn show_ui_system(world: &mut World) {
@@ -70,9 +223,9 @@ fn show_ui_system(world: &mut World) {
     });
 }
 
-// make camera only render to view not obstructed by UI
+/// make camera only render to view not obstructed by UI
 fn set_camera_viewport(
-    ui_state: Res<UiState>,
+    viewport_rect: Res<ViewportRect>,
     primary_window: Query<&mut Window, With<PrimaryWindow>>,
     egui_settings: Res<bevy_egui::EguiSettings>,
     mut cameras: Query<&mut Camera, With<MainCamera>>,
@@ -85,8 +238,8 @@ fn set_camera_viewport(
 
         let scale_factor = window.scale_factor() * egui_settings.scale_factor;
 
-        let viewport_pos = ui_state.viewport_rect.left_top().to_vec2() * scale_factor as f32;
-        let viewport_size = ui_state.viewport_rect.size() * scale_factor as f32;
+        let viewport_pos = viewport_rect.left_top().to_vec2() * scale_factor as f32;
+        let viewport_size = viewport_rect.size() * scale_factor as f32;
 
         cam.viewport = Some(Viewport {
             physical_position: UVec2::new(viewport_pos.x as u32, viewport_pos.y as u32),
@@ -99,7 +252,7 @@ fn set_camera_viewport(
 fn set_gizmo_mode(input: Res<Input<KeyCode>>, mut ui_state: ResMut<UiState>) {
     for (key, mode) in [
         (KeyCode::R, GizmoMode::Rotate),
-        (KeyCode::T, GizmoMode::Translate),
+        (KeyCode::G, GizmoMode::Translate),
         (KeyCode::S, GizmoMode::Scale),
     ] {
         if input.just_pressed(key) {
@@ -118,10 +271,11 @@ enum InspectorSelection {
 #[derive(Resource)]
 struct UiState {
     state: DockState<EguiWindow>,
-    viewport_rect: egui::Rect,
     selected_entities: SelectedEntities,
     selection: InspectorSelection,
     gizmo_mode: GizmoMode,
+    /// Position of the context menu (where was mouse)
+    menu_pos: Vec2,
 }
 
 impl UiState {
@@ -138,15 +292,19 @@ impl UiState {
             state,
             selected_entities: SelectedEntities::default(),
             selection: InspectorSelection::Entities,
-            viewport_rect: egui::Rect::NOTHING,
             gizmo_mode: GizmoMode::Translate,
+            menu_pos: Vec2::default(),
         }
+    }
+
+    pub fn new_window(&mut self, window: EguiWindow) {
+        let tree = self.state.main_surface_mut();
+        tree.push_to_focused_leaf(window);
     }
 
     fn ui(&mut self, world: &mut World, ctx: &mut egui::Context) {
         let mut tab_viewer = TabViewer {
             world,
-            viewport_rect: &mut self.viewport_rect,
             selected_entities: &mut self.selected_entities,
             selection: &mut self.selection,
             gizmo_mode: self.gizmo_mode,
@@ -170,7 +328,6 @@ struct TabViewer<'a> {
     world: &'a mut World,
     selected_entities: &'a mut SelectedEntities,
     selection: &'a mut InspectorSelection,
-    viewport_rect: &'a mut egui::Rect,
     gizmo_mode: GizmoMode,
 }
 
@@ -183,10 +340,7 @@ impl egui_dock::TabViewer for TabViewer<'_> {
 
         match window {
             EguiWindow::GameView => {
-                *self.viewport_rect = ui.clip_rect();
-
-                let rect = ui.min_rect();
-                self.world.resource_mut::<UiFrameRect>().set(rect);
+                self.world.resource_mut::<ViewportRect>().set(ui.clip_rect());
 
                 draw_gizmo(ui, self.world, self.selected_entities, self.gizmo_mode);
             }

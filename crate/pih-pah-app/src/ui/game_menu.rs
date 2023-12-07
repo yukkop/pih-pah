@@ -8,7 +8,7 @@ use bevy::prelude::*;
 use bevy_egui::egui::Align2;
 use bevy_egui::{egui, EguiContexts};
 
-use super::{UiState, UiFrameRect};
+use super::{UiState, ViewportRect};
 
 lazy_static::lazy_static! {
     static ref MODULE: &'static str = module_path!().splitn(3, ':').nth(2).unwrap_or(module_path!());
@@ -45,7 +45,8 @@ pub struct GameMenuPlugins;
 
 impl Plugin for GameMenuPlugins {
     fn build(&self, app: &mut App) {
-        app.add_event::<GameMenuEvent>()
+        app
+            .add_event::<GameMenuEvent>()
             .add_state::<WindowState>()
             .init_resource::<EguiState>()
             .add_systems(
@@ -84,7 +85,7 @@ fn menu(
     mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut context: EguiContexts,
     mut state: ResMut<EguiState>,
-    ui_frame_rect: ResMut<UiFrameRect>, 
+    ui_frame_rect: ResMut<ViewportRect>, 
     mut windows: Query<&Window>,
     mut ui_game_menu_writer: EventWriter<GameMenuEvent>,
 ) {
@@ -138,15 +139,15 @@ fn settings_window(
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
     mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut context: EguiContexts,
-    mut windows: Query<&Window>,
+    // mut windows: Query<&Window>,
     mut settings: ResMut<Settings>,
     mut state: ResMut<EguiState>,
     lobby_state: Res<State<LobbyState>>,
-    ui_frame_rect: ResMut<UiFrameRect>, 
+    ui_frame_rect: ResMut<ViewportRect>, 
     mut settings_applying: EventWriter<ApplySettings>,
     mut change_province: EventWriter<ChangeProvinceServerEvent>,
 ) {
-    let window = windows.single_mut();
+    // let window = windows.single_mut();
     // let window_size = egui::vec2(window.width(), window.height());
     let frame_size = ui_frame_rect.max - ui_frame_rect.min;
 

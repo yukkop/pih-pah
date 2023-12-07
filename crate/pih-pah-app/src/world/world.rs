@@ -5,7 +5,7 @@ use crate::lobby::{LobbyPlugins, LobbyState, PlayerInput};
 use crate::province::ProvincePlugins;
 use crate::settings::SettingsPlugins;
 use crate::sound::SoundPlugins;
-use crate::ui;
+use crate::ui::{self, DebugFrameState, DebugState, DebugMenuEvent};
 use crate::ui::{UiAction, UiPlugins};
 use bevy::prelude::*;
 use bevy_xpbd_3d::components::{CollisionLayers, Mass};
@@ -56,13 +56,31 @@ impl Plugin for WorldPlugins {
 #[derive(Component)]
 pub struct Me;
 
+/// Processes the input keys and manages them from a resource or event deep in the program.
 fn input(
     keyboard_input: Res<Input<KeyCode>>,
     mut ui_game_menu_writer: EventWriter<ui::GameMenuEvent>,
+    mut next_state_debug_frame: ResMut<NextState<DebugFrameState>>,
+    debug_frame_state: Res<State<DebugFrameState>>,
+    mut next_state_debug: ResMut<NextState<DebugState>>,
+    mut debug_menu_togl: EventWriter<DebugMenuEvent>,
+    debug_state: Res<State<DebugState>>,
     mut player_input_query: Query<&mut PlayerInput, With<Me>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Escape) {
         ui_game_menu_writer.send(ui::GameMenuEvent(UiAction::Toggle));
+    }
+
+    if keyboard_input.just_pressed(KeyCode::F8) {
+        next_state_debug_frame.set(debug_frame_state.get().clone().toggle());
+    }
+
+    if keyboard_input.just_pressed(KeyCode::F9) {
+        next_state_debug.set(debug_state.get().clone().toggle());
+    }
+
+    if keyboard_input.just_pressed(KeyCode::F10) {
+        debug_menu_togl.send(DebugMenuEvent);
     }
 
     if let Ok(mut player_input) = player_input_query.get_single_mut() {
