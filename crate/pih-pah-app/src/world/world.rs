@@ -5,10 +5,10 @@ use crate::lobby::{LobbyPlugins, LobbyState, PlayerInput};
 use crate::province::ProvincePlugins;
 use crate::settings::SettingsPlugins;
 use crate::sound::SoundPlugins;
-use crate::ui::{DebugFrameState, DebugMenuEvent, DebugState};
 use crate::ui::UiPlugins;
-use bevy::input::mouse::MouseMotion;
+use crate::ui::{DebugFrameState, DebugMenuEvent, DebugState};
 use crate::ui::{GameMenuActionState, MouseGrabState};
+use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
 use bevy_xpbd_3d::components::{CollisionLayers, Mass};
 use bevy_xpbd_3d::prelude::{Collider, PhysicsLayer, RigidBody};
@@ -121,7 +121,8 @@ fn input(
                 keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::Left);
             player_input.right =
                 keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right);
-            player_input.up = keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
+            player_input.up =
+                keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
             player_input.down =
                 keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
             player_input.jump = keyboard_input.just_pressed(KeyCode::Space);

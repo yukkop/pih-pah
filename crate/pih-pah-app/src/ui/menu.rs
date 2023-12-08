@@ -10,7 +10,7 @@ use bevy::window::Window;
 use bevy_egui::egui::Align2;
 use bevy_egui::{egui, EguiContexts};
 
-use super::{UiState, ViewportRect, MouseGrabState};
+use super::{MouseGrabState, UiState, ViewportRect};
 
 lazy_static::lazy_static! {
     static ref MODULE: &'static str = module_path!().splitn(3, ':').nth(2).unwrap_or(module_path!());

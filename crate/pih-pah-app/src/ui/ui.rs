@@ -57,8 +57,7 @@ pub struct UiPlugins;
 
 impl Plugin for UiPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_state::<UiState>()
+        app.add_state::<UiState>()
             .add_state::<MouseGrabState>()
             .init_resource::<ViewportRect>()
             .add_plugins((DebugUiPlugins, MenuPlugins, GameMenuPlugins))
@@ -78,18 +77,14 @@ pub fn rich_text(text: impl Into<Arc<String>>, uniq: Uniq, font: &FontId) -> egu
     egui::RichText::new(trans(text.into(), uniq)).font(font.clone())
 }
 
-fn grab_mouse_on(
-    mut windows: Query<&mut Window>,
-) {
+fn grab_mouse_on(mut windows: Query<&mut Window>) {
     let mut window = windows.single_mut();
 
     window.cursor.visible = false;
     window.cursor.grab_mode = CursorGrabMode::Locked;
 }
 
-fn grab_mouse_off(
-    mut windows: Query<&mut Window>,
-) {
+fn grab_mouse_off(mut windows: Query<&mut Window>) {
     let mut window = windows.single_mut();
 
     window.cursor.visible = true;

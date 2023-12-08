@@ -143,29 +143,25 @@ fn move_characters(
         let shift_acceleration = SHIFT_ACCELERATION.powf(input.sprint as i32 as f32);
 
         // move by x axis
-        linear_velocity.x +=
-            dx * PLAYER_MOVE_SPEED * view_direction_x.x * shift_acceleration;
-        linear_velocity.z +=
-            dx * PLAYER_MOVE_SPEED * view_direction_x.z * shift_acceleration;
+        linear_velocity.x += dx * PLAYER_MOVE_SPEED * view_direction_x.x * shift_acceleration;
+        linear_velocity.z += dx * PLAYER_MOVE_SPEED * view_direction_x.z * shift_acceleration;
 
         // move by y axis
-        linear_velocity.x +=
-            dy * PLAYER_MOVE_SPEED * view_direction_y.x * shift_acceleration;
-        linear_velocity.z +=
-            dy * PLAYER_MOVE_SPEED * view_direction_y.z * shift_acceleration;
+        linear_velocity.x += dy * PLAYER_MOVE_SPEED * view_direction_y.x * shift_acceleration;
+        linear_velocity.z += dy * PLAYER_MOVE_SPEED * view_direction_y.z * shift_acceleration;
 
         // camera turn
         let rotation = Quat::from_rotation_y(
             PLAYER_CAMERA_ROTATION_SPEED * input.turn_horizontal * SENSITIVITY, /* * delta_seconds */
         );
         // global rotation
-        view_direction.0 = rotation * view_direction.0 ;
+        view_direction.0 = rotation * view_direction.0;
 
         let rotation = Quat::from_rotation_x(
             PLAYER_CAMERA_ROTATION_SPEED * input.turn_vertical * SENSITIVITY, /* * delta_seconds */
         );
         // local rotation
-        view_direction.0 = view_direction.0 * rotation;
+        view_direction.0 *= rotation;
     }
 }
 

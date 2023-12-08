@@ -31,7 +31,6 @@ impl Default for EguiState {
     }
 }
 
-
 #[derive(Default, Debug, Hash, States, PartialEq, Eq, Clone, Copy)]
 pub enum GameMenuActionState {
     Enable,
@@ -60,13 +59,14 @@ pub struct GameMenuPlugins;
 
 impl Plugin for GameMenuPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_state::<WindowState>()
+        app.add_state::<WindowState>()
             .add_state::<GameMenuActionState>()
             .init_resource::<EguiState>()
             .add_systems(
                 Update,
-                menu.run_if(in_state(UiState::GameMenu).and_then(in_state(GameMenuActionState::Enable))),
+                menu.run_if(
+                    in_state(UiState::GameMenu).and_then(in_state(GameMenuActionState::Enable)),
+                ),
             )
             .add_systems(
                 Update,
@@ -77,6 +77,7 @@ impl Plugin for GameMenuPlugins {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn menu(
     mut next_state_lobby: ResMut<NextState<LobbyState>>,
     mut next_state_ui: ResMut<NextState<UiState>>,
