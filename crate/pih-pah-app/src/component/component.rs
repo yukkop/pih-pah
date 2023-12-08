@@ -9,36 +9,52 @@ use bevy::transform::components::{GlobalTransform, Transform};
 use bevy_xpbd_3d::components::{AngularVelocity, CollisionLayers, LinearVelocity};
 
 use crate::component::AxisName;
-use crate::world::MyLayers;
+use crate::world::CollisionLayer;
 
 use super::despawn_type::{DespawnReason, IntoDespawnTypeVec};
 
+/// A component representing respawn behavior for an entity.
+///
+/// The [`Respawn`] component is used to control how an entity respawns in a game. It includes information about the respawn reasons,
+/// the spawn point, and a timer value for keeping the entity untouched upon spawn.
 #[derive(Component)]
 pub struct Respawn {
+    /// Reasons for respawning.
     reason: Vec<DespawnReason>,
+    /// The spawn point for the entity.
     spawn_point: Vec3,
-    untuched_on_spawn: UntouchedTimerValue,
+    /// Duration for keeping the [`CollisionLayers`] into [`noclip`](CollisionLayer::ActorNoclip) [`CollisionLayer`] upon spawn.
+    noclip: NoclipDuration,
 }
 
+/// An enumeration representing the duration of time an actor will remain [`noclip`](CollisionLayer::ActorNoclip).
+///
+/// The [`NoclipDuration`] enum is used to specify how long an actor should remain [`noclip`](CollisionLayer::ActorNoclip) before some action or event takes place.
 #[derive(PartialEq, Debug)]
-pub enum UntouchedTimerValue {
+pub enum NoclipDuration {
+    /// Indicates that there is no [`noclip`](CollisionLayer::ActorNoclip) duration, and the actor can be acted upon immediately.
     None,
+    /// Specifies a timed duration in seconds before the actor can be acted upon.
     Timer(f32),
 }
 
+/// A component representing a timer for a [`noclip`](CollisionLayer::ActorNoclip) mode.
+///
+/// The [`NoclipTimer`] component is used to manage the duration of a [`noclip`](CollisionLayer::ActorNoclip) mode in a game.
+/// It wraps a [`Timer`] for time tracking and management.
 #[derive(Deref, DerefMut, Component)]
-pub struct UntouchedTimer(Timer);
+pub struct NoclipTimer(Timer);
 
 impl Respawn {
     pub fn new<T: IntoDespawnTypeVec>(
         reason: T,
         spawn_point: Vec3,
-        untuched_on_spawn: UntouchedTimerValue,
+        untouched_on_spawn: NoclipDuration,
     ) -> Self {
         Self {
             reason: reason.into_despawn_type_vec(),
             spawn_point,
-            untuched_on_spawn,
+            noclip: untouched_on_spawn,
         }
     }
 
@@ -46,7 +62,7 @@ impl Respawn {
         Self {
             reason: vec![],
             spawn_point,
-            untuched_on_spawn: UntouchedTimerValue::None,
+            noclip: NoclipDuration::None,
         }
     }
 
@@ -71,28 +87,36 @@ pub struct ComponentPlugins;
 impl Plugin for ComponentPlugins {
     fn build(&self, app: &mut App) {
         app.add_systems(PreUpdate, (respawn, despawn))
-            .add_systems(Update, timer_tick_system);
+            .add_systems(Update, noclip_timer);
     }
 }
 
-fn timer_tick_system(
+/// Updates entities with a [`NoclipTimer`] component to toggle [`noclip`](CollisionLayer::ActorNoclip) mode temporarily.
+///
+/// The `noclip_timer` function iterates through entities with a [`NoclipTimer`] component and checks if the timer has finished.
+/// If the timer has finished, it adds a specific collision layer to the entity, indicating [`noclip`](CollisionLayer::ActorNoclip) mode, and removes the [`NoclipTimer`] component.
+fn noclip_timer(
     mut commands: Commands,
     time: Res<Time>,
-    mut query: Query<(Entity, &mut UntouchedTimer)>,
+    mut query: Query<(Entity, &mut NoclipTimer)>,
 ) {
     for (entity, mut timer) in query.iter_mut() {
         if timer.0.tick(time.delta()).just_finished() {
             commands
                 .entity(entity)
                 .insert(CollisionLayers::new(
-                    [MyLayers::Default],
-                    [MyLayers::Default, MyLayers::ActorNoclip],
+                    [CollisionLayer::Default],
+                    [CollisionLayer::Default, CollisionLayer::ActorNoclip],
                 ))
-                .remove::<UntouchedTimer>();
+                .remove::<NoclipTimer>();
         }
     }
 }
 
+/// Processes a [`Entity`] with [`Respawn`] [`Component`]
+///
+/// Move actors on respawn position and optionally rest [`LinearVelocity`] and [`AngularVelocity`]
+/// if one of `reason` ([`DespawnReason`]) is true
 fn respawn(
     mut commands: Commands,
     mut respawn_query: Query<(&mut Respawn, &mut Transform, &GlobalTransform, Entity)>,
@@ -106,16 +130,16 @@ fn respawn(
         velocity_query: &mut Query<(&mut LinearVelocity, &mut AngularVelocity), With<Respawn>>,
     ) {
         info!("Respawn entity: {:?}", entity);
-        if let UntouchedTimerValue::Timer(val) = respawn.untuched_on_spawn {
+        if let NoclipDuration::Timer(val) = respawn.noclip {
             commands
                 .entity(entity)
-                .insert(UntouchedTimer(Timer::from_seconds(
+                .insert(NoclipTimer(Timer::from_seconds(
                     val,
                     bevy::time::TimerMode::Once,
                 )))
                 .insert(CollisionLayers::new(
-                    [MyLayers::ActorNoclip],
-                    [MyLayers::Default],
+                    [CollisionLayer::ActorNoclip],
+                    [CollisionLayer::Default],
                 ));
         }
         transform.translation = respawn.spawn_point;

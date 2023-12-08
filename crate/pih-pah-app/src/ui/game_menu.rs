@@ -8,7 +8,7 @@ use bevy::prelude::*;
 use bevy_egui::egui::Align2;
 use bevy_egui::{egui, EguiContexts};
 
-use super::UiState;
+use super::{UiState, ViewportRect};
 
 lazy_static::lazy_static! {
     static ref MODULE: &'static str = module_path!().splitn(3, ':').nth(2).unwrap_or(module_path!());
@@ -77,6 +77,7 @@ fn handle_action(mut reader: EventReader<GameMenuEvent>, mut state: ResMut<EguiS
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn menu(
     mut next_state_lobby: ResMut<NextState<LobbyState>>,
     mut next_state_ui: ResMut<NextState<UiState>>,
@@ -84,6 +85,8 @@ fn menu(
     mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut context: EguiContexts,
     mut state: ResMut<EguiState>,
+    ui_frame_rect: ResMut<ViewportRect>,
+    mut windows: Query<&Window>,
     mut ui_game_menu_writer: EventWriter<GameMenuEvent>,
 ) {
     let ctx = context.ctx_mut();
@@ -93,10 +96,19 @@ fn menu(
         ..default()
     };
 
+    let window = windows.single_mut();
+    let window_size = egui::vec2(window.width(), window.height());
+
     if state.is_active {
         egui::Window::new(rich_text("Menu".to_string(), Module(&MODULE), &font))
             .frame(*TRANSPARENT)
-            .anchor(egui::Align2::LEFT_BOTTOM, [10., -10.])
+            .anchor(
+                egui::Align2::LEFT_BOTTOM,
+                [
+                    ui_frame_rect.min.x + 10.,
+                    (window_size.y - ui_frame_rect.max.y) * -1. - 10.,
+                ],
+            )
             .collapsible(false)
             .resizable(false)
             .movable(false)
@@ -133,15 +145,17 @@ fn settings_window(
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
     mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut context: EguiContexts,
-    mut windows: Query<&Window>,
+    // mut windows: Query<&Window>,
     mut settings: ResMut<Settings>,
     mut state: ResMut<EguiState>,
     lobby_state: Res<State<LobbyState>>,
+    ui_frame_rect: ResMut<ViewportRect>,
     mut settings_applying: EventWriter<ApplySettings>,
     mut change_province: EventWriter<ChangeProvinceServerEvent>,
 ) {
-    let window = windows.single_mut();
-    let window_size = egui::vec2(window.width(), window.height());
+    // let window = windows.single_mut();
+    // let window_size = egui::vec2(window.width(), window.height());
+    let frame_size = ui_frame_rect.max - ui_frame_rect.min;
 
     let ctx = context.ctx_mut();
 
@@ -152,7 +166,7 @@ fn settings_window(
 
     let egui_window_size = egui::vec2(400.0, 200.0); // Set your desired egui window size
 
-    let center_position = egui::pos2(window_size.x / 2.0, window_size.y / 2.0);
+    let center_position = egui::pos2(frame_size.x / 2.0, frame_size.y / 2.0);
 
     egui::Window::new(rich_text("Settings".to_string(), Module(&MODULE), &font))
         .pivot(Align2::CENTER_CENTER)

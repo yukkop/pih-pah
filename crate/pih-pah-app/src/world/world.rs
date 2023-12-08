@@ -5,20 +5,43 @@ use crate::lobby::{LobbyPlugins, LobbyState, PlayerInput};
 use crate::province::ProvincePlugins;
 use crate::settings::SettingsPlugins;
 use crate::sound::SoundPlugins;
-use crate::ui;
+use crate::ui::{self, DebugFrameState, DebugMenuEvent, DebugState};
 use crate::ui::{UiAction, UiPlugins};
 use bevy::prelude::*;
 use bevy_xpbd_3d::components::{CollisionLayers, Mass};
 use bevy_xpbd_3d::prelude::{Collider, PhysicsLayer, RigidBody};
 use serde::{Deserialize, Serialize};
 
+/// Enum representing collision layers for physics interactions.
 #[derive(PhysicsLayer)]
-pub enum MyLayers {
-    /// Cannot touch each other
+pub enum CollisionLayer {
+    /// Actors with this layer cannot collide with each other.
     ActorNoclip,
+    /// The default collision layer.
     Default,
 }
 
+/// A component representing a promised GLTF scene.
+///
+/// This component is used to temporarily hold a GLTF scene while additional components are added to it.
+/// Once processing is complete, it should be removed from the entity.
+///
+/// # Example
+///
+/// ```rust
+/// use bevy::prelude::*;
+/// use pih_pah_app::world::PromisedScene;
+///
+/// fn setup_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
+///     let scene = asset_server.load("my_scene.glb#Scene0");
+///
+///     // Create an entity with the PromisedScene component.
+///     commands.spawn((
+///         SceneBundle { scene, ..default() },
+///         PromisedScene,
+///     ));
+/// }
+///```
 #[derive(Component)]
 pub struct PromisedScene;
 
@@ -56,13 +79,32 @@ impl Plugin for WorldPlugins {
 #[derive(Component)]
 pub struct Me;
 
+/// Processes the input keys and manages them from a resource or event deep in the program.
+#[allow(clippy::too_many_arguments)]
 fn input(
     keyboard_input: Res<Input<KeyCode>>,
     mut ui_game_menu_writer: EventWriter<ui::GameMenuEvent>,
+    mut next_state_debug_frame: ResMut<NextState<DebugFrameState>>,
+    debug_frame_state: Res<State<DebugFrameState>>,
+    mut next_state_debug: ResMut<NextState<DebugState>>,
+    mut debug_menu_togl: EventWriter<DebugMenuEvent>,
+    debug_state: Res<State<DebugState>>,
     mut player_input_query: Query<&mut PlayerInput, With<Me>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Escape) {
         ui_game_menu_writer.send(ui::GameMenuEvent(UiAction::Toggle));
+    }
+
+    if keyboard_input.just_pressed(KeyCode::F8) {
+        next_state_debug_frame.set(debug_frame_state.get().clone().toggle());
+    }
+
+    if keyboard_input.just_pressed(KeyCode::F9) {
+        next_state_debug.set(debug_state.get().clone().toggle());
+    }
+
+    if keyboard_input.just_pressed(KeyCode::F10) {
+        debug_menu_togl.send(DebugMenuEvent);
     }
 
     if let Ok(mut player_input) = player_input_query.get_single_mut() {
@@ -80,55 +122,11 @@ fn input(
     }
 }
 
-fn process_scene_simplified(
-    mut commands: Commands,
-    scene_query: Query<(Entity, &Children), With<PromisedScene>>,
-    parent_query: Query<&Children>,
-    name_query: Query<&Name>,
-) {
-    for (entity, children) in scene_query.iter() {
-        for child in children {
-            process_scene_child_simplified(&mut commands, *child, &parent_query, &name_query);
-        }
-        commands.entity(entity).remove::<PromisedScene>();
-    }
-}
-
-fn process_scene_child_simplified(
-    commands: &mut Commands,
-    entity: Entity,
-    parent_query: &Query<&Children>,
-    name_query: &Query<&Name>,
-) {
-    if let Ok(name) = name_query.get(entity) {
-        if name.find('[').is_some() {
-            let name = name.split('.').next().unwrap_or(name);
-            let params = name
-                .split('[')
-                .nth(1)
-                .unwrap()
-                .split(']')
-                .next()
-                .unwrap()
-                .split(';');
-            for param in params {
-                let mut split = param.split(':');
-                let name = split.next().unwrap();
-                if let Some(val) = split.next() {
-                    if name == "id" {
-                        commands.entity(entity).insert(LinkId(val.to_string()));
-                    }
-                }
-            }
-        }
-    }
-    if let Ok(children) = parent_query.get(entity) {
-        for child in children {
-            process_scene_child_simplified(commands, *child, parent_query, name_query);
-        }
-    }
-}
-
+/// Processes a promised GLTF scene, adding components as needed and removing the [`PromisedScene`] component from the entity.
+///
+/// This function recursively traverses the scene hierarchy, processes each entity based on its name and attributes, and adds relevant components.
+/// After processing, the [`PromisedScene`] component is removed from the entity.
+///
 fn process_scene(
     mut commands: Commands,
     scene_query: Query<(Entity, &Children), With<PromisedScene>>,
@@ -154,6 +152,10 @@ fn process_scene(
     }
 }
 
+/// Processes a child entity within the GLTF scene hierarchy.
+///
+/// This function processes a child entity based on its name and attributes, adding relevant components as needed.
+/// It is called recursively for each child entity.
 fn process_scene_child(
     commands: &mut Commands,
     entity: Entity,
@@ -186,8 +188,8 @@ fn process_scene_child(
                                 .entity(entity)
                                 .insert(collider)
                                 .insert(CollisionLayers::new(
-                                    [MyLayers::Default],
-                                    [MyLayers::Default, MyLayers::ActorNoclip],
+                                    [CollisionLayer::Default],
+                                    [CollisionLayer::Default, CollisionLayer::ActorNoclip],
                                 ));
 
                             if val == "d" {
@@ -224,6 +226,63 @@ fn process_scene_child(
                 transform_query,
                 meshes,
             );
+        }
+    }
+}
+
+/// Processes a promised GLTF scene for a client, adding components as needed and removing the [`PromisedScene`] component from the entity.
+///
+/// This function recursively traverses the scene hierarchy and processes each entity based on its name and attributes, adding relevant components.
+/// After processing, the [`PromisedScene`] component is removed from the entity.
+fn process_scene_simplified(
+    mut commands: Commands,
+    scene_query: Query<(Entity, &Children), With<PromisedScene>>,
+    parent_query: Query<&Children>,
+    name_query: Query<&Name>,
+) {
+    for (entity, children) in scene_query.iter() {
+        for child in children {
+            process_scene_child_simplified(&mut commands, *child, &parent_query, &name_query);
+        }
+        commands.entity(entity).remove::<PromisedScene>();
+    }
+}
+
+/// Processes a child entity within the GLTF scene hierarchy for a client.
+///
+/// This function processes a child entity based on its name and attributes, adding relevant components as needed.
+/// It is called recursively for each child entity.
+fn process_scene_child_simplified(
+    commands: &mut Commands,
+    entity: Entity,
+    parent_query: &Query<&Children>,
+    name_query: &Query<&Name>,
+) {
+    if let Ok(name) = name_query.get(entity) {
+        if name.find('[').is_some() {
+            let name = name.split('.').next().unwrap_or(name);
+            let params = name
+                .split('[')
+                .nth(1)
+                .unwrap()
+                .split(']')
+                .next()
+                .unwrap()
+                .split(';');
+            for param in params {
+                let mut split = param.split(':');
+                let name = split.next().unwrap();
+                if let Some(val) = split.next() {
+                    if name == "id" {
+                        commands.entity(entity).insert(LinkId(val.to_string()));
+                    }
+                }
+            }
+        }
+    }
+    if let Ok(children) = parent_query.get(entity) {
+        for child in children {
+            process_scene_child_simplified(commands, *child, parent_query, name_query);
         }
     }
 }

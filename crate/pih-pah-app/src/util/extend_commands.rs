@@ -1,3 +1,4 @@
+/// Extends the `Commands` type with a new command.
 #[macro_export]
 macro_rules! extend_commands {
   ($command_name:ident($( $arg:ident: $arg_type:ty ),*), $command_fn:expr) => {

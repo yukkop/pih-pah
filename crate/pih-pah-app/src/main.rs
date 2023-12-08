@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowResolution};
 use bevy::winit::WinitWindows;
 use bevy_egui::EguiPlugin;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_inspector_egui::DefaultInspectorConfigPlugin;
 use bevy_xpbd_3d::prelude::PhysicsPlugins;
 use pih_pah_app::world::WorldPlugins;
 use winit::window::Icon;
@@ -14,6 +14,7 @@ fn main() {
         "RUST_LOG",
         std::env::var("RUST_LOG").unwrap_or(String::from("info")),
     );
+
     env_logger::init();
     info!("Starting pih-pah");
     let _args: Vec<String> = std::env::args().collect();
@@ -49,9 +50,9 @@ fn main() {
                 file_path: "asset".into(),
                 ..default()
             }),
+            DefaultInspectorConfigPlugin,
             EguiPlugin,
-        ))
-        .add_plugins(WorldInspectorPlugin::default());
+        ));
     }
     info!("Starting pih-pah");
 
@@ -62,16 +63,11 @@ fn main() {
     app.run();
 }
 
-fn set_window_icon(
-    // we have to use `NonSend` here
-    windows: NonSend<WinitWindows>,
-) {
+fn set_window_icon(windows: NonSend<WinitWindows>) {
     let exe_path = env::current_exe().expect("Failed to find executable path");
     let exe_dir = exe_path
         .parent()
         .expect("Failed to find executable directory");
-    // here we use the `image` crate to load our icon data from a png file
-    // this is not a very bevy-native solution, but it will do
     let (icon_rgba, icon_width, icon_height) = {
         if let Ok(image) = image::open(exe_dir.join("icon-v1.png")) {
             let image = image.into_rgba8();
@@ -85,7 +81,6 @@ fn set_window_icon(
     };
     let icon = Icon::from_rgba(icon_rgba, icon_width, icon_height).unwrap();
 
-    // do it for all windows
     for window in windows.windows.values() {
         window.set_window_icon(Some(icon.clone()));
     }
