@@ -45,8 +45,7 @@ pub struct GameMenuPlugins;
 
 impl Plugin for GameMenuPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_event::<GameMenuEvent>()
+        app.add_event::<GameMenuEvent>()
             .add_state::<WindowState>()
             .init_resource::<EguiState>()
             .add_systems(
@@ -78,6 +77,7 @@ fn handle_action(mut reader: EventReader<GameMenuEvent>, mut state: ResMut<EguiS
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn menu(
     mut next_state_lobby: ResMut<NextState<LobbyState>>,
     mut next_state_ui: ResMut<NextState<UiState>>,
@@ -85,7 +85,7 @@ fn menu(
     mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut context: EguiContexts,
     mut state: ResMut<EguiState>,
-    ui_frame_rect: ResMut<ViewportRect>, 
+    ui_frame_rect: ResMut<ViewportRect>,
     mut windows: Query<&Window>,
     mut ui_game_menu_writer: EventWriter<GameMenuEvent>,
 ) {
@@ -102,7 +102,13 @@ fn menu(
     if state.is_active {
         egui::Window::new(rich_text("Menu".to_string(), Module(&MODULE), &font))
             .frame(*TRANSPARENT)
-            .anchor(egui::Align2::LEFT_BOTTOM, [ui_frame_rect.min.x + 10., (window_size.y - ui_frame_rect.max.y) * -1. - 10.])
+            .anchor(
+                egui::Align2::LEFT_BOTTOM,
+                [
+                    ui_frame_rect.min.x + 10.,
+                    (window_size.y - ui_frame_rect.max.y) * -1. - 10.,
+                ],
+            )
             .collapsible(false)
             .resizable(false)
             .movable(false)
@@ -143,7 +149,7 @@ fn settings_window(
     mut settings: ResMut<Settings>,
     mut state: ResMut<EguiState>,
     lobby_state: Res<State<LobbyState>>,
-    ui_frame_rect: ResMut<ViewportRect>, 
+    ui_frame_rect: ResMut<ViewportRect>,
     mut settings_applying: EventWriter<ApplySettings>,
     mut change_province: EventWriter<ChangeProvinceServerEvent>,
 ) {

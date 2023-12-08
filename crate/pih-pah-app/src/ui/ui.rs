@@ -12,7 +12,10 @@ pub struct ViewportRect(egui::Rect);
 
 impl Default for ViewportRect {
     fn default() -> Self {
-        Self(egui::Rect::from_min_size(Default::default(), Default::default()))
+        Self(egui::Rect::from_min_size(
+            Default::default(),
+            Default::default(),
+        ))
     }
 }
 
@@ -45,18 +48,14 @@ pub struct UiPlugins;
 
 impl Plugin for UiPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_state::<UiState>()
+        app.add_state::<UiState>()
             .init_resource::<ViewportRect>()
             .add_plugins((DebugUiPlugins, MenuPlugins, GameMenuPlugins))
             .add_systems(Startup, frame_rect);
     }
 }
 
-pub fn frame_rect(
-    mut windows: Query<&Window>,
-    mut ui_frame_rect: ResMut<ViewportRect>,
-) {
+pub fn frame_rect(mut windows: Query<&Window>, mut ui_frame_rect: ResMut<ViewportRect>) {
     let window = windows.single_mut();
     let window_size = egui::vec2(window.width(), window.height());
 

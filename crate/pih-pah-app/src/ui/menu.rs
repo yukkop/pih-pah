@@ -69,6 +69,7 @@ impl Plugin for MenuPlugins {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn menu(
     mut event_load: EventWriter<LoadEvent>,
     mut next_state_ui: ResMut<NextState<UiState>>,
@@ -76,7 +77,7 @@ fn menu(
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
     mut context: EguiContexts,
     mut exit: EventWriter<AppExit>,
-    ui_frame_rect: ResMut<ViewportRect>, 
+    ui_frame_rect: ResMut<ViewportRect>,
     mut windows: Query<&Window>,
 ) {
     let ctx = context.ctx_mut();
@@ -91,7 +92,13 @@ fn menu(
 
     egui::Window::new(rich_text("Menu".to_string(), Module(&MODULE), &font))
         .frame(*TRANSPARENT)
-        .anchor(egui::Align2::LEFT_BOTTOM, [ui_frame_rect.min.x + 10., (window_size.y - ui_frame_rect.max.y) * -1. - 10.])
+        .anchor(
+            egui::Align2::LEFT_BOTTOM,
+            [
+                ui_frame_rect.min.x + 10.,
+                (window_size.y - ui_frame_rect.max.y) * -1. - 10.,
+            ],
+        )
         .collapsible(false)
         .resizable(false)
         .movable(false)
@@ -140,7 +147,7 @@ fn multiplayer_window(
     mut state: ResMut<State>,
     // mut windows: Query<&Window>,
     mut host_resource: ResMut<HostResource>,
-    ui_frame_rect: ResMut<ViewportRect>, 
+    ui_frame_rect: ResMut<ViewportRect>,
     mut client_resource: ResMut<ClientResource>,
 ) {
     // let window = windows.single_mut();
@@ -167,7 +174,7 @@ fn multiplayer_window(
         .collapsible(false)
         .resizable(false)
         .movable(false)
-        .show(&ctx, |ui| {
+        .show(ctx, |ui| {
             match state.multiplayer_state {
                 MultiplayerState::Create => {
                     ui.horizontal(|ui| {
@@ -245,7 +252,7 @@ fn settings_window(
     mut context: EguiContexts,
     // mut windows: Query<&Window>,
     mut settings: ResMut<Settings>,
-    ui_frame_rect: ResMut<ViewportRect>, 
+    ui_frame_rect: ResMut<ViewportRect>,
     mut settings_applying: EventWriter<ApplySettings>,
 ) {
     // let window = windows.single_mut();

@@ -1,22 +1,22 @@
 use std::any::TypeId;
 
-use bevy::prelude::*;
 use bevy::asset::{ReflectAsset, UntypedAssetId};
+use bevy::prelude::*;
+use bevy::reflect::TypeRegistry;
+use bevy::render::camera::{CameraProjection, Viewport};
+use bevy::window::PrimaryWindow;
+use bevy_egui::{egui, EguiContext, EguiContexts, EguiSet};
 use bevy_inspector_egui::bevy_inspector::hierarchy::{hierarchy_ui, SelectedEntities};
 use bevy_inspector_egui::bevy_inspector::{
     self, ui_for_entities_shared_components, ui_for_entity_with_children,
 };
-use bevy::reflect::TypeRegistry;
-use bevy::render::camera::{CameraProjection, Viewport};
 use egui::{Align2, Pos2};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use egui_gizmo::{Gizmo, GizmoMode, GizmoOrientation};
-use bevy::window::PrimaryWindow;
-use bevy_egui::{EguiContext, egui, EguiSet, EguiContexts};
 
 use crate::util::i18n::Uniq;
 
-use super::{MainCamera, ViewportRect, rich_text};
+use super::{rich_text, MainCamera, ViewportRect};
 
 lazy_static::lazy_static! {
     static ref MODULE: &'static str = module_path!().splitn(3, ':').nth(2).unwrap_or(module_path!());
@@ -70,26 +70,41 @@ pub struct DebugUiPlugins;
 
 impl Plugin for DebugUiPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_event::<DebugMenuEvent>()
+        app.add_event::<DebugMenuEvent>()
             .add_state::<DebugFrameState>()
             .add_state::<DebugState>()
             .add_state::<DebugMenuState>();
         let is_debug = std::env::var("DEBUG").is_ok();
-        
+
         if is_debug {
-            app
-                .insert_resource(UiState::new())
+            app.insert_resource(UiState::new())
                 .add_systems(
                     PostUpdate,
-                    show_ui_system.run_if(in_state(DebugState::Enable))
+                    show_ui_system
+                        .run_if(in_state(DebugState::Enable))
                         .before(EguiSet::ProcessOutput)
                         .before(bevy::transform::TransformSystem::TransformPropagate),
                 )
-                .add_systems(PostUpdate, set_camera_viewport.run_if(in_state(DebugState::Enable)).after(show_ui_system))
-                .add_systems(Update, (set_gizmo_mode, push_window_menu_event).run_if(in_state(DebugState::Enable)))
-                .add_systems(Update, push_window_menu.run_if(in_state(DebugState::Enable).and_then(in_state(DebugMenuState::Enable))))
-                .add_systems(OnEnter(DebugState::Disable), (exit_debug, set_camera_viewport.after(exit_debug)))
+                .add_systems(
+                    PostUpdate,
+                    set_camera_viewport
+                        .run_if(in_state(DebugState::Enable))
+                        .after(show_ui_system),
+                )
+                .add_systems(
+                    Update,
+                    (set_gizmo_mode, push_window_menu_event).run_if(in_state(DebugState::Enable)),
+                )
+                .add_systems(
+                    Update,
+                    push_window_menu.run_if(
+                        in_state(DebugState::Enable).and_then(in_state(DebugMenuState::Enable)),
+                    ),
+                )
+                .add_systems(
+                    OnEnter(DebugState::Disable),
+                    (exit_debug, set_camera_viewport.after(exit_debug)),
+                )
                 .register_type::<Option<Handle<Image>>>()
                 .add_systems(OnEnter(DebugFrameState::Enable), debug_frame_enable)
                 .add_systems(OnEnter(DebugFrameState::Disable), debug_frame_disable)
@@ -107,8 +122,7 @@ fn push_window_menu_event(
     for _ in debug_menu_event.read() {
         if let Some(position) = windows.single().physical_cursor_position() {
             ui_state.menu_pos = position;
-        } 
-        else {
+        } else {
             let window = windows.single();
             let window_size = egui::vec2(window.width(), window.height());
             ui_state.menu_pos = Vec2::new(window_size.x / 2.0, window_size.y / 2.0);
@@ -128,30 +142,62 @@ fn push_window_menu(
         ..default()
     };
 
-
     let ctx = context.ctx_mut();
     egui::Window::new("Mouse moved")
-        .anchor(Align2::LEFT_TOP, [ui_state.menu_pos.x - 10., ui_state.menu_pos.y - 35.])
+        .anchor(
+            Align2::LEFT_TOP,
+            [ui_state.menu_pos.x - 10., ui_state.menu_pos.y - 35.],
+        )
         .collapsible(false)
         .movable(false)
         .show(ctx, |ui| {
             let new_window = {
-                if ui.button(rich_text("ViewPort".to_string(), Uniq::Module(&MODULE), &font)).clicked() {
+                if ui
+                    .button(rich_text(
+                        "ViewPort".to_string(),
+                        Uniq::Module(&MODULE),
+                        &font,
+                    ))
+                    .clicked()
+                {
                     Some(EguiWindow::GameView)
-                }
-                else if ui.button(rich_text("Hierarchy".to_string(), Uniq::Module(&MODULE), &font)).clicked() {
+                } else if ui
+                    .button(rich_text(
+                        "Hierarchy".to_string(),
+                        Uniq::Module(&MODULE),
+                        &font,
+                    ))
+                    .clicked()
+                {
                     Some(EguiWindow::Hierarchy)
-                }
-                else if ui.button(rich_text("Resources".to_string(), Uniq::Module(&MODULE), &font)).clicked() {
+                } else if ui
+                    .button(rich_text(
+                        "Resources".to_string(),
+                        Uniq::Module(&MODULE),
+                        &font,
+                    ))
+                    .clicked()
+                {
                     Some(EguiWindow::Resources)
-                }
-                else if ui.button(rich_text("Assets".to_string(), Uniq::Module(&MODULE), &font)).clicked() {
+                } else if ui
+                    .button(rich_text(
+                        "Assets".to_string(),
+                        Uniq::Module(&MODULE),
+                        &font,
+                    ))
+                    .clicked()
+                {
                     Some(EguiWindow::Assets)
-                }
-                else if ui.button(rich_text("Inspector".to_string(), Uniq::Module(&MODULE), &font)).clicked() {
+                } else if ui
+                    .button(rich_text(
+                        "Inspector".to_string(),
+                        Uniq::Module(&MODULE),
+                        &font,
+                    ))
+                    .clicked()
+                {
                     Some(EguiWindow::Inspector)
-                }
-                else {
+                } else {
                     None
                 }
             };
@@ -163,31 +209,25 @@ fn push_window_menu(
             // TODO this is clip more that we need
             let rect = ui.clip_rect();
             if let Some(position) = windows.single().cursor_position() {
-                if !rect.contains(Pos2 { x: position.x, y: position.y }) {
+                if !rect.contains(Pos2 {
+                    x: position.x,
+                    y: position.y,
+                }) {
                     next_state_debug_menu.set(DebugMenuState::Disable);
                 }
-            }
-            else {
+            } else {
                 next_state_debug_menu.set(DebugMenuState::Disable);
-            } 
+            }
         });
-
-    
-    
 }
 
-fn exit_debug(
-    mut viewport_rect: ResMut<ViewportRect>,
-    windows: Query<&Window>,
-) {
+fn exit_debug(mut viewport_rect: ResMut<ViewportRect>, windows: Query<&Window>) {
     let window = windows.single();
     let window_size = egui::vec2(window.width(), window.height());
     viewport_rect.set(egui::Rect::from_min_size(Default::default(), window_size));
 }
 
-fn debug_frame_disable(
-    mut context: EguiContexts,
-) {
+fn debug_frame_disable(mut context: EguiContexts) {
     context.ctx_mut().set_style(egui::Style {
         debug: egui::style::DebugOptions {
             debug_on_hover: false,
@@ -197,9 +237,7 @@ fn debug_frame_disable(
     });
 }
 
-fn debug_frame_enable(
-    mut context: EguiContexts,
-) {
+fn debug_frame_enable(mut context: EguiContexts) {
     context.ctx_mut().set_style(egui::Style {
         debug: egui::style::DebugOptions {
             debug_on_hover: true,
@@ -231,7 +269,6 @@ fn set_camera_viewport(
     mut cameras: Query<&mut Camera, With<MainCamera>>,
 ) {
     if let Ok(mut cam) = cameras.get_single_mut() {
-
         let Ok(window) = primary_window.get_single() else {
             return;
         };
@@ -340,7 +377,9 @@ impl egui_dock::TabViewer for TabViewer<'_> {
 
         match window {
             EguiWindow::GameView => {
-                self.world.resource_mut::<ViewportRect>().set(ui.clip_rect());
+                self.world
+                    .resource_mut::<ViewportRect>()
+                    .set(ui.clip_rect());
 
                 draw_gizmo(ui, self.world, self.selected_entities, self.gizmo_mode);
             }
@@ -398,7 +437,8 @@ fn draw_gizmo(
 ) {
     if let Ok((cam_transform, projection)) = world
         .query_filtered::<(&GlobalTransform, &Projection), With<MainCamera>>()
-        .get_single(world) {
+        .get_single(world)
+    {
         let view_matrix = Mat4::from(cam_transform.affine().inverse());
         let projection_matrix = projection.get_projection_matrix();
 

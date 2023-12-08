@@ -5,7 +5,7 @@ use crate::lobby::{LobbyPlugins, LobbyState, PlayerInput};
 use crate::province::ProvincePlugins;
 use crate::settings::SettingsPlugins;
 use crate::sound::SoundPlugins;
-use crate::ui::{self, DebugFrameState, DebugState, DebugMenuEvent};
+use crate::ui::{self, DebugFrameState, DebugMenuEvent, DebugState};
 use crate::ui::{UiAction, UiPlugins};
 use bevy::prelude::*;
 use bevy_xpbd_3d::components::{CollisionLayers, Mass};
@@ -80,6 +80,7 @@ impl Plugin for WorldPlugins {
 pub struct Me;
 
 /// Processes the input keys and manages them from a resource or event deep in the program.
+#[allow(clippy::too_many_arguments)]
 fn input(
     keyboard_input: Res<Input<KeyCode>>,
     mut ui_game_menu_writer: EventWriter<ui::GameMenuEvent>,
@@ -285,4 +286,3 @@ fn process_scene_child_simplified(
         }
     }
 }
-

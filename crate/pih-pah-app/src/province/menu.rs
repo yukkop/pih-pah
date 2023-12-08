@@ -35,15 +35,16 @@ fn load(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     commands
-        .spawn((Camera3dBundle {
-            transform: Transform::from_xyz(5., 2.5, 5.).looking_at(Vec3::ZERO, Vec3::Y),
-            camera: Camera {
-                order: PRIMARY_CAMERA_ORDER,
-                ..default()
+        .spawn((
+            Camera3dBundle {
+                transform: Transform::from_xyz(5., 2.5, 5.).looking_at(Vec3::ZERO, Vec3::Y),
+                camera: Camera {
+                    order: PRIMARY_CAMERA_ORDER,
+                    ..default()
+                },
+                ..Default::default()
             },
-            ..Default::default()
-        },
-        MainCamera,
+            MainCamera,
         ))
         .insert(Affiliation);
 

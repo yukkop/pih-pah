@@ -52,7 +52,6 @@ fn main() {
             }),
             DefaultInspectorConfigPlugin,
             EguiPlugin,
-
         ));
     }
     info!("Starting pih-pah");
@@ -64,9 +63,7 @@ fn main() {
     app.run();
 }
 
-fn set_window_icon(
-    windows: NonSend<WinitWindows>,
-) {
+fn set_window_icon(windows: NonSend<WinitWindows>) {
     let exe_path = env::current_exe().expect("Failed to find executable path");
     let exe_dir = exe_path
         .parent()

@@ -1,9 +1,9 @@
-use crate::component::{AxisName, DespawnReason, Respawn, UntouchedTimerValue};
+use crate::component::{AxisName, DespawnReason, NoclipDuration, Respawn};
 use crate::extend_commands;
 use crate::lobby::Character;
 use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerViewDirection};
 use crate::ui::MainCamera;
-use crate::world::{Me, CollisionLayer};
+use crate::world::{CollisionLayer, Me};
 use bevy::{ecs::system::EntityCommands, prelude::*};
 use bevy_xpbd_3d::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -115,7 +115,6 @@ fn jump(
                 .is_some()
         {
             **linear_velocity +=
-
                 ((jump_direction.last_viable_normal + local_x * dx + local_y * dy)
                     .normalize_or_zero())
                     * (-gravity.0.y * 2.0 * PLAYER_SIZE).sqrt()
@@ -138,18 +137,14 @@ fn move_characters(
 
         // never use delta time in fixed update !!!
 
-        let a = 1.5_f32.powf(input.sprint as i32 as f32); 
+        let a = 1.5_f32.powf(input.sprint as i32 as f32);
         // move by x axis
-        linear_velocity.x +=
-            dx * PLAYER_MOVE_SPEED * view_direction_x.x * a;
-        linear_velocity.z +=
-            dx * PLAYER_MOVE_SPEED * view_direction_x.z * a;
+        linear_velocity.x += dx * PLAYER_MOVE_SPEED * view_direction_x.x * a;
+        linear_velocity.z += dx * PLAYER_MOVE_SPEED * view_direction_x.z * a;
 
         // move by y axis
-        linear_velocity.x +=
-            dy * PLAYER_MOVE_SPEED * view_direction_y.x * a;
-        linear_velocity.z +=
-            dy * PLAYER_MOVE_SPEED * view_direction_y.z * a;
+        linear_velocity.x += dy * PLAYER_MOVE_SPEED * view_direction_y.x * a;
+        linear_velocity.z += dy * PLAYER_MOVE_SPEED * view_direction_y.z * a;
 
         // camera turn
         let turn = (input.turn_right as i8 - input.turn_left as i8) as f32;
@@ -188,7 +183,7 @@ extend_commands!(
        JumpHelper{last_viable_normal: Vec3::Y},
        CollisionLayers::new([CollisionLayer::Default], [CollisionLayer::Default, CollisionLayer::ActorNoclip]),
      ))
-     .insert(Respawn::new(DespawnReason::Less(-10., AxisName::Y), spawn_point, UntouchedTimerValue::Timer(10.)))
+     .insert(Respawn::new(DespawnReason::Less(-10., AxisName::Y), spawn_point,  NoclipDuration::Timer(10.)))
      .insert(PlayerInput::default())
      .insert(Character { id: player_id })
      .insert(PlayerViewDirection(Quat::default()));

@@ -91,7 +91,6 @@ impl Plugin for ComponentPlugins {
     }
 }
 
-
 /// Updates entities with a [`NoclipTimer`] component to toggle [`noclip`](CollisionLayer::ActorNoclip) mode temporarily.
 ///
 /// The `noclip_timer` function iterates through entities with a [`NoclipTimer`] component and checks if the timer has finished.
