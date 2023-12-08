@@ -147,8 +147,8 @@ pub struct PlayerInput {
     pub right: bool,
     pub jump: bool,
     pub sprint: bool,
-    pub turn_left: bool,
-    pub turn_right: bool,
+    pub turn_horizontal: f32,
+    pub turn_vertical: f32,
 }
 
 #[derive(Debug, Component)]
