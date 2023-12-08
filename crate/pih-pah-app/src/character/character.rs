@@ -3,6 +3,7 @@ use crate::extend_commands;
 use crate::lobby::Character;
 use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerViewDirection};
 use crate::world::{Me, MyLayers};
+use crate::ui::GameMenuActionState;
 use bevy::{ecs::system::EntityCommands, prelude::*, input::mouse::MouseMotion};
 use bevy_xpbd_3d::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -11,7 +12,8 @@ pub const PLAYER_MOVE_SPEED: f32 = 0.07;
 pub const PLAYER_CAMERA_ROTATION_SPEED: f32 = 0.015;
 pub const PLAYER_SIZE: f32 = 2.0;
 const SHIFT_ACCELERATION: f32 = 4.0_f32;
-const SENSITIVITY: f32 = 0.01;
+const SENSITIVITY: f32 = 0.003;
+const JUMP_HEIGHT_MULTIPLICATOR: f32 = 1.5_f32;
 
 #[derive(Component, Debug, Serialize, Deserialize)]
 pub struct TiedCamera(Entity);
@@ -44,6 +46,11 @@ impl Plugin for CharacterPlugins {
         .add_systems(
             FixedUpdate,
             update_jump_normals.run_if(
+                not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
+            ),
+        ).add_systems(
+            FixedUpdate,
+            rotate_camera.run_if(
                 not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
             ),
         );
@@ -119,56 +126,60 @@ fn jump(
                 ((jump_direction.last_viable_normal + local_x * dx + local_y * dy)
                     .normalize_or_zero())
                     * (-gravity.0.y * 2.0 * PLAYER_SIZE).sqrt()
-                    * 2.0; // sqrt(2gh)
-            log::info!("{:?}", jump_direction.last_viable_normal);
+                    * JUMP_HEIGHT_MULTIPLICATOR; // sqrt(2gh)
         }
     }
 }
 
 fn move_characters(
-    mut query: Query<(&mut LinearVelocity, &mut PlayerViewDirection, &PlayerInput)>, /* , time: Res<Time> */
-    mut mouse_motion_event: EventReader<MouseMotion>,
+    mut query: Query<(&mut LinearVelocity, &PlayerViewDirection, &PlayerInput)>, /* , time: Res<Time> */
+    menu_state: Res<State<GameMenuActionState>>,
 ) {
-    for (mut linear_velocity, mut view_direction, input) in query.iter_mut() {
-        let dx = (input.right as i8 - input.left as i8) as f32;
-        let dy = (input.down as i8 - input.up as i8) as f32;
+    for (mut linear_velocity, view_direction, input) in query.iter_mut() {
+        if *menu_state.get() == GameMenuActionState::Disable {
+            let dx = (input.right as i8 - input.left as i8) as f32;
+            let dy = (input.down as i8 - input.up as i8) as f32;
 
-        // convert axises to global
-        let global_x = view_direction.0.mul_vec3(Vec3::X);
-        let global_y = view_direction.0.mul_vec3(Vec3::Z);
+            // convert axises to global
+            let global_x = view_direction.0.mul_vec3(Vec3::X);
+            let global_y = view_direction.0.mul_vec3(Vec3::Z);
 
-        // never use delta time in fixed update !!!
+            // never use delta time in fixed update !!!
 
-        // move by x axis
-        linear_velocity.x +=
-            dx * PLAYER_MOVE_SPEED * global_x.x * SHIFT_ACCELERATION.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
-        linear_velocity.z +=
-            dx * PLAYER_MOVE_SPEED * global_x.z * SHIFT_ACCELERATION.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            // move by x axis
+            linear_velocity.x +=
+                dx * PLAYER_MOVE_SPEED * global_x.x * SHIFT_ACCELERATION.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            linear_velocity.z +=
+                dx * PLAYER_MOVE_SPEED * global_x.z * SHIFT_ACCELERATION.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
 
-        // move by y axis
-        linear_velocity.x +=
-            dy * PLAYER_MOVE_SPEED * global_y.x * SHIFT_ACCELERATION.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
-        linear_velocity.z +=
-            dy * PLAYER_MOVE_SPEED * global_y.z * SHIFT_ACCELERATION.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            // move by y axis
+            linear_velocity.x +=
+                dy * PLAYER_MOVE_SPEED * global_y.x * SHIFT_ACCELERATION.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
+            linear_velocity.z +=
+                dy * PLAYER_MOVE_SPEED * global_y.z * SHIFT_ACCELERATION.powf(input.sprint as i32 as f32); // * time.delta().as_secs_f32();
 
-        // camera turn
-        let turn = (input.turn_right as i8 - input.turn_left as i8) as f32;
-        
-
-        for mouse_motion in mouse_motion_event.read(){
-            let rotation_x = Quat::from_rotation_x(
-                SENSITIVITY * mouse_motion.delta.x
-            );
-            let rotation_y = Quat::from_rotation_y(
-                SENSITIVITY * mouse_motion.delta.y
-            );
-            view_direction.0 *= rotation_x * rotation_y;
         }
+    }
+}
 
-        let rotation = Quat::from_rotation_y(
-            PLAYER_CAMERA_ROTATION_SPEED * turn, /* * delta_seconds */
-        );
-        view_direction.0 *= rotation;
+fn rotate_camera(
+    mut tied_camera_query: Query<(&TiedCamera, &Transform)>,
+    mut mouse_motion_event: EventReader<MouseMotion>,
+    menu_state: Res<State<GameMenuActionState>>,
+    mut view_direction_query: Query<&mut PlayerViewDirection, With<Me>>,
+) {
+    for (TiedCamera(_), transform) in tied_camera_query.iter_mut() {
+        if *menu_state.get() == GameMenuActionState::Disable {
+            for mouse_motion in mouse_motion_event.read(){
+                for mut view_direction in view_direction_query.iter_mut() {
+                    let dx = SENSITIVITY * -mouse_motion.delta.x;
+                    let dy = SENSITIVITY * -mouse_motion.delta.y;
+                    let x_rotation = Quat::from_rotation_arc(transform.local_x(), Vec3::X) * Quat::from_rotation_x(dy);
+                    let y_rotation = Quat::from_rotation_arc(transform.local_y(), Vec3::Y) * Quat::from_rotation_y(dx);
+                    view_direction.0 *= x_rotation * y_rotation;
+                }
+            }
+        }
     }
 }
 
@@ -248,6 +259,7 @@ extend_commands!(
         PbrBundle::default(),
         TiedCamera(target),
         Name::new("TiedCamera"),
+        // CameraRotation{rotation: Quat::default()}, 
       ))
       .with_children(|parent| {
         // spawn tied camera
