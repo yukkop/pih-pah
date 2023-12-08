@@ -7,6 +7,7 @@ use crate::settings::SettingsPlugins;
 use crate::sound::SoundPlugins;
 use crate::ui::{self, DebugFrameState, DebugMenuEvent, DebugState};
 use crate::ui::{UiAction, UiPlugins};
+use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
 use bevy_xpbd_3d::components::{CollisionLayers, Mass};
 use bevy_xpbd_3d::prelude::{Collider, PhysicsLayer, RigidBody};
@@ -90,6 +91,7 @@ fn input(
     mut debug_menu_togl: EventWriter<DebugMenuEvent>,
     debug_state: Res<State<DebugState>>,
     mut player_input_query: Query<&mut PlayerInput, With<Me>>,
+    mut motion_evr: EventReader<MouseMotion>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Escape) {
         ui_game_menu_writer.send(ui::GameMenuEvent(UiAction::Toggle));
@@ -115,10 +117,15 @@ fn input(
         player_input.up = keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
         player_input.down =
             keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
-        player_input.turn_left = keyboard_input.pressed(KeyCode::Q);
-        player_input.turn_right = keyboard_input.pressed(KeyCode::E);
         player_input.jump = keyboard_input.just_pressed(KeyCode::Space);
         player_input.sprint = keyboard_input.pressed(KeyCode::ControlLeft);
+
+        player_input.turn_horisontal = 0.;
+        player_input.turn_vertical = 0.;
+        for ev in motion_evr.read() {
+            player_input.turn_horisontal = ev.delta.x;
+            player_input.turn_vertical = ev.delta.y;
+        }
     }
 }
 

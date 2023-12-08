@@ -147,12 +147,17 @@ fn move_characters(
         linear_velocity.z += dy * PLAYER_MOVE_SPEED * view_direction_y.z * a;
 
         // camera turn
-        let turn = (input.turn_right as i8 - input.turn_left as i8) as f32;
-
         let rotation = Quat::from_rotation_y(
-            PLAYER_CAMERA_ROTATION_SPEED * turn, /* * delta_seconds */
+            PLAYER_CAMERA_ROTATION_SPEED * input.turn_horisontal, /* * delta_seconds */
         );
-        view_direction.0 *= rotation;
+        // global rotation
+        view_direction.0 = rotation * view_direction.0;
+
+        let rotation = Quat::from_rotation_x(
+            PLAYER_CAMERA_ROTATION_SPEED * input.turn_vertical, /* * delta_seconds */
+        );
+        // local rotation
+        view_direction.0 = view_direction.0 * rotation;
     }
 }
 
