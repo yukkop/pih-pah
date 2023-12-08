@@ -10,7 +10,10 @@ use serde::{Deserialize, Serialize};
 
 pub const PLAYER_MOVE_SPEED: f32 = 0.07;
 pub const PLAYER_CAMERA_ROTATION_SPEED: f32 = 0.015;
-pub const PLAYER_SIZE: f32 = 2.0;
+pub const PLAYER_SIZE: f32 = 2.;
+const SHIFT_ACCELERATION: f32 = 2.;
+const SENSITIVITY: f32 = 1.;
+const JUMP_HEIGHT_MULTIPLICATOR: f32 = 1.;
 
 #[derive(Component, Debug, Serialize, Deserialize)]
 pub struct TiedCamera(Entity);
@@ -118,7 +121,7 @@ fn jump(
                 ((jump_direction.last_viable_normal + local_x * dx + local_y * dy)
                     .normalize_or_zero())
                     * (-gravity.0.y * 2.0 * PLAYER_SIZE).sqrt()
-                    * 2.0; // sqrt(2gh)
+                    * JUMP_HEIGHT_MULTIPLICATOR; // sqrt(2gh)
             log::debug!("{:?}", jump_direction.last_viable_normal);
         }
     }
@@ -137,24 +140,29 @@ fn move_characters(
 
         // never use delta time in fixed update !!!
 
-        let a = 1.5_f32.powf(input.sprint as i32 as f32);
+        let shift_acceleration = SHIFT_ACCELERATION.powf(input.sprint as i32 as f32);
+
         // move by x axis
-        linear_velocity.x += dx * PLAYER_MOVE_SPEED * view_direction_x.x * a;
-        linear_velocity.z += dx * PLAYER_MOVE_SPEED * view_direction_x.z * a;
+        linear_velocity.x +=
+            dx * PLAYER_MOVE_SPEED * view_direction_x.x * shift_acceleration;
+        linear_velocity.z +=
+            dx * PLAYER_MOVE_SPEED * view_direction_x.z * shift_acceleration;
 
         // move by y axis
-        linear_velocity.x += dy * PLAYER_MOVE_SPEED * view_direction_y.x * a;
-        linear_velocity.z += dy * PLAYER_MOVE_SPEED * view_direction_y.z * a;
+        linear_velocity.x +=
+            dy * PLAYER_MOVE_SPEED * view_direction_y.x * shift_acceleration;
+        linear_velocity.z +=
+            dy * PLAYER_MOVE_SPEED * view_direction_y.z * shift_acceleration;
 
         // camera turn
         let rotation = Quat::from_rotation_y(
-            PLAYER_CAMERA_ROTATION_SPEED * input.turn_horisontal, /* * delta_seconds */
+            PLAYER_CAMERA_ROTATION_SPEED * input.turn_horizontal * SENSITIVITY, /* * delta_seconds */
         );
         // global rotation
-        view_direction.0 = rotation * view_direction.0;
+        view_direction.0 = rotation * view_direction.0 ;
 
         let rotation = Quat::from_rotation_x(
-            PLAYER_CAMERA_ROTATION_SPEED * input.turn_vertical, /* * delta_seconds */
+            PLAYER_CAMERA_ROTATION_SPEED * input.turn_vertical * SENSITIVITY, /* * delta_seconds */
         );
         // local rotation
         view_direction.0 = view_direction.0 * rotation;

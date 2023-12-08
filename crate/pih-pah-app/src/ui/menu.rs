@@ -10,7 +10,7 @@ use bevy::window::Window;
 use bevy_egui::egui::Align2;
 use bevy_egui::{egui, EguiContexts};
 
-use super::{UiState, ViewportRect};
+use super::{UiState, ViewportRect, MouseGrabState};
 
 lazy_static::lazy_static! {
     static ref MODULE: &'static str = module_path!().splitn(3, ':').nth(2).unwrap_or(module_path!());
@@ -79,6 +79,7 @@ fn menu(
     mut exit: EventWriter<AppExit>,
     ui_frame_rect: ResMut<ViewportRect>,
     mut windows: Query<&Window>,
+    mut nex_state_mouse_grab: ResMut<NextState<MouseGrabState>>,
 ) {
     let ctx = context.ctx_mut();
 
@@ -111,6 +112,7 @@ fn menu(
                 ))
                 .clicked()
             {
+                nex_state_mouse_grab.set(MouseGrabState::Enable);
                 next_state_ui.set(UiState::GameMenu);
                 next_state_province.set(ProvinceState::ShootingRange);
                 event_load.send(LoadEvent(LobbyState::Single));
@@ -149,6 +151,7 @@ fn multiplayer_window(
     mut host_resource: ResMut<HostResource>,
     ui_frame_rect: ResMut<ViewportRect>,
     mut client_resource: ResMut<ClientResource>,
+    mut nex_state_mouse_grab: ResMut<NextState<MouseGrabState>>,
 ) {
     // let window = windows.single_mut();
     // let window_size = egui::vec2(window.width(), window.height());
@@ -198,6 +201,7 @@ fn multiplayer_window(
                         .button(rich_text("Create".to_string(), Module(&MODULE), &font))
                         .clicked()
                     {
+                        nex_state_mouse_grab.set(MouseGrabState::Enable);
                         host_resource.address =
                             Some(format!("127.0.0.1:{}", state.host_port.clone()));
                         host_resource.username = Some(state.username.clone());
@@ -229,6 +233,7 @@ fn multiplayer_window(
                         .button(rich_text("Connect".to_string(), Module(&MODULE), &font))
                         .clicked()
                     {
+                        nex_state_mouse_grab.set(MouseGrabState::Enable);
                         client_resource.address = Some(state.join_address.clone());
                         client_resource.username = Some(state.username.clone());
                         next_state_menu_window.set(WindowState::None);

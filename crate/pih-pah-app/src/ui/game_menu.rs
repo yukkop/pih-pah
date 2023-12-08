@@ -2,7 +2,7 @@ use crate::lobby::host::ChangeProvinceServerEvent;
 use crate::lobby::LobbyState;
 use crate::province::ProvinceState;
 use crate::settings::{ApplySettings, ExemptSettings, Settings};
-use crate::ui::{rich_text, UiAction, TRANSPARENT};
+use crate::ui::{rich_text, TRANSPARENT};
 use crate::util::i18n::Uniq::Module;
 use bevy::prelude::*;
 use bevy_egui::egui::Align2;
@@ -13,9 +13,6 @@ use super::{UiState, ViewportRect};
 lazy_static::lazy_static! {
     static ref MODULE: &'static str = module_path!().splitn(3, ':').nth(2).unwrap_or(module_path!());
 }
-
-#[derive(Event)]
-pub struct GameMenuEvent(pub UiAction);
 
 #[derive(Resource)]
 struct EguiState {
@@ -34,6 +31,24 @@ impl Default for EguiState {
     }
 }
 
+
+#[derive(Default, Debug, Hash, States, PartialEq, Eq, Clone, Copy)]
+pub enum GameMenuActionState {
+    Enable,
+    #[default]
+    Disable,
+}
+
+impl GameMenuActionState {
+    pub fn toggle(&mut self) -> Self {
+        match self {
+            GameMenuActionState::Enable => *self = GameMenuActionState::Disable,
+            GameMenuActionState::Disable => *self = GameMenuActionState::Enable,
+        }
+        *self
+    }
+}
+
 #[derive(Default, Debug, Hash, States, PartialEq, Eq, Clone, Copy)]
 enum WindowState {
     #[default]
@@ -45,12 +60,13 @@ pub struct GameMenuPlugins;
 
 impl Plugin for GameMenuPlugins {
     fn build(&self, app: &mut App) {
-        app.add_event::<GameMenuEvent>()
+        app
             .add_state::<WindowState>()
+            .add_state::<GameMenuActionState>()
             .init_resource::<EguiState>()
             .add_systems(
                 Update,
-                (handle_action, menu).run_if(in_state(UiState::GameMenu)),
+                menu.run_if(in_state(UiState::GameMenu).and_then(in_state(GameMenuActionState::Enable))),
             )
             .add_systems(
                 Update,
@@ -61,33 +77,16 @@ impl Plugin for GameMenuPlugins {
     }
 }
 
-fn handle_action(mut reader: EventReader<GameMenuEvent>, mut state: ResMut<EguiState>) {
-    for GameMenuEvent(action) in reader.read() {
-        match action {
-            UiAction::Enable => {
-                state.is_active = true;
-            }
-            UiAction::Disable => {
-                state.is_active = false;
-            }
-            UiAction::Toggle => {
-                state.is_active = !state.is_active;
-            }
-        }
-    }
-}
-
-#[allow(clippy::too_many_arguments)]
 fn menu(
     mut next_state_lobby: ResMut<NextState<LobbyState>>,
     mut next_state_ui: ResMut<NextState<UiState>>,
+    mut next_state_game_menu_action: ResMut<NextState<GameMenuActionState>>,
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
     mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut context: EguiContexts,
     mut state: ResMut<EguiState>,
     ui_frame_rect: ResMut<ViewportRect>,
     mut windows: Query<&Window>,
-    mut ui_game_menu_writer: EventWriter<GameMenuEvent>,
 ) {
     let ctx = context.ctx_mut();
 
@@ -99,45 +98,44 @@ fn menu(
     let window = windows.single_mut();
     let window_size = egui::vec2(window.width(), window.height());
 
-    if state.is_active {
-        egui::Window::new(rich_text("Menu".to_string(), Module(&MODULE), &font))
-            .frame(*TRANSPARENT)
-            .anchor(
-                egui::Align2::LEFT_BOTTOM,
-                [
-                    ui_frame_rect.min.x + 10.,
-                    (window_size.y - ui_frame_rect.max.y) * -1. - 10.,
-                ],
-            )
-            .collapsible(false)
-            .resizable(false)
-            .movable(false)
-            .show(ctx, |ui| {
-                if ui
-                    .button(rich_text("Back".to_string(), Module(&MODULE), &font))
-                    .clicked()
-                {
-                    next_state_menu_window.set(WindowState::None);
-                    ui_game_menu_writer.send(GameMenuEvent(UiAction::Disable));
-                }
-                if ui
-                    .button(rich_text("Settings".to_string(), Module(&MODULE), &font))
-                    .clicked()
-                {
-                    next_state_menu_window.set(WindowState::Settings);
-                }
-                if ui
-                    .button(rich_text("Menu".to_string(), Module(&MODULE), &font))
-                    .clicked()
-                {
-                    state.is_active = false;
-                    next_state_menu_window.set(WindowState::None);
-                    next_state_lobby.set(LobbyState::None);
-                    next_state_province.set(ProvinceState::Menu);
-                    next_state_ui.set(UiState::Menu);
-                }
-            });
-    }
+    egui::Window::new(rich_text("Menu".to_string(), Module(&MODULE), &font))
+        .frame(*TRANSPARENT)
+        .anchor(
+            egui::Align2::LEFT_BOTTOM,
+            [
+                ui_frame_rect.min.x + 10.,
+                (window_size.y - ui_frame_rect.max.y) * -1. - 10.,
+            ],
+        )
+        .collapsible(false)
+        .resizable(false)
+        .movable(false)
+        .show(ctx, |ui| {
+            if ui
+                .button(rich_text("Back".to_string(), Module(&MODULE), &font))
+                .clicked()
+            {
+                next_state_menu_window.set(WindowState::None);
+                next_state_game_menu_action.set(GameMenuActionState::Disable);
+            }
+            if ui
+                .button(rich_text("Settings".to_string(), Module(&MODULE), &font))
+                .clicked()
+            {
+                next_state_menu_window.set(WindowState::Settings);
+            }
+            if ui
+                .button(rich_text("Menu".to_string(), Module(&MODULE), &font))
+                .clicked()
+            {
+                state.is_active = false;
+                next_state_game_menu_action.set(GameMenuActionState::Disable);
+                next_state_menu_window.set(WindowState::None);
+                next_state_lobby.set(LobbyState::None);
+                next_state_province.set(ProvinceState::Menu);
+                next_state_ui.set(UiState::Menu);
+            }
+        });
 }
 
 #[allow(clippy::too_many_arguments)]

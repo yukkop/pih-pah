@@ -147,7 +147,7 @@ pub struct PlayerInput {
     pub right: bool,
     pub jump: bool,
     pub sprint: bool,
-    pub turn_horisontal: f32,
+    pub turn_horizontal: f32,
     pub turn_vertical: f32,
 }
 
