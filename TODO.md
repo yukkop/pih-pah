@@ -24,9 +24,9 @@
     [ ] skybox
     [ ] portals
 [ ] gravity
-    [ ] own gravity for any actor
+    [x] own gravity for any actor
     [ ] gravity zones
-    [ ] option toggle gravity for character
+    [x] option toggle gravity for character
 [ ] map
     [ ] option load custom map
     [ ] transfer map from server to client
@@ -34,5 +34,6 @@
 # Fixes
 [ ] wrong position on player spawn
 [ ] do not get mass from gld in processes scene system
-[ ] mouse disapired on esc in menu
-[ ] widow do not hide after game menu close
+[x] mouse disapired on esc in menu
+[x] widow do not hide after game menu close
+[ ] intuitiv mouse position in game menu (I mean that mouse position in game menu shold be on last position or in center of screen) 

@@ -5,9 +5,9 @@ use crate::lobby::{LobbyPlugins, LobbyState, PlayerInput};
 use crate::province::ProvincePlugins;
 use crate::settings::SettingsPlugins;
 use crate::sound::SoundPlugins;
-use crate::ui::UiPlugins;
+use crate::ui::{UiPlugins, UiState, MouseGrabState};
 use crate::ui::{DebugFrameState, DebugMenuEvent, DebugState};
-use crate::ui::{GameMenuActionState, MouseGrabState};
+use crate::ui::GameMenuActionState;
 use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
 use bevy_xpbd_3d::components::{CollisionLayers, Mass};
@@ -90,17 +90,19 @@ fn input(
     mut next_state_debug: ResMut<NextState<DebugState>>,
     mut debug_menu_togl: EventWriter<DebugMenuEvent>,
     debug_state: Res<State<DebugState>>,
+    ui_state: Res<State<UiState>>,
     mut next_state_game_menu_action: ResMut<NextState<GameMenuActionState>>,
-    mut nex_state_mouse_grab: ResMut<NextState<MouseGrabState>>,
     game_menu_action: Res<State<GameMenuActionState>>,
-    mouse_grab_state: Res<State<MouseGrabState>>,
     mut player_input_query: Query<&mut PlayerInput, With<Me>>,
     mut motion_evr: EventReader<MouseMotion>,
-    menu_state: Res<State<GameMenuActionState>>,
+    mut next_state_mouse_grab: ResMut<NextState<MouseGrabState>>,
+    mouse_grab_state: Res<State<MouseGrabState>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Escape) {
-        next_state_game_menu_action.set(game_menu_action.get().clone().toggle());
-        nex_state_mouse_grab.set(mouse_grab_state.get().clone().toggle());
+        if *ui_state.get() == UiState::GameMenu {
+            next_state_game_menu_action.set(game_menu_action.get().clone().toggle());
+            next_state_mouse_grab.set(mouse_grab_state.get().clone().toggle());
+        }
     }
 
     if keyboard_input.just_pressed(KeyCode::F8) {
@@ -115,7 +117,7 @@ fn input(
         debug_menu_togl.send(DebugMenuEvent);
     }
 
-    if *menu_state.get() == GameMenuActionState::Disable {
+    if *game_menu_action.get() == GameMenuActionState::Disable {
         if let Ok(mut player_input) = player_input_query.get_single_mut() {
             player_input.left =
                 keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::Left);
