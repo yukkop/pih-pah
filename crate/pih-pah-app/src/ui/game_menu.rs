@@ -71,7 +71,7 @@ impl Plugin for GameMenuPlugins {
             .add_systems(
                 Update,
                 settings_window
-                    .run_if(in_state(UiState::GameMenu).and_then(in_state(WindowState::Settings))),
+                    .run_if(in_state(UiState::GameMenu).and_then(in_state(GameMenuActionState::Enable)).and_then(in_state(WindowState::Settings))),
             )
             .add_systems(OnExit(WindowState::Settings), exempt_setting);
     }
