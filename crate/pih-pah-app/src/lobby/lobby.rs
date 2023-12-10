@@ -149,6 +149,7 @@ pub struct PlayerInput {
     pub sprint: bool,
     pub turn_horizontal: f32,
     pub turn_vertical: f32,
+    pub special: bool,
 }
 
 #[derive(Debug, Component)]

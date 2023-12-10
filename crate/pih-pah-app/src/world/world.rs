@@ -125,6 +125,7 @@ fn input(
                 keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
             player_input.down =
                 keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
+            player_input.special = keyboard_input.just_pressed(KeyCode::F); 
             player_input.jump = keyboard_input.just_pressed(KeyCode::Space);
             player_input.sprint = keyboard_input.pressed(KeyCode::ControlLeft);
 

@@ -11,7 +11,8 @@ x11 = ["bevy/x11"]
 bevy = { version = "0.12.1", default-features = false, features = ["bevy_winit", "bevy_gltf", "bevy_scene", "bevy_core_pipeline", "bevy_render", "bevy_asset", "bevy_pbr", "tonemapping_luts", "ktx2", "zstd", "multi-threaded" ] }
 bevy_kira_audio = { version = "0.18.0", default-features = false, features = [ "wav" ] }
 bevy_egui = "0.23.0"
-bevy_xpbd_3d = "0.3.2"
+# bevy_xpbd_3d = "0.3.2"
+bevy_xpbd_3d = { git = "https://github.com/yukkop/bevy_xpbd.git", rev = "1b5a7225135d7c84d41e7b6007ec70bd4346ccae" }
 
 # multipleyer
 renet = { git = "https://github.com/lucaspoffo/renet.git", package = "renet", version = "0.0.14", features = ["bevy", "serde", "transport" ] }
