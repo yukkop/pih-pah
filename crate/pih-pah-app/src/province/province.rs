@@ -26,6 +26,10 @@ impl Display for ProvinceState {
     }
 }
 
+pub fn is_loaded(spawn_point: &Res<SpawnPoint>) -> bool {
+    !spawn_point.is_empty()
+}
+
 pub struct ProvincePlugins;
 
 impl Plugin for ProvincePlugins {

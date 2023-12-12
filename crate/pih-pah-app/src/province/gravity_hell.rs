@@ -1,4 +1,4 @@
-use crate::world::PromisedScene;
+use crate::{world::PromisedScene, lobby::MapLoader};
 use bevy::{pbr::CascadeShadowConfigBuilder, prelude::*};
 
 use super::{spawn_point::SpawnPoint, ProvinceState};
@@ -15,9 +15,10 @@ impl Plugin for GravityHellPlugins {
     }
 }
 
-fn load(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.insert_resource(SpawnPoint::new(Vec3::new(0., 5., 0.)));
-
+fn load(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+) {
     commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
             color: Color::WHITE,
@@ -46,10 +47,19 @@ fn load(mut commands: Commands, asset_server: Res<AssetServer>) {
         Affiliation,
         Name::new("GravityHell"),
     ));
+
+    commands.insert_resource(SpawnPoint::new(Vec3::new(0., 5., 0.)));
 }
 
-fn unload(mut commands: Commands, affiliation_query: Query<Entity, With<Affiliation>>) {
+fn unload(
+    mut commands: Commands,
+    affiliation_query: Query<Entity, With<Affiliation>>,
+    mut next_state_map: ResMut<NextState<MapLoader>>,
+) {
     for entity in affiliation_query.iter() {
         commands.entity(entity).despawn_recursive();
     }
+
+    commands.insert_resource(SpawnPoint::empty());
+    next_state_map.set(MapLoader::No);
 }

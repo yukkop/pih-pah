@@ -9,6 +9,7 @@ use bevy::transform::components::{GlobalTransform, Transform};
 use bevy_xpbd_3d::components::{AngularVelocity, CollisionLayers, LinearVelocity};
 
 use crate::component::AxisName;
+use crate::province::SpawnPoint;
 use crate::world::CollisionLayer;
 
 use super::despawn_type::{DespawnReason, IntoDespawnTypeVec};
@@ -22,7 +23,7 @@ pub struct Respawn {
     /// Reasons for respawning.
     reason: Vec<DespawnReason>,
     /// The spawn point for the entity.
-    spawn_point: Vec3,
+    spawn_point: SpawnPoint,
     /// Duration for keeping the [`CollisionLayers`] into [`noclip`](CollisionLayer::ActorNoclip) [`CollisionLayer`] upon spawn.
     noclip: NoclipDuration,
 }
@@ -48,7 +49,7 @@ pub struct NoclipTimer(Timer);
 impl Respawn {
     pub fn new<T: IntoDespawnTypeVec>(
         reason: T,
-        spawn_point: Vec3,
+        spawn_point: SpawnPoint,
         untouched_on_spawn: NoclipDuration,
     ) -> Self {
         Self {
@@ -61,13 +62,21 @@ impl Respawn {
     pub fn from_vec3(spawn_point: Vec3) -> Self {
         Self {
             reason: vec![],
-            spawn_point,
+            spawn_point: SpawnPoint::new(spawn_point),
             noclip: NoclipDuration::None,
         }
     }
 
     pub fn insert_reason(&mut self, reason: DespawnReason) {
         self.reason.push(reason);
+    }
+
+    pub fn clear_spawn_point(&mut self) {
+        self.spawn_point = SpawnPoint::default();
+    }
+
+    pub fn replase_spawn_point(&mut self, spawn_point: SpawnPoint) {
+        self.spawn_point = spawn_point;
     }
 }
 
@@ -130,6 +139,7 @@ fn respawn(
         velocity_query: &mut Query<(&mut LinearVelocity, &mut AngularVelocity), With<Respawn>>,
     ) {
         info!("Respawn entity: {:?}", entity);
+        info!("Respawn cords: {:?}", respawn.spawn_point);
         if let NoclipDuration::Timer(val) = respawn.noclip {
             commands
                 .entity(entity)
@@ -142,7 +152,7 @@ fn respawn(
                     [CollisionLayer::Default],
                 ));
         }
-        transform.translation = respawn.spawn_point;
+        transform.translation = respawn.spawn_point.random_point();
         if let Ok((mut linear_velocity, mut angular_velocity)) = velocity_query.get_mut(entity) {
             linear_velocity.0 = Vec3::ZERO;
             angular_velocity.0 = Vec3::ZERO;

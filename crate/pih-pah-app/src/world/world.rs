@@ -1,6 +1,5 @@
 use crate::character::CharacterPlugins;
 use crate::component::{ComponentPlugins, Respawn};
-use crate::load::LoadPlugins;
 use crate::lobby::{LobbyPlugins, LobbyState, PlayerInput};
 use crate::province::ProvincePlugins;
 use crate::settings::SettingsPlugins;
@@ -55,7 +54,6 @@ pub struct WorldPlugins;
 impl Plugin for WorldPlugins {
     fn build(&self, app: &mut App) {
         app.add_plugins((
-            LoadPlugins,
             SettingsPlugins,
             SoundPlugins,
             ProvincePlugins,

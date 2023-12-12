@@ -10,6 +10,9 @@
     [ ] chat history
     [ ] chat colors
 [ ] lobby player list
+[ ] settings
+    [ ] key bindings
+    [ ] sensetivity
 [ ] nickname above character
 [ ] projectile
     [ ] collision
@@ -33,7 +36,9 @@
 
 # Fixes
 [ ] wrong position on player spawn
+    [ ] loader do not work on changing map (need rewrite it all)
 [ ] do not get mass from gld in processes scene system
 [x] mouse disapired on esc in menu
 [x] widow do not hide after game menu close
 [ ] intuitiv mouse position in game menu (I mean that mouse position in game menu shold be on last position or in center of screen) 
+[ ] if open game menu during camera movement it will be spin ever

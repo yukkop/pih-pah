@@ -222,7 +222,7 @@ fn settings_window(
                 {
                     if state.selected_map_applied != state.selected_map {
                         state.selected_map_applied = state.selected_map;
-                        next_state_province.set(state.selected_map);
+                        // next_state_province.set(state.selected_map);
                         change_province.send(ChangeProvinceServerEvent(state.selected_map));
                     }
                     settings_applying.send(ApplySettings);
@@ -233,7 +233,7 @@ fn settings_window(
                 {
                     if state.selected_map_applied != state.selected_map {
                         state.selected_map_applied = state.selected_map;
-                        next_state_province.set(state.selected_map);
+                        // next_state_province.set(state.selected_map);
                         change_province.send(ChangeProvinceServerEvent(state.selected_map));
                     }
                     settings_applying.send(ApplySettings);

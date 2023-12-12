@@ -49,6 +49,13 @@ pub enum ServerMessages {
     },
 }
 
+#[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
+pub enum MapLoader {
+    Yes,
+    #[default]
+    No,
+}
+
 #[derive(Resource)]
 pub struct Username(pub String);
 
@@ -98,17 +105,6 @@ pub struct ClientResource {
 pub struct HostResource {
     pub address: Option<String>,
     pub username: Option<String>,
-}
-
-pub struct LobbyPlugins;
-
-impl Plugin for LobbyPlugins {
-    fn build(&self, app: &mut App) {
-        app.add_state::<LobbyState>()
-            .init_resource::<HostResource>()
-            .init_resource::<ClientResource>()
-            .add_plugins((SingleLobbyPlugins, HostLobbyPlugins, ClientLobbyPlugins));
-    }
 }
 
 #[derive(Debug, Default, Resource)]
@@ -183,3 +179,16 @@ pub struct TransportDataResource {
 
 #[derive(Debug, Component, Default)]
 pub struct PlayerViewDirection(pub Quat);
+
+pub struct LobbyPlugins;
+
+impl Plugin for LobbyPlugins {
+    fn build(&self, app: &mut App) {
+        app
+            .add_state::<LobbyState>()
+            .add_state::<MapLoader>()
+            .init_resource::<HostResource>()
+            .init_resource::<ClientResource>()
+            .add_plugins((SingleLobbyPlugins, HostLobbyPlugins, ClientLobbyPlugins));
+    }
+}

@@ -1,6 +1,5 @@
 pub mod character;
 pub mod component;
-pub mod load;
 pub mod lobby;
 pub mod province;
 pub mod settings;
