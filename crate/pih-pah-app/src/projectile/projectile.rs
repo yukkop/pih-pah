@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-#[derive(Component, Serialize, Deserialize)]
+#[derive(Default, Component, Serialize, Deserialize)]
 struct Projectile{
     position: Vec3,
     direction: Vec3,
@@ -9,8 +9,8 @@ struct Projectile{
 
 extend_commands!(
     spawn_projectile(position: Vec3, direction: Vec3, power: i32)
-    |&mut world: World, entity_id: Entity, position: Vec3, direction: Vec3, power: i32|{
-
+    |&mut world: World, entity_id: Entity, position: Vec3, direction: Vec3, power: i32| {
+        s
     }
 )
 

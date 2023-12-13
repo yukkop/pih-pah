@@ -41,8 +41,8 @@ impl DebugFrameState {
 
 #[derive(Default, Debug, Hash, States, PartialEq, Eq, Clone, Copy)]
 pub enum DebugState {
-    #[default]
     Enable,
+    #[default]
     Disable,
 }
 

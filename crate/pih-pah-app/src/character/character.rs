@@ -9,11 +9,10 @@ use bevy_xpbd_3d::prelude::*;
 use serde::{Deserialize, Serialize};
 
 pub const PLAYER_MOVE_SPEED: f32 = 0.07;
-pub const PLAYER_CAMERA_ROTATION_SPEED: f32 = 0.015;
-pub const PLAYER_SIZE: f32 = 2.;
-const SHIFT_ACCELERATION: f32 = 2.;
-const SENSITIVITY: f32 = 1.;
-const JUMP_HEIGHT_MULTIPLICATOR: f32 = 1.;
+pub const PLAYER_SIZE: f32 = 2.0;
+const SHIFT_ACCELERATION: f32 = 2.0;
+const SENSITIVITY: f32 = 0.5;
+const JUMP_HEIGHT_MULTIPLICATOR: f32 = 1.1;
 
 #[derive(Component, Debug, Serialize, Deserialize)]
 pub struct TiedCamera(Entity);
@@ -35,7 +34,7 @@ impl Plugin for CharacterPlugins {
         )
         .add_systems(
             Update,
-            jump.run_if(
+            (jump, rotate_camera).run_if(
                 not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
             ),
         )
@@ -59,7 +58,7 @@ fn tied_camera_follow(
 ) {
     for (TiedCamera(target), mut transform) in tied_camera_query.iter_mut() {
         if let Ok(target_transform) = transform_query.get(*target) {
-            transform.translation = target_transform.translation;
+            transform.translation = target_transform.translation + Vec3::Y * 2.;
             if let Ok(view_dirrection) = view_direction_query.get_single() {
                 transform.rotation = view_dirrection.0;
             }
@@ -120,17 +119,17 @@ fn jump(
             **linear_velocity +=
                 ((jump_direction.last_viable_normal + local_x * dx + local_y * dy)
                     .normalize_or_zero())
-                    * (-gravity.0.y * 2.0 * PLAYER_SIZE).sqrt()
-                    * JUMP_HEIGHT_MULTIPLICATOR; // sqrt(2gh)
+                    * (-gravity.0.y * 2.0 * PLAYER_SIZE).sqrt() // sqrt(2gh)
+                    * JUMP_HEIGHT_MULTIPLICATOR;
             log::debug!("{:?}", jump_direction.last_viable_normal);
         }
     }
 }
 
 fn move_characters(
-    mut query: Query<(&mut LinearVelocity, &mut PlayerViewDirection, &PlayerInput)>, /* , time: Res<Time> */
+    mut query: Query<(&mut LinearVelocity, &PlayerViewDirection, &PlayerInput)>, /* , time: Res<Time> */
 ) {
-    for (mut linear_velocity, mut view_direction, input) in query.iter_mut() {
+    for (mut linear_velocity, view_direction, input) in query.iter_mut() {
         let dx = (input.right as i8 - input.left as i8) as f32;
         let dy = (input.down as i8 - input.up as i8) as f32;
 
@@ -139,7 +138,6 @@ fn move_characters(
         let view_direction_y = view_direction.0.mul_vec3(Vec3::Z);
 
         // never use delta time in fixed update !!!
-
         let shift_acceleration = SHIFT_ACCELERATION.powf(input.sprint as i32 as f32);
 
         // move by x axis
@@ -149,20 +147,48 @@ fn move_characters(
         // move by y axis
         linear_velocity.x += dy * PLAYER_MOVE_SPEED * view_direction_y.x * shift_acceleration;
         linear_velocity.z += dy * PLAYER_MOVE_SPEED * view_direction_y.z * shift_acceleration;
+    }
+}
 
+fn rotate_camera(
+    mut query: Query<(&mut PlayerViewDirection, &PlayerInput)>,
+    time: Res<Time>,
+    mut tied_camera_query: Query<(&GlobalTransform, &Children), With<TiedCamera>>,
+    mut camera_query: Query<(&GlobalTransform, &mut RayCaster, &RayHits), With<Camera>>,
+    name_query: Query<&Name>,
+) { 
+    let delta_seconds = time.delta_seconds();
+    for (mut view_direction, input) in query.iter_mut() {
         // camera turn
         let rotation = Quat::from_rotation_y(
-            PLAYER_CAMERA_ROTATION_SPEED * input.turn_horizontal * SENSITIVITY, /* * delta_seconds */
+            input.turn_horizontal * SENSITIVITY * delta_seconds
         );
-        // global rotation
+        // global rotation (!ORDER OF MULTIPLICATION MATTERS!)
         view_direction.0 = rotation * view_direction.0;
 
         let rotation = Quat::from_rotation_x(
-            PLAYER_CAMERA_ROTATION_SPEED * input.turn_vertical * SENSITIVITY, /* * delta_seconds */
+            input.turn_vertical * SENSITIVITY * delta_seconds
         );
-        // local rotation
+        // local rotation (!ORDER OF MULTIPLICATION MATTERS!)
         view_direction.0 *= rotation;
     }
+ 
+    for (tied_camera_transform, children) in tied_camera_query.iter_mut() {
+        if let Some(child) = children.iter().next() {
+            if let Ok((camera_transform, mut ray, hits)) = camera_query.get_mut(*child) {
+                log::info!("{:?} {:?}", ray.global_origin(), ray.direction);
+                for hit in hits.iter() {
+                    log::info!("{:?}, {:?}, {:?}", hit.entity, name_query.get(hit.entity), ray.origin);
+                }
+            }
+        }
+    }
+}
+
+fn system_for_tracking_all_the_obstacles_and_avoiding_them_by_moving_the_camera_right_in_front_of_the_closest_to_character_object(
+
+) {
+
 }
 
 extend_commands!(
@@ -234,6 +260,21 @@ extend_commands!(
   spawn_tied_camera(target: Entity),
   |world: &mut World, entity_id: Entity, target: Entity| {
     world
+      .spawn(
+          NodeBundle{
+              style: Style{
+                  width: Val::Px(2.0),
+                  height: Val::Px(2.0),
+                  align_self: AlignSelf::Center,
+                  justify_self: JustifySelf::Center,
+                  ..default()
+              },
+              background_color: Color::rgb(1.0, 0.0, 0.0).into(),
+              ..default()
+          }
+      );
+    let default_camera_local_position = Vec3::new(0.0, 10.0, 15.0);
+    world
       .entity_mut(entity_id)
       .insert((
         // TODO find light prd without mesh
@@ -245,10 +286,11 @@ extend_commands!(
         // spawn tied camera
         parent.spawn((
             Camera3dBundle {
-                transform: Transform::from_xyz(0., 10., 15.).looking_at(Vec3::ZERO, Vec3::Y),
+                transform: Transform::from_translation(default_camera_local_position).looking_at(Vec3::ZERO, Vec3::Y),
                 ..Default::default()
-                },
+            },
             MainCamera,
+            RayCaster::new(Vec3::ZERO, default_camera_local_position),
         ));
       });
   }
