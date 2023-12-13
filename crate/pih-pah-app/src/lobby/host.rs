@@ -4,7 +4,7 @@ use std::time::SystemTime;
 use crate::character::{spawn_character, spawn_tied_camera, TiedCamera};
 use crate::component::{DespawnReason, Respawn};
 use crate::lobby::{LobbyState, PlayerData, PlayerId, ServerMessages, Username};
-use crate::province::{ProvinceState, SpawnPoint, is_loaded};
+use crate::map::{MapState, SpawnPoint, is_loaded};
 use crate::world::{LinkId, Me};
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
@@ -24,7 +24,7 @@ use renet::{ConnectionConfig, DefaultChannel, RenetServer, ServerEvent};
 
 use super::{
     Character, HostResource, Lobby, ObjectTransportData, PlayerInput, PlayerTransportData,
-    PlayerViewDirection, TransportDataResource, PROTOCOL_ID, MapLoader, ChangeProvinceLobbyEvent,
+    PlayerViewDirection, TransportDataResource, PROTOCOL_ID, MapLoaderState, ChangeMapLobbyEvent,
 };
 
 pub struct HostLobbyPlugins;
@@ -38,13 +38,13 @@ impl Plugin for HostLobbyPlugins {
                 Update,
                 (
                     server_update_system,
-                    send_change_province,
+                    send_change_map,
                     server_sync_players,
                 )
                     .run_if(in_state(LobbyState::Host)),
             )
             .add_systems(OnExit(LobbyState::Host), teardown)
-            .add_systems(Update, load_processing.run_if(in_state(LobbyState::Host).and_then(in_state(MapLoader::No))));
+            .add_systems(Update, load_processing.run_if(in_state(LobbyState::Host).and_then(in_state(MapLoaderState::No))));
     }
 }
 
@@ -72,7 +72,7 @@ pub fn new_renet_server(addr: &str) -> (RenetServer, NetcodeServerTransport) {
 fn setup(
     mut commands: Commands,
     host_resource: Res<HostResource>,
-    mut change_province_event: EventWriter<ChangeProvinceLobbyEvent>,
+    mut change_map_event: EventWriter<ChangeMapLobbyEvent>,
 ) {
     // resources for server
     commands.init_resource::<TransportDataResource>();
@@ -83,7 +83,7 @@ fn setup(
     commands.insert_resource(server);
     commands.insert_resource(transport);
 
-    change_province_event.send(ChangeProvinceLobbyEvent(ProvinceState::ShootingRange));
+    change_map_event.send(ChangeMapLobbyEvent(MapState::ShootingRange));
 }
 
 pub fn load_processing(
@@ -93,7 +93,7 @@ pub fn load_processing(
     host_resource: Res<HostResource>,
     query: Query<(), With<Me>>,
     mut character_respawn_query: Query<&mut Respawn, With<Character>>,
-    mut next_state_map: ResMut<NextState<MapLoader>>,
+    mut next_state_map: ResMut<NextState<MapLoaderState>>,
 ) {
     info!("LoadProcessing: {:#?}", spawn_point);
     if is_loaded(&spawn_point) {
@@ -123,19 +123,19 @@ pub fn load_processing(
             respawn.insert_reason(DespawnReason::Forced);
         }
 
-        next_state_map.set(MapLoader::Yes);
+        next_state_map.set(MapLoaderState::Yes);
     }
 }
 
-pub fn send_change_province(
-    mut change_province_event: EventReader<ChangeProvinceLobbyEvent>,
+pub fn send_change_map(
+    mut change_map_event: EventReader<ChangeMapLobbyEvent>,
     mut server: ResMut<RenetServer>,
-    mut next_state_province: ResMut<NextState<ProvinceState>>,
+    mut next_state_map: ResMut<NextState<MapState>>,
 ) {
-    for ChangeProvinceLobbyEvent(state) in change_province_event.read() {
-        next_state_province.set(*state);
-        let message = bincode::serialize(&ServerMessages::ChangeProvince {
-            province_state: *state,
+    for ChangeMapLobbyEvent(state) in change_map_event.read() {
+        next_state_map.set(*state);
+        let message = bincode::serialize(&ServerMessages::ChangeMap {
+            map_state: *state,
         })
         .unwrap();
         server.broadcast_message(DefaultChannel::ReliableOrdered, message);
@@ -170,7 +170,7 @@ pub fn server_update_system(
     mut server: ResMut<RenetServer>,
     transport: Res<NetcodeServerTransport>,
     spawn_point: Res<SpawnPoint>,
-    province_state: ResMut<State<ProvinceState>>,
+    map_state: ResMut<State<MapState>>,
 ) {
     for event in server_events.read() {
         match event {
@@ -180,7 +180,7 @@ pub fn server_update_system(
                 // TODO remove
                 let message = bincode::serialize(&ServerMessages::InitConnection {
                     id: *client_id,
-                    province_state: *province_state.get(),
+                    map_state: *map_state.get(),
                 })
                 .unwrap();
                 server.send_message(*client_id, DefaultChannel::ReliableOrdered, message);

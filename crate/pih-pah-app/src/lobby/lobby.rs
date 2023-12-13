@@ -1,5 +1,5 @@
 use crate::lobby::single::SingleLobbyPlugins;
-use crate::province::ProvinceState;
+use crate::map::MapState;
 use crate::world::LinkId;
 use bevy::app::{App, Plugin};
 use bevy::ecs::event::Event;
@@ -31,27 +31,58 @@ pub enum LobbyState {
     Client = 3,
 }
 
+/// Represents different types of messages that a server can send.
+///
+/// This enum is used to encapsulate various messages that a server
+/// in a multiplayer game may need to send.
+/// Each variant of the enum represents a different type of message 
+/// with its own associated data.
 #[derive(Debug, Serialize, Deserialize, Component)]
 pub enum ServerMessages {
+    /// Sent when initializing a connection with a client.
+    ///
+    /// This message includes the client's ID and their initial map state.
+    ///
+    /// # Fields
+    ///
+    /// * `id` - Unique identifier for the connecting client.
+    /// * `map_state` - Initial state of the client's map.
     InitConnection {
         id: ClientId,
-        province_state: ProvinceState,
+        map_state: MapState,
     },
-    ChangeProvince {
-        province_state: ProvinceState,
+    /// Sent to notify a change in the map's state.
+    ///
+    /// # Fields
+    ///
+    /// * `map_state` - The new state of the map.
+    ChangeMap {
+        map_state: MapState,
     },
+    /// Indicates that a player has connected to the server.
+    ///
+    /// # Fields
+    ///
+    /// * `id` - Unique identifier for the player.
+    /// * `color` - The color assigned to the player.
+    /// * `username` - The player's chosen username.
     PlayerConnected {
         id: PlayerId,
         color: Color,
         username: String,
     },
+    /// Indicates that a player has disconnected from the server.
+    ///
+    /// # Fields
+    ///
+    /// * `id` - Unique identifier for the player who has disconnected.
     PlayerDisconnected {
         id: PlayerId,
     },
 }
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
-pub enum MapLoader {
+pub enum MapLoaderState {
     Yes,
     #[default]
     No,
@@ -182,16 +213,16 @@ pub struct TransportDataResource {
 pub struct PlayerViewDirection(pub Quat);
 
 #[derive(Debug, Event)]
-pub struct ChangeProvinceLobbyEvent(pub ProvinceState);
+pub struct ChangeMapLobbyEvent(pub MapState);
 
 pub struct LobbyPlugins;
 
 impl Plugin for LobbyPlugins {
     fn build(&self, app: &mut App) {
         app
-            .add_event::<ChangeProvinceLobbyEvent>()
+            .add_event::<ChangeMapLobbyEvent>()
             .add_state::<LobbyState>()
-            .add_state::<MapLoader>()
+            .add_state::<MapLoaderState>()
             .init_resource::<HostResource>()
             .init_resource::<ClientResource>()
             .add_plugins((SingleLobbyPlugins, HostLobbyPlugins, ClientLobbyPlugins));

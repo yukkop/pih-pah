@@ -1,7 +1,7 @@
 use crate::character::CharacterPlugins;
 use crate::component::{ComponentPlugins, Respawn};
 use crate::lobby::{LobbyPlugins, LobbyState, PlayerInput};
-use crate::province::ProvincePlugins;
+use crate::map::MapPlugins;
 use crate::settings::SettingsPlugins;
 use crate::sound::SoundPlugins;
 use crate::ui::{UiPlugins, UiState, MouseGrabState};
@@ -56,7 +56,7 @@ impl Plugin for WorldPlugins {
         app.add_plugins((
             SettingsPlugins,
             SoundPlugins,
-            ProvincePlugins,
+            MapPlugins,
             UiPlugins,
             LobbyPlugins,
             CharacterPlugins,

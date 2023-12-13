@@ -9,7 +9,7 @@ use bevy::transform::components::{GlobalTransform, Transform};
 use bevy_xpbd_3d::components::{AngularVelocity, CollisionLayers, LinearVelocity};
 
 use crate::component::AxisName;
-use crate::province::SpawnPoint;
+use crate::map::SpawnPoint;
 use crate::world::CollisionLayer;
 
 use super::despawn_type::{DespawnReason, IntoDespawnTypeVec};
@@ -47,6 +47,13 @@ pub enum NoclipDuration {
 pub struct NoclipTimer(Timer);
 
 impl Respawn {
+    /// Creates a new `Respawn` instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `reason` - A container of reasons why the entity might be respawned.
+    /// * `spawn_point` - The location where the entity will respawn.
+    /// * `untouched_on_spawn` - Duration for which the entity remains in [`noclip`](CollisionLayer::ActorNoclip) mode upon respawn.
     pub fn new<T: IntoDespawnTypeVec>(
         reason: T,
         spawn_point: SpawnPoint,
@@ -59,6 +66,17 @@ impl Respawn {
         }
     }
 
+    /// Creates a new `Respawn` instance with the specified spawn point and default values for other fields.
+    ///
+    /// # Arguments
+    ///
+    /// * `spawn_point` - A `Vec3` representing the location where the entity will respawn.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let respawn = Respawn::from_vec3(Vec3::new(0.0, 0.0, 0.0));
+    /// ```
     pub fn from_vec3(spawn_point: Vec3) -> Self {
         Self {
             reason: vec![],
@@ -67,14 +85,25 @@ impl Respawn {
         }
     }
 
+    /// Adds a new respawn reason to the list of reasons.
+    ///
+    /// # Arguments
+    ///
+    /// * `reason` - The [`DespawnReason`] to be added to the respawn reasons list.
     pub fn insert_reason(&mut self, reason: DespawnReason) {
         self.reason.push(reason);
     }
 
+    /// Clears the current spawn point, resetting it to the default.
     pub fn clear_spawn_point(&mut self) {
         self.spawn_point = SpawnPoint::default();
     }
 
+    /// Replaces the current spawn point with a new one.
+    ///
+    /// # Arguments
+    ///
+    /// * `spawn_point` - The new spawn point for the entity.
     pub fn replase_spawn_point(&mut self, spawn_point: SpawnPoint) {
         self.spawn_point = spawn_point;
     }

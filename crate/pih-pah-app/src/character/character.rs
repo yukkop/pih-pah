@@ -2,7 +2,7 @@ use crate::component::{AxisName, DespawnReason, NoclipDuration, Respawn};
 use crate::extend_commands;
 use crate::lobby::Character;
 use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerViewDirection};
-use crate::province::SpawnPoint;
+use crate::map::SpawnPoint;
 use crate::ui::MainCamera;
 use crate::world::{CollisionLayer, Me};
 use bevy::{ecs::system::EntityCommands, prelude::*};
