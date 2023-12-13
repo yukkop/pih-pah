@@ -4,13 +4,13 @@ use std::time::SystemTime;
 use crate::character::{spawn_character, spawn_tied_camera, TiedCamera};
 use crate::component::{DespawnReason, Respawn};
 use crate::lobby::{LobbyState, PlayerData, PlayerId, ServerMessages, Username};
-use crate::map::{MapState, SpawnPoint, is_loaded};
+use crate::map::{is_loaded, MapState, SpawnPoint};
 use crate::world::{LinkId, Me};
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
 use bevy::ecs::event::{EventReader, EventWriter};
 use bevy::ecs::query::With;
-use bevy::ecs::schedule::{OnExit, State, Condition, NextState};
+use bevy::ecs::schedule::{Condition, NextState, OnExit, State};
 use bevy::ecs::system::{Query, Res, ResMut};
 use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::log::info;
@@ -23,28 +23,27 @@ use renet::transport::{NetcodeServerTransport, ServerAuthentication, ServerConfi
 use renet::{ConnectionConfig, DefaultChannel, RenetServer, ServerEvent};
 
 use super::{
-    Character, HostResource, Lobby, ObjectTransportData, PlayerInput, PlayerTransportData,
-    PlayerViewDirection, TransportDataResource, PROTOCOL_ID, MapLoaderState, ChangeMapLobbyEvent,
+    ChangeMapLobbyEvent, Character, HostResource, Lobby, MapLoaderState, ObjectTransportData,
+    PlayerInput, PlayerTransportData, PlayerViewDirection, TransportDataResource, PROTOCOL_ID,
 };
 
 pub struct HostLobbyPlugins;
 
 impl Plugin for HostLobbyPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_plugins((RenetServerPlugin, NetcodeServerPlugin))
+        app.add_plugins((RenetServerPlugin, NetcodeServerPlugin))
             .add_systems(OnEnter(LobbyState::Host), setup)
             .add_systems(
                 Update,
-                (
-                    server_update_system,
-                    send_change_map,
-                    server_sync_players,
-                )
+                (server_update_system, send_change_map, server_sync_players)
                     .run_if(in_state(LobbyState::Host)),
             )
             .add_systems(OnExit(LobbyState::Host), teardown)
-            .add_systems(Update, load_processing.run_if(in_state(LobbyState::Host).and_then(in_state(MapLoaderState::No))));
+            .add_systems(
+                Update,
+                load_processing
+                    .run_if(in_state(LobbyState::Host).and_then(in_state(MapLoaderState::No))),
+            );
     }
 }
 
@@ -78,7 +77,7 @@ fn setup(
     commands.init_resource::<TransportDataResource>();
     commands.insert_resource(Lobby::default());
 
-    // spanw server 
+    // spanw server
     let (server, transport) = new_renet_server(host_resource.address.clone().unwrap().as_str());
     commands.insert_resource(server);
     commands.insert_resource(transport);
@@ -97,7 +96,7 @@ pub fn load_processing(
 ) {
     info!("LoadProcessing: {:#?}", spawn_point);
     if is_loaded(&spawn_point) {
-        if let Err(_) = query.get_single()  {
+        if query.get_single().is_err() {
             // spawn host character
             lobby_res.players_seq += 1;
             let color = generate_player_color(lobby_res.players_seq as u32);
@@ -134,10 +133,7 @@ pub fn send_change_map(
 ) {
     for ChangeMapLobbyEvent(state) in change_map_event.read() {
         next_state_map.set(*state);
-        let message = bincode::serialize(&ServerMessages::ChangeMap {
-            map_state: *state,
-        })
-        .unwrap();
+        let message = bincode::serialize(&ServerMessages::ChangeMap { map_state: *state }).unwrap();
         server.broadcast_message(DefaultChannel::ReliableOrdered, message);
     }
 }

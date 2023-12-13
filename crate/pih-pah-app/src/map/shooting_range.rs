@@ -1,4 +1,4 @@
-use crate::{world::PromisedScene, lobby::MapLoaderState};
+use crate::{lobby::MapLoaderState, world::PromisedScene};
 use bevy::{pbr::CascadeShadowConfigBuilder, prelude::*};
 
 use super::{spawn_point::SpawnPoint, MapState};
@@ -15,10 +15,7 @@ impl Plugin for ShootingRangePlugins {
     }
 }
 
-fn load(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-) {
+fn load(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         .spawn(DirectionalLightBundle {
             directional_light: DirectionalLight {

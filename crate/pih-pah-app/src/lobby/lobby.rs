@@ -35,7 +35,7 @@ pub enum LobbyState {
 ///
 /// This enum is used to encapsulate various messages that a server
 /// in a multiplayer game may need to send.
-/// Each variant of the enum represents a different type of message 
+/// Each variant of the enum represents a different type of message
 /// with its own associated data.
 #[derive(Debug, Serialize, Deserialize, Component)]
 pub enum ServerMessages {
@@ -47,18 +47,13 @@ pub enum ServerMessages {
     ///
     /// * `id` - Unique identifier for the connecting client.
     /// * `map_state` - Initial state of the client's map.
-    InitConnection {
-        id: ClientId,
-        map_state: MapState,
-    },
+    InitConnection { id: ClientId, map_state: MapState },
     /// Sent to notify a change in the map's state.
     ///
     /// # Fields
     ///
     /// * `map_state` - The new state of the map.
-    ChangeMap {
-        map_state: MapState,
-    },
+    ChangeMap { map_state: MapState },
     /// Indicates that a player has connected to the server.
     ///
     /// # Fields
@@ -76,9 +71,7 @@ pub enum ServerMessages {
     /// # Fields
     ///
     /// * `id` - Unique identifier for the player who has disconnected.
-    PlayerDisconnected {
-        id: PlayerId,
-    },
+    PlayerDisconnected { id: PlayerId },
 }
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
@@ -219,8 +212,7 @@ pub struct LobbyPlugins;
 
 impl Plugin for LobbyPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_event::<ChangeMapLobbyEvent>()
+        app.add_event::<ChangeMapLobbyEvent>()
             .add_state::<LobbyState>()
             .add_state::<MapLoaderState>()
             .init_resource::<HostResource>()

@@ -1,4 +1,4 @@
-use crate::lobby::{LobbyState, ChangeMapLobbyEvent};
+use crate::lobby::{ChangeMapLobbyEvent, LobbyState};
 use crate::map::MapState;
 use crate::settings::{ApplySettings, ExemptSettings, Settings};
 use crate::ui::{rich_text, TRANSPARENT};
@@ -7,7 +7,7 @@ use bevy::prelude::*;
 use bevy_egui::egui::Align2;
 use bevy_egui::{egui, EguiContexts};
 
-use super::{UiState, ViewportRect, MouseGrabState};
+use super::{MouseGrabState, UiState, ViewportRect};
 
 lazy_static::lazy_static! {
     static ref MODULE: &'static str = module_path!().splitn(3, ':').nth(2).unwrap_or(module_path!());
@@ -69,8 +69,11 @@ impl Plugin for GameMenuPlugins {
             )
             .add_systems(
                 Update,
-                settings_window
-                    .run_if(in_state(UiState::GameMenu).and_then(in_state(GameMenuActionState::Enable)).and_then(in_state(WindowState::Settings))),
+                settings_window.run_if(
+                    in_state(UiState::GameMenu)
+                        .and_then(in_state(GameMenuActionState::Enable))
+                        .and_then(in_state(WindowState::Settings)),
+                ),
             )
             .add_systems(OnExit(WindowState::Settings), exempt_setting);
     }

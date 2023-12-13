@@ -1,36 +1,37 @@
 use crate::character::{spawn_character, spawn_tied_camera, TiedCamera};
-use crate::component::{Respawn, DespawnReason};
-use crate::lobby::LobbyState;
+use crate::component::{DespawnReason, Respawn};
 use crate::lobby::host::generate_player_color;
-use crate::map::{SpawnPoint, is_loaded, MapState};
+use crate::lobby::LobbyState;
+use crate::map::{is_loaded, MapState, SpawnPoint};
 use crate::world::Me;
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
-use bevy::ecs::event::{Events, EventReader};
+use bevy::ecs::event::{EventReader, Events};
 use bevy::ecs::query::With;
-use bevy::ecs::schedule::{OnExit, NextState, Condition};
+use bevy::ecs::schedule::{Condition, NextState, OnExit};
 use bevy::ecs::system::{Query, Res, ResMut};
 use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::prelude::{in_state, Commands, IntoSystemConfigs, OnEnter};
 use log::info;
 
-use super::{PlayerId, PlayerInput, MapLoaderState, ChangeMapLobbyEvent};
+use super::{ChangeMapLobbyEvent, MapLoaderState, PlayerId, PlayerInput};
 
 pub struct SingleLobbyPlugins;
 
 impl Plugin for SingleLobbyPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_systems(OnEnter(LobbyState::Single), setup)
-            .add_systems(Update, load_processing.run_if(in_state(LobbyState::Single).and_then(in_state(MapLoaderState::No))))
+        app.add_systems(OnEnter(LobbyState::Single), setup)
+            .add_systems(
+                Update,
+                load_processing
+                    .run_if(in_state(LobbyState::Single).and_then(in_state(MapLoaderState::No))),
+            )
             .add_systems(Update, send_change_map.run_if(in_state(LobbyState::Single)))
             .add_systems(OnExit(LobbyState::Single), teardown);
     }
 }
 
-fn setup(
-    mut map_events: ResMut<Events<ChangeMapLobbyEvent>>,
-) {
+fn setup(mut map_events: ResMut<Events<ChangeMapLobbyEvent>>) {
     map_events.send(ChangeMapLobbyEvent(MapState::ShootingRange));
 }
 
@@ -53,7 +54,7 @@ pub fn load_processing(
                     .insert(Me)
                     .id();
                 commands.spawn_tied_camera(player_entity);
-            },
+            }
             Ok(mut respawn) => {
                 // respawn character
                 respawn.replase_spawn_point(spawn_point.clone());

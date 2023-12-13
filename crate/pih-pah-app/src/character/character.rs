@@ -55,21 +55,23 @@ impl Plugin for CharacterPlugins {
 }
 
 fn gravity_direction(
-    mut query: Query<(&mut GravityDirection, &mut PlayerViewDirection, &PlayerInput)>
+    mut query: Query<(
+        &mut GravityDirection,
+        &mut PlayerViewDirection,
+        &PlayerInput,
+    )>,
 ) {
     for (mut direction_resource, mut view_direction, player_input) in query.iter_mut() {
         if player_input.special {
             // change gravity direction
-            let new_y = direction_resource.y * -1.; 
+            let new_y = direction_resource.y * -1.;
             direction_resource.set_y(new_y);
 
             // rotate view direction (tied camera)
-            let rotation = Quat::from_rotation_z(
-                PI,
-            );
+            let rotation = Quat::from_rotation_z(PI);
             // global rotation
             view_direction.0 = rotation * view_direction.0;
-        } 
+        }
     }
 }
 
