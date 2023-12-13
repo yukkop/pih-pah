@@ -1,6 +1,6 @@
 use crate::ui::MainCamera;
 
-use super::ProvinceState;
+use super::MapState;
 use bevy::prelude::*;
 use std::f32::consts::PI;
 
@@ -20,12 +20,12 @@ pub struct MenuPlugins;
 
 impl Plugin for MenuPlugins {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(ProvinceState::Menu), load)
+        app.add_systems(OnEnter(MapState::Menu), load)
             .add_systems(
                 Update,
-                update_light_position.run_if(in_state(ProvinceState::Menu)),
+                update_light_position.run_if(in_state(MapState::Menu)),
             )
-            .add_systems(OnExit(ProvinceState::Menu), unload);
+            .add_systems(OnExit(MapState::Menu), unload);
     }
 }
 

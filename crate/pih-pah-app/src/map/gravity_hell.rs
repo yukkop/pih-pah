@@ -1,7 +1,7 @@
-use crate::world::PromisedScene;
+use crate::{lobby::MapLoaderState, world::PromisedScene};
 use bevy::{pbr::CascadeShadowConfigBuilder, prelude::*};
 
-use super::{spawn_point::SpawnPoint, ProvinceState};
+use super::{spawn_point::SpawnPoint, MapState};
 
 #[derive(Component)]
 struct Affiliation;
@@ -10,14 +10,12 @@ pub struct GravityHellPlugins;
 
 impl Plugin for GravityHellPlugins {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(ProvinceState::GravityHell), load)
-            .add_systems(OnExit(ProvinceState::GravityHell), unload);
+        app.add_systems(OnEnter(MapState::GravityHell), load)
+            .add_systems(OnExit(MapState::GravityHell), unload);
     }
 }
 
 fn load(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.insert_resource(SpawnPoint::new(Vec3::new(0., 5., 0.)));
-
     commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
             color: Color::WHITE,
@@ -46,10 +44,19 @@ fn load(mut commands: Commands, asset_server: Res<AssetServer>) {
         Affiliation,
         Name::new("GravityHell"),
     ));
+
+    commands.insert_resource(SpawnPoint::new(Vec3::new(0., 5., 0.)));
 }
 
-fn unload(mut commands: Commands, affiliation_query: Query<Entity, With<Affiliation>>) {
+fn unload(
+    mut commands: Commands,
+    affiliation_query: Query<Entity, With<Affiliation>>,
+    mut next_state_map: ResMut<NextState<MapLoaderState>>,
+) {
     for entity in affiliation_query.iter() {
         commands.entity(entity).despawn_recursive();
     }
+
+    commands.insert_resource(SpawnPoint::empty());
+    next_state_map.set(MapLoaderState::No);
 }

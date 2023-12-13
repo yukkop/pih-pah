@@ -1,6 +1,4 @@
-use crate::load::LoadEvent;
 use crate::lobby::{ClientResource, HostResource, LobbyState};
-use crate::province::ProvinceState;
 use crate::settings::{ApplySettings, ExemptSettings, Settings};
 use crate::ui::{rich_text, TRANSPARENT};
 use crate::util::i18n::Uniq::Module;
@@ -71,14 +69,13 @@ impl Plugin for MenuPlugins {
 
 #[allow(clippy::too_many_arguments)]
 fn menu(
-    mut event_load: EventWriter<LoadEvent>,
     mut next_state_ui: ResMut<NextState<UiState>>,
-    mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
     mut context: EguiContexts,
     mut exit: EventWriter<AppExit>,
     ui_frame_rect: ResMut<ViewportRect>,
     mut windows: Query<&Window>,
+    mut next_state_lobby: ResMut<NextState<LobbyState>>,
     mut nex_state_mouse_grab: ResMut<NextState<MouseGrabState>>,
 ) {
     let ctx = context.ctx_mut();
@@ -114,8 +111,8 @@ fn menu(
             {
                 nex_state_mouse_grab.set(MouseGrabState::Enable);
                 next_state_ui.set(UiState::GameMenu);
-                next_state_province.set(ProvinceState::ShootingRange);
-                event_load.send(LoadEvent(LobbyState::Single));
+
+                next_state_lobby.set(LobbyState::Single);
             }
             if ui
                 .button(rich_text("Multiplayer".to_string(), Module(&MODULE), &font))
@@ -140,10 +137,8 @@ fn menu(
 
 #[allow(clippy::too_many_arguments)]
 fn multiplayer_window(
-    mut event_load: EventWriter<LoadEvent>,
     mut next_state_ui: ResMut<NextState<UiState>>,
     mut next_state_lobby: ResMut<NextState<LobbyState>>,
-    mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
     mut context: EguiContexts,
     mut state: ResMut<State>,
@@ -206,9 +201,9 @@ fn multiplayer_window(
                             Some(format!("127.0.0.1:{}", state.host_port.clone()));
                         host_resource.username = Some(state.username.clone());
                         next_state_menu_window.set(WindowState::None);
-                        event_load.send(LoadEvent(LobbyState::Host));
-                        next_state_province.set(ProvinceState::ShootingRange);
                         next_state_ui.set(UiState::GameMenu);
+
+                        next_state_lobby.set(LobbyState::Host);
                     }
                 }
                 MultiplayerState::Join => {
@@ -238,8 +233,9 @@ fn multiplayer_window(
                         client_resource.username = Some(state.username.clone());
                         next_state_menu_window.set(WindowState::None);
                         state.multiplayer_state = MultiplayerState::Create;
-                        next_state_lobby.set(LobbyState::Client);
                         next_state_ui.set(UiState::GameMenu);
+
+                        next_state_lobby.set(LobbyState::Client);
                     }
                 }
             }
