@@ -1,5 +1,4 @@
-use crate::lobby::host::ChangeProvinceServerEvent;
-use crate::lobby::LobbyState;
+use crate::lobby::{LobbyState, ChangeProvinceLobbyEvent};
 use crate::province::ProvinceState;
 use crate::settings::{ApplySettings, ExemptSettings, Settings};
 use crate::ui::{rich_text, TRANSPARENT};
@@ -144,18 +143,14 @@ fn menu(
 #[allow(clippy::too_many_arguments)]
 fn settings_window(
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
-    mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut context: EguiContexts,
-    // mut windows: Query<&Window>,
     mut settings: ResMut<Settings>,
     mut state: ResMut<EguiState>,
     lobby_state: Res<State<LobbyState>>,
     ui_frame_rect: ResMut<ViewportRect>,
     mut settings_applying: EventWriter<ApplySettings>,
-    mut change_province: EventWriter<ChangeProvinceServerEvent>,
+    mut change_province: EventWriter<ChangeProvinceLobbyEvent>,
 ) {
-    // let window = windows.single_mut();
-    // let window_size = egui::vec2(window.width(), window.height());
     let frame_size = ui_frame_rect.max - ui_frame_rect.min;
 
     let ctx = context.ctx_mut();
@@ -223,7 +218,7 @@ fn settings_window(
                     if state.selected_map_applied != state.selected_map {
                         state.selected_map_applied = state.selected_map;
                         // next_state_province.set(state.selected_map);
-                        change_province.send(ChangeProvinceServerEvent(state.selected_map));
+                        change_province.send(ChangeProvinceLobbyEvent(state.selected_map));
                     }
                     settings_applying.send(ApplySettings);
                 }
@@ -234,7 +229,7 @@ fn settings_window(
                     if state.selected_map_applied != state.selected_map {
                         state.selected_map_applied = state.selected_map;
                         // next_state_province.set(state.selected_map);
-                        change_province.send(ChangeProvinceServerEvent(state.selected_map));
+                        change_province.send(ChangeProvinceLobbyEvent(state.selected_map));
                     }
                     settings_applying.send(ApplySettings);
                     next_state_menu_window.set(WindowState::None);

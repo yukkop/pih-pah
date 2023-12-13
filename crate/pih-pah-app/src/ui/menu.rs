@@ -1,5 +1,4 @@
 use crate::lobby::{ClientResource, HostResource, LobbyState};
-use crate::province::ProvinceState;
 use crate::settings::{ApplySettings, ExemptSettings, Settings};
 use crate::ui::{rich_text, TRANSPARENT};
 use crate::util::i18n::Uniq::Module;
@@ -71,7 +70,6 @@ impl Plugin for MenuPlugins {
 #[allow(clippy::too_many_arguments)]
 fn menu(
     mut next_state_ui: ResMut<NextState<UiState>>,
-    mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
     mut context: EguiContexts,
     mut exit: EventWriter<AppExit>,
@@ -113,9 +111,8 @@ fn menu(
             {
                 nex_state_mouse_grab.set(MouseGrabState::Enable);
                 next_state_ui.set(UiState::GameMenu);
-                next_state_province.set(ProvinceState::ShootingRange);
 
-                next_state_lobby.set(LobbyState::Host);
+                next_state_lobby.set(LobbyState::Single);
             }
             if ui
                 .button(rich_text("Multiplayer".to_string(), Module(&MODULE), &font))

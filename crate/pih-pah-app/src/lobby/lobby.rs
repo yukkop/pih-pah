@@ -2,6 +2,7 @@ use crate::lobby::single::SingleLobbyPlugins;
 use crate::province::ProvinceState;
 use crate::world::LinkId;
 use bevy::app::{App, Plugin};
+use bevy::ecs::event::Event;
 use bevy::math::{Quat, Vec3};
 use bevy::prelude::{Color, Component, Entity, Resource, States};
 use renet::transport::NETCODE_USER_DATA_BYTES;
@@ -115,14 +116,14 @@ pub struct Lobby {
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, Serialize, Deserialize)]
 pub enum PlayerId {
-    Host,
+    HostOrSingle,
     Client(ClientId),
 }
 
 impl PlayerId {
     pub fn client_id(&self) -> Option<ClientId> {
         match self {
-            PlayerId::Host => None,
+            PlayerId::HostOrSingle => None,
             PlayerId::Client(id) => Some(*id),
         }
     }
@@ -180,11 +181,15 @@ pub struct TransportDataResource {
 #[derive(Debug, Component, Default)]
 pub struct PlayerViewDirection(pub Quat);
 
+#[derive(Debug, Event)]
+pub struct ChangeProvinceLobbyEvent(pub ProvinceState);
+
 pub struct LobbyPlugins;
 
 impl Plugin for LobbyPlugins {
     fn build(&self, app: &mut App) {
         app
+            .add_event::<ChangeProvinceLobbyEvent>()
             .add_state::<LobbyState>()
             .add_state::<MapLoader>()
             .init_resource::<HostResource>()

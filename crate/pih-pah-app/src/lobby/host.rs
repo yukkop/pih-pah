@@ -8,7 +8,7 @@ use crate::province::{ProvinceState, SpawnPoint, is_loaded};
 use crate::world::{LinkId, Me};
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
-use bevy::ecs::event::{Event, EventReader, EventWriter};
+use bevy::ecs::event::{EventReader, EventWriter};
 use bevy::ecs::query::With;
 use bevy::ecs::schedule::{OnExit, State, Condition, NextState};
 use bevy::ecs::system::{Query, Res, ResMut};
@@ -24,17 +24,14 @@ use renet::{ConnectionConfig, DefaultChannel, RenetServer, ServerEvent};
 
 use super::{
     Character, HostResource, Lobby, ObjectTransportData, PlayerInput, PlayerTransportData,
-    PlayerViewDirection, TransportDataResource, PROTOCOL_ID, MapLoader,
+    PlayerViewDirection, TransportDataResource, PROTOCOL_ID, MapLoader, ChangeProvinceLobbyEvent,
 };
-
-#[derive(Debug, Event)]
-pub struct ChangeProvinceServerEvent(pub ProvinceState);
 
 pub struct HostLobbyPlugins;
 
 impl Plugin for HostLobbyPlugins {
     fn build(&self, app: &mut App) {
-        app.add_event::<ChangeProvinceServerEvent>()
+        app
             .add_plugins((RenetServerPlugin, NetcodeServerPlugin))
             .add_systems(OnEnter(LobbyState::Host), setup)
             .add_systems(
@@ -75,7 +72,7 @@ pub fn new_renet_server(addr: &str) -> (RenetServer, NetcodeServerTransport) {
 fn setup(
     mut commands: Commands,
     host_resource: Res<HostResource>,
-    mut change_province_event: EventWriter<ChangeProvinceServerEvent>,
+    mut change_province_event: EventWriter<ChangeProvinceLobbyEvent>,
 ) {
     // resources for server
     commands.init_resource::<TransportDataResource>();
@@ -86,7 +83,7 @@ fn setup(
     commands.insert_resource(server);
     commands.insert_resource(transport);
 
-    change_province_event.send(ChangeProvinceServerEvent(ProvinceState::ShootingRange));
+    change_province_event.send(ChangeProvinceLobbyEvent(ProvinceState::ShootingRange));
 }
 
 pub fn load_processing(
@@ -106,13 +103,13 @@ pub fn load_processing(
             let color = generate_player_color(lobby_res.players_seq as u32);
 
             let player_entity = commands
-                .spawn_character(PlayerId::Host, color, spawn_point.random_point())
+                .spawn_character(PlayerId::HostOrSingle, color, spawn_point.random_point())
                 .insert(Me)
                 .id();
             commands.spawn_tied_camera(player_entity);
 
             lobby_res.players.insert(
-                PlayerId::Host,
+                PlayerId::HostOrSingle,
                 PlayerData {
                     entity: player_entity,
                     color,
@@ -131,11 +128,11 @@ pub fn load_processing(
 }
 
 pub fn send_change_province(
-    mut change_province_event: EventReader<ChangeProvinceServerEvent>,
+    mut change_province_event: EventReader<ChangeProvinceLobbyEvent>,
     mut server: ResMut<RenetServer>,
     mut next_state_province: ResMut<NextState<ProvinceState>>,
 ) {
-    for ChangeProvinceServerEvent(state) in change_province_event.read() {
+    for ChangeProvinceLobbyEvent(state) in change_province_event.read() {
         next_state_province.set(*state);
         let message = bincode::serialize(&ServerMessages::ChangeProvince {
             province_state: *state,
