@@ -1,13 +1,12 @@
 use crate::character::CharacterPlugins;
 use crate::component::{ComponentPlugins, Respawn};
-use crate::load::LoadPlugins;
 use crate::lobby::{LobbyPlugins, LobbyState, PlayerInput};
-use crate::province::ProvincePlugins;
+use crate::map::MapPlugins;
 use crate::settings::SettingsPlugins;
 use crate::sound::SoundPlugins;
-use crate::ui::UiPlugins;
+use crate::ui::GameMenuActionState;
 use crate::ui::{DebugFrameState, DebugMenuEvent, DebugState};
-use crate::ui::{GameMenuActionState, MouseGrabState};
+use crate::ui::{MouseGrabState, UiPlugins, UiState};
 use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
 use bevy_xpbd_3d::components::{CollisionLayers, Mass};
@@ -55,10 +54,9 @@ pub struct WorldPlugins;
 impl Plugin for WorldPlugins {
     fn build(&self, app: &mut App) {
         app.add_plugins((
-            LoadPlugins,
             SettingsPlugins,
             SoundPlugins,
-            ProvincePlugins,
+            MapPlugins,
             UiPlugins,
             LobbyPlugins,
             CharacterPlugins,
@@ -90,17 +88,17 @@ fn input(
     mut next_state_debug: ResMut<NextState<DebugState>>,
     mut debug_menu_togl: EventWriter<DebugMenuEvent>,
     debug_state: Res<State<DebugState>>,
+    ui_state: Res<State<UiState>>,
     mut next_state_game_menu_action: ResMut<NextState<GameMenuActionState>>,
-    mut nex_state_mouse_grab: ResMut<NextState<MouseGrabState>>,
     game_menu_action: Res<State<GameMenuActionState>>,
-    mouse_grab_state: Res<State<MouseGrabState>>,
     mut player_input_query: Query<&mut PlayerInput, With<Me>>,
     mut motion_evr: EventReader<MouseMotion>,
-    menu_state: Res<State<GameMenuActionState>>,
+    mut next_state_mouse_grab: ResMut<NextState<MouseGrabState>>,
+    mouse_grab_state: Res<State<MouseGrabState>>,
 ) {
-    if keyboard_input.just_pressed(KeyCode::Escape) {
+    if keyboard_input.just_pressed(KeyCode::Escape) && *ui_state.get() == UiState::GameMenu {
         next_state_game_menu_action.set(game_menu_action.get().clone().toggle());
-        nex_state_mouse_grab.set(mouse_grab_state.get().clone().toggle());
+        next_state_mouse_grab.set(mouse_grab_state.get().clone().toggle());
     }
 
     if keyboard_input.just_pressed(KeyCode::F8) {
@@ -115,7 +113,7 @@ fn input(
         debug_menu_togl.send(DebugMenuEvent);
     }
 
-    if *menu_state.get() == GameMenuActionState::Disable {
+    if *game_menu_action.get() == GameMenuActionState::Disable {
         if let Ok(mut player_input) = player_input_query.get_single_mut() {
             player_input.left =
                 keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::Left);
@@ -125,6 +123,7 @@ fn input(
                 keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
             player_input.down =
                 keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
+            player_input.special = keyboard_input.just_pressed(KeyCode::F);
             player_input.jump = keyboard_input.just_pressed(KeyCode::Space);
             player_input.sprint = keyboard_input.pressed(KeyCode::ControlLeft);
 

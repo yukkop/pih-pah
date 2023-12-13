@@ -2,9 +2,11 @@ use crate::component::{AxisName, DespawnReason, NoclipDuration, Respawn};
 use crate::extend_commands;
 use crate::lobby::Character;
 use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerViewDirection};
+use crate::map::SpawnPoint;
 use crate::ui::MainCamera;
 use crate::world::{CollisionLayer, Me};
 use bevy::{ecs::system::EntityCommands, prelude::*};
+use bevy_xpbd_3d::math::PI;
 use bevy_xpbd_3d::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -35,7 +37,7 @@ impl Plugin for CharacterPlugins {
         )
         .add_systems(
             Update,
-            jump.run_if(
+            (jump, gravity_direction).run_if(
                 not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
             ),
         )
@@ -49,6 +51,27 @@ impl Plugin for CharacterPlugins {
                 not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
             ),
         );
+    }
+}
+
+fn gravity_direction(
+    mut query: Query<(
+        &mut GravityDirection,
+        &mut PlayerViewDirection,
+        &PlayerInput,
+    )>,
+) {
+    for (mut direction_resource, mut view_direction, player_input) in query.iter_mut() {
+        if player_input.special {
+            // change gravity direction
+            let new_y = direction_resource.y * -1.;
+            direction_resource.set_y(new_y);
+
+            // rotate view direction (tied camera)
+            let rotation = Quat::from_rotation_z(PI);
+            // global rotation
+            view_direction.0 = rotation * view_direction.0;
+        }
     }
 }
 
@@ -190,9 +213,10 @@ extend_commands!(
        Position::from_xyz(spawn_point.x, spawn_point.y, spawn_point.z),
        Collider::cuboid(PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE),
        JumpHelper{last_viable_normal: Vec3::Y},
+       GravityDirection::from_xyz(0., -1., 0.),
        CollisionLayers::new([CollisionLayer::Default], [CollisionLayer::Default, CollisionLayer::ActorNoclip]),
      ))
-     .insert(Respawn::new(DespawnReason::Less(-10., AxisName::Y), spawn_point,  NoclipDuration::Timer(10.)))
+     .insert(Respawn::new(DespawnReason::Less(-10., AxisName::Y), SpawnPoint::new(spawn_point),  NoclipDuration::Timer(10.)))
      .insert(PlayerInput::default())
      .insert(Character { id: player_id })
      .insert(PlayerViewDirection(Quat::default()));

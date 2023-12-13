@@ -1,7 +1,7 @@
-use crate::world::PromisedScene;
+use crate::{lobby::MapLoaderState, world::PromisedScene};
 use bevy::{pbr::CascadeShadowConfigBuilder, prelude::*};
 
-use super::{spawn_point::SpawnPoint, ProvinceState};
+use super::{spawn_point::SpawnPoint, MapState};
 
 #[derive(Component)]
 struct Affiliation;
@@ -10,14 +10,12 @@ pub struct ShootingRangePlugins;
 
 impl Plugin for ShootingRangePlugins {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(ProvinceState::ShootingRange), load)
-            .add_systems(OnExit(ProvinceState::ShootingRange), unload);
+        app.add_systems(OnEnter(MapState::ShootingRange), load)
+            .add_systems(OnExit(MapState::ShootingRange), unload);
     }
 }
 
 fn load(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.insert_resource(SpawnPoint::new(Vec3::new(0., 30., 0.)));
-
     commands
         .spawn(DirectionalLightBundle {
             directional_light: DirectionalLight {
@@ -40,7 +38,7 @@ fn load(mut commands: Commands, asset_server: Res<AssetServer>) {
         })
         .insert(Affiliation);
 
-    let scene = asset_server.load("test_province.glb#Scene0");
+    let scene = asset_server.load("test_map.glb#Scene0");
 
     commands.spawn((
         SceneBundle { scene, ..default() },
@@ -48,10 +46,19 @@ fn load(mut commands: Commands, asset_server: Res<AssetServer>) {
         Affiliation,
         Name::new("ShootingRange"),
     ));
+
+    commands.insert_resource(SpawnPoint::new(Vec3::new(0., 30., 0.)));
 }
 
-fn unload(mut commands: Commands, affiliation_query: Query<Entity, With<Affiliation>>) {
+fn unload(
+    mut commands: Commands,
+    affiliation_query: Query<Entity, With<Affiliation>>,
+    mut next_state_map: ResMut<NextState<MapLoaderState>>,
+) {
     for entity in affiliation_query.iter() {
         commands.entity(entity).despawn_recursive();
     }
+
+    commands.insert_resource(SpawnPoint::empty());
+    next_state_map.set(MapLoaderState::No);
 }

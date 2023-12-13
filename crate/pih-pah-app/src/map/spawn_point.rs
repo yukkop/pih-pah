@@ -9,6 +9,10 @@ impl SpawnPoint {
         Self(spawn_points.into_vec3_vec())
     }
 
+    pub fn empty() -> Self {
+        Self(Vec::new())
+    }
+
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }

@@ -1,6 +1,5 @@
-use crate::lobby::host::ChangeProvinceServerEvent;
-use crate::lobby::LobbyState;
-use crate::province::ProvinceState;
+use crate::lobby::{ChangeMapLobbyEvent, LobbyState};
+use crate::map::MapState;
 use crate::settings::{ApplySettings, ExemptSettings, Settings};
 use crate::ui::{rich_text, TRANSPARENT};
 use crate::util::i18n::Uniq::Module;
@@ -8,7 +7,7 @@ use bevy::prelude::*;
 use bevy_egui::egui::Align2;
 use bevy_egui::{egui, EguiContexts};
 
-use super::{UiState, ViewportRect};
+use super::{MouseGrabState, UiState, ViewportRect};
 
 lazy_static::lazy_static! {
     static ref MODULE: &'static str = module_path!().splitn(3, ':').nth(2).unwrap_or(module_path!());
@@ -17,16 +16,16 @@ lazy_static::lazy_static! {
 #[derive(Resource)]
 struct EguiState {
     is_active: bool,
-    selected_map: ProvinceState,
-    selected_map_applied: ProvinceState,
+    selected_map: MapState,
+    selected_map_applied: MapState,
 }
 
 impl Default for EguiState {
     fn default() -> Self {
         Self {
             is_active: false,
-            selected_map: ProvinceState::ShootingRange,
-            selected_map_applied: ProvinceState::ShootingRange,
+            selected_map: MapState::ShootingRange,
+            selected_map_applied: MapState::ShootingRange,
         }
     }
 }
@@ -70,8 +69,11 @@ impl Plugin for GameMenuPlugins {
             )
             .add_systems(
                 Update,
-                settings_window
-                    .run_if(in_state(UiState::GameMenu).and_then(in_state(WindowState::Settings))),
+                settings_window.run_if(
+                    in_state(UiState::GameMenu)
+                        .and_then(in_state(GameMenuActionState::Enable))
+                        .and_then(in_state(WindowState::Settings)),
+                ),
             )
             .add_systems(OnExit(WindowState::Settings), exempt_setting);
     }
@@ -83,11 +85,12 @@ fn menu(
     mut next_state_ui: ResMut<NextState<UiState>>,
     mut next_state_game_menu_action: ResMut<NextState<GameMenuActionState>>,
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
-    mut next_state_province: ResMut<NextState<ProvinceState>>,
+    mut next_state_map: ResMut<NextState<MapState>>,
     mut context: EguiContexts,
     mut state: ResMut<EguiState>,
     ui_frame_rect: ResMut<ViewportRect>,
     mut windows: Query<&Window>,
+    mut nex_state_mouse_grab: ResMut<NextState<MouseGrabState>>,
 ) {
     let ctx = context.ctx_mut();
 
@@ -116,6 +119,7 @@ fn menu(
                 .button(rich_text("Back".to_string(), Module(&MODULE), &font))
                 .clicked()
             {
+                nex_state_mouse_grab.set(MouseGrabState::Enable);
                 next_state_menu_window.set(WindowState::None);
                 next_state_game_menu_action.set(GameMenuActionState::Disable);
             }
@@ -133,7 +137,7 @@ fn menu(
                 next_state_game_menu_action.set(GameMenuActionState::Disable);
                 next_state_menu_window.set(WindowState::None);
                 next_state_lobby.set(LobbyState::None);
-                next_state_province.set(ProvinceState::Menu);
+                next_state_map.set(MapState::Menu);
                 next_state_ui.set(UiState::Menu);
             }
         });
@@ -142,18 +146,14 @@ fn menu(
 #[allow(clippy::too_many_arguments)]
 fn settings_window(
     mut next_state_menu_window: ResMut<NextState<WindowState>>,
-    mut next_state_province: ResMut<NextState<ProvinceState>>,
     mut context: EguiContexts,
-    // mut windows: Query<&Window>,
     mut settings: ResMut<Settings>,
     mut state: ResMut<EguiState>,
     lobby_state: Res<State<LobbyState>>,
     ui_frame_rect: ResMut<ViewportRect>,
     mut settings_applying: EventWriter<ApplySettings>,
-    mut change_province: EventWriter<ChangeProvinceServerEvent>,
+    mut change_map: EventWriter<ChangeMapLobbyEvent>,
 ) {
-    // let window = windows.single_mut();
-    // let window_size = egui::vec2(window.width(), window.height());
     let frame_size = ui_frame_rect.max - ui_frame_rect.min;
 
     let ctx = context.ctx_mut();
@@ -185,10 +185,10 @@ fn settings_window(
                 ui.add(egui::Slider::new(&mut settings.music_volume, 0.0..=200.0).text("%"));
             });
             if *lobby_state.get() != LobbyState::Client {
-                ui.label(rich_text("Province: ".to_string(), Module(&MODULE), &font));
+                ui.label(rich_text("Map: ".to_string(), Module(&MODULE), &font));
                 ui.horizontal(|ui| {
                     egui::ComboBox::from_label(rich_text(
-                        "Province".to_string(),
+                        "Map".to_string(),
                         Module(&MODULE),
                         &font,
                     ))
@@ -196,13 +196,13 @@ fn settings_window(
                     .show_ui(ui, |ui| {
                         ui.selectable_value(
                             &mut state.selected_map,
-                            ProvinceState::ShootingRange,
-                            ProvinceState::ShootingRange.to_string(),
+                            MapState::ShootingRange,
+                            MapState::ShootingRange.to_string(),
                         );
                         ui.selectable_value(
                             &mut state.selected_map,
-                            ProvinceState::GravityHell,
-                            ProvinceState::GravityHell.to_string(),
+                            MapState::GravityHell,
+                            MapState::GravityHell.to_string(),
                         );
                     });
                 });
@@ -220,8 +220,8 @@ fn settings_window(
                 {
                     if state.selected_map_applied != state.selected_map {
                         state.selected_map_applied = state.selected_map;
-                        next_state_province.set(state.selected_map);
-                        change_province.send(ChangeProvinceServerEvent(state.selected_map));
+                        // next_state_map.set(state.selected_map);
+                        change_map.send(ChangeMapLobbyEvent(state.selected_map));
                     }
                     settings_applying.send(ApplySettings);
                 }
@@ -231,8 +231,8 @@ fn settings_window(
                 {
                     if state.selected_map_applied != state.selected_map {
                         state.selected_map_applied = state.selected_map;
-                        next_state_province.set(state.selected_map);
-                        change_province.send(ChangeProvinceServerEvent(state.selected_map));
+                        // next_state_map.set(state.selected_map);
+                        change_map.send(ChangeMapLobbyEvent(state.selected_map));
                     }
                     settings_applying.send(ApplySettings);
                     next_state_menu_window.set(WindowState::None);

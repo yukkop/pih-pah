@@ -388,6 +388,7 @@ version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e4bc7e09282a82a48d70ade0c4c1154b0fd7882a735a39c66766a5d0f4718ea9"
 dependencies = [
+ "bevy_dylib",
  "bevy_internal",
 ]
 
@@ -563,6 +564,15 @@ dependencies = [
  "bevy_time",
  "bevy_utils",
  "sysinfo",
+]
+
+[[package]]
+name = "bevy_dylib"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "45b99001eb4837c78d9c63cc8b32fda61ea96b194a2cda54b569aeee69a9853c"
+dependencies = [
+ "bevy_internal",
 ]
 
 [[package]]
@@ -1060,8 +1070,7 @@ dependencies = [
 [[package]]
 name = "bevy_xpbd_3d"
 version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8abc57e8b249dc2ae59896189c05a39faca384c1f2eb7fd6dfb5127ad796354d"
+source = "git+https://github.com/yukkop/bevy_xpbd.git?rev=1b5a7225135d7c84d41e7b6007ec70bd4346ccae#1b5a7225135d7c84d41e7b6007ec70bd4346ccae"
 dependencies = [
  "bevy",
  "bevy_xpbd_derive",
@@ -1078,8 +1087,7 @@ dependencies = [
 [[package]]
 name = "bevy_xpbd_derive"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e1ef1d5e328abe1b76df974245f78e17fd17867583883d5e77444c6a8223a64"
+source = "git+https://github.com/yukkop/bevy_xpbd.git?rev=1b5a7225135d7c84d41e7b6007ec70bd4346ccae#1b5a7225135d7c84d41e7b6007ec70bd4346ccae"
 dependencies = [
  "quote",
  "syn 2.0.39",
