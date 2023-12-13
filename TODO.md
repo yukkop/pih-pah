@@ -35,9 +35,9 @@
     [ ] transfer map from server to client
 
 # Fixes
-[ ] wrong position on player spawn
-    [ ] loader do not work on changing map (need rewrite it all)
-[ ] do not get mass from gld in processes scene system
+[x] wrong position on player spawn
+    [x] loader do not work on changing map (need rewrite it all)
+[ ] do not get mass from glb in processes scene system
 [x] mouse disapired on esc in menu
 [x] widow do not hide after game menu close
 [ ] intuitiv mouse position in game menu (I mean that mouse position in game menu shold be on last position or in center of screen) 
