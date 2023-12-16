@@ -4,12 +4,12 @@ use bevy::app::{App, PreUpdate, Update};
 use bevy::ecs::entity::Entity;
 use bevy::ecs::query::With;
 use bevy::ecs::system::{Commands, Query, Res};
+use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::log::info;
 use bevy::prelude::{Component, Deref, DerefMut, Plugin, Vec3};
 use bevy::reflect::Reflect;
 use bevy::time::{Time, Timer};
 use bevy::transform::components::{GlobalTransform, Transform};
-use bevy::utils::info;
 use bevy_xpbd_3d::components::{AngularVelocity, CollisionLayers, LinearVelocity};
 
 use crate::component::AxisName;
@@ -113,14 +113,25 @@ impl Respawn {
     }
 }
 
-#[derive(Debug)]
-struct Despawn(Vec<DespawnReason>);
+#[derive(Component, Deref, Reflect)]
+struct Despawn{
+    /// Reasons for respawning.
+    reason: Vec<DespawnReason>,
+}
 
 impl Despawn {
-    // TODO
     #[allow(dead_code)]
-    pub fn new<T: IntoDespawnTypeVec>(types: T) -> Self {
-        Self(types.into_despawn_type_vec())
+    pub fn new<T: IntoDespawnTypeVec>(reason: T) -> Self {
+        Self{reason: reason.into_despawn_type_vec()}
+    }
+
+    /// Adds a new respawn reason to the list of reasons.
+    ///
+    /// # Arguments
+    ///
+    /// * `reason` - The [`DespawnReason`] to be added to the respawn reasons list.
+    pub fn insert_reason(&mut self, reason: DespawnReason) {
+        self.reason.push(reason);
     }
 }
 
@@ -156,11 +167,11 @@ fn noclip_timer(
 }
 
 fn match_reason (
-    respawn: &mut Respawn,
+    reason: &mut Vec<DespawnReason>,
     global_translation: &Vec3,
     delta_time: &Duration,
 ) -> bool {
-    for reason in respawn.reason.iter_mut() {
+    for reason in reason.iter_mut() {
         if match reason {
             DespawnReason::Forced => {
                 true
@@ -195,7 +206,7 @@ fn respawn(
     time: Res<Time>,
 ) {
     for (mut respawn, mut transform, global_transform, entity) in respawn_query.iter_mut() {
-        if !match_reason(&mut respawn, &global_transform.translation(), &time.delta()) {
+        if !match_reason(&mut respawn.reason, &global_transform.translation(), &time.delta()) {
             continue;
         }
 
@@ -225,4 +236,17 @@ fn respawn(
     }
 }
 
-fn despawn() {}
+fn despawn(
+    mut commands: Commands,
+    mut despawn_query: Query<(&mut Despawn, &GlobalTransform, Entity)>,
+    time: Res<Time>,
+) {
+    for (mut respawn, global_transform, entity) in despawn_query.iter_mut() {
+        if !match_reason(&mut respawn.reason, &global_transform.translation(), &time.delta()) {
+            continue;
+        }
+
+        info!("Despawn entity: {:?}", entity);
+        commands.entity(entity).despawn_recursive();
+    }
+}

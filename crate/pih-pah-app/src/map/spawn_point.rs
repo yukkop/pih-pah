@@ -1,4 +1,4 @@
-use bevy::{ecs::system::Resource, math::Vec3, prelude::Deref, reflect::{FromReflect, Reflect}};
+use bevy::{ecs::system::Resource, math::Vec3, prelude::Deref, reflect::Reflect};
 use rand::Rng;
 
 #[derive(Debug, Clone, Resource, Deref, Default, Reflect)]

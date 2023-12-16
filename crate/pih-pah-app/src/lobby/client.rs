@@ -114,7 +114,6 @@ pub fn client_sync_players(
     mut transport_data: ResMut<TransportDataResource>,
     mut lobby: ResMut<Lobby>,
     mut own_id: ResMut<OwnId>,
-    mut tied_camera_query: Query<&mut Transform, With<TiedCamera>>,
     mut next_state_map: ResMut<NextState<MapState>>,
     lincked_obj_query: Query<(Entity, &LinkId)>,
 ) {
