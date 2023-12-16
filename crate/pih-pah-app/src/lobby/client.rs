@@ -184,15 +184,9 @@ pub fn client_sync_players(
                     ..Default::default()
                 };
                 // TODO: why transform to default?
-                commands.entity(player_data.entity).insert(transform);
-                if let PlayerId::Client(id) = player_id {
-                    if Some(id) == own_id.0.as_ref() {
-                        if let Ok(mut camera_transform) = tied_camera_query.get_single_mut() {
-                            camera_transform.translation = transform.translation;
-                            camera_transform.rotation = data.tied_camera_rotation;
-                        }
-                    }
-                }
+                commands.entity(player_data.entity)
+                    .insert(transform)
+                    .insert(data.player_view);
             }
         }
 

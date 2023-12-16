@@ -42,3 +42,4 @@
 [x] widow do not hide after game menu close
 [ ] intuitiv mouse position in game menu (I mean that mouse position in game menu shold be on last position or in center of screen) 
 [ ] if open game menu during camera movement it will be spin ever
+[ ] viewport size do not update after window size hase been changed

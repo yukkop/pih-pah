@@ -1,12 +1,16 @@
+use std::ops::Add;
+
 use crate::component::{AxisName, DespawnReason, NoclipDuration, Respawn};
 use crate::extend_commands;
 use crate::lobby::Character;
-use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerViewDirection};
+use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerView};
 use crate::map::SpawnPoint;
 use crate::ui::MainCamera;
 use crate::world::{CollisionLayer, Me};
+use bevy::transform::{self, commands};
 use bevy::{ecs::system::EntityCommands, prelude::*};
 use bevy_xpbd_3d::math::PI;
+use bevy_xpbd_3d::parry::na::ComplexField;
 use bevy_xpbd_3d::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -15,6 +19,9 @@ pub const PLAYER_SIZE: f32 = 2.0;
 const SHIFT_ACCELERATION: f32 = 2.0;
 const SENSITIVITY: f32 = 0.5;
 const JUMP_HEIGHT_MULTIPLICATOR: f32 = 1.1;
+
+
+const DEFAULT_CAMERA_LOCAL_POSITION: Vec3 = Vec3::new(0.0, 10.0, 15.0);
 
 #[derive(Component, Debug, Serialize, Deserialize)]
 pub struct TiedCamera(Entity);
@@ -56,7 +63,7 @@ impl Plugin for CharacterPlugins {
 fn gravity_direction(
     mut query: Query<(
         &mut GravityDirection,
-        &mut PlayerViewDirection,
+        &mut PlayerView,
         &PlayerInput,
     )>,
 ) {
@@ -69,21 +76,21 @@ fn gravity_direction(
             // rotate view direction (tied camera)
             let rotation = Quat::from_rotation_z(PI);
             // global rotation
-            view_direction.0 = rotation * view_direction.0;
+            view_direction.direction = rotation * view_direction.direction;
         }
     }
 }
 
 fn tied_camera_follow(
     mut tied_camera_query: Query<(&TiedCamera, &mut Transform)>,
-    view_direction_query: Query<&PlayerViewDirection, With<Me>>,
+    view_direction_query: Query<&PlayerView, With<Me>>,
     transform_query: Query<&Transform, Without<TiedCamera>>,
 ) {
     for (TiedCamera(target), mut transform) in tied_camera_query.iter_mut() {
         if let Ok(target_transform) = transform_query.get(*target) {
             transform.translation = target_transform.translation + Vec3::Y * 2.;
             if let Ok(view_dirrection) = view_direction_query.get_single() {
-                transform.rotation = view_dirrection.0;
+                transform.rotation = view_dirrection.direction;
             }
         } else {
             warn!(
@@ -114,7 +121,7 @@ fn update_jump_normals(
 fn jump(
     mut query: Query<(
         &mut LinearVelocity,
-        &PlayerViewDirection,
+        &PlayerView,
         &PlayerInput,
         Entity,
         &JumpHelper,
@@ -130,8 +137,8 @@ fn jump(
         let dx = (input.right as i8 - input.left as i8) as f32;
         let dy = (input.down as i8 - input.up as i8) as f32;
 
-        let local_x = view_direction.0.mul_vec3(Vec3::X);
-        let local_y = view_direction.0.mul_vec3(Vec3::Z);
+        let local_x = view_direction.direction.mul_vec3(Vec3::X);
+        let local_y = view_direction.direction.mul_vec3(Vec3::Z);
 
         if jumped
             && collisions
@@ -150,15 +157,15 @@ fn jump(
 }
 
 fn move_characters(
-    mut query: Query<(&mut LinearVelocity, &PlayerViewDirection, &PlayerInput)>, /* , time: Res<Time> */
+    mut query: Query<(&mut LinearVelocity, &PlayerView, &PlayerInput)>, /* , time: Res<Time> */
 ) {
     for (mut linear_velocity, view_direction, input) in query.iter_mut() {
         let dx = (input.right as i8 - input.left as i8) as f32;
         let dy = (input.down as i8 - input.up as i8) as f32;
 
         // convert axises to global
-        let view_direction_x = view_direction.0.mul_vec3(Vec3::X);
-        let view_direction_y = view_direction.0.mul_vec3(Vec3::Z);
+        let view_direction_x = view_direction.direction.mul_vec3(Vec3::X);
+        let view_direction_y = view_direction.direction.mul_vec3(Vec3::Z);
 
         // never use delta time in fixed update !!!
         let shift_acceleration = SHIFT_ACCELERATION.powf(input.sprint as i32 as f32);
@@ -174,44 +181,37 @@ fn move_characters(
 }
 
 fn rotate_camera(
-    mut query: Query<(&mut PlayerViewDirection, &PlayerInput)>,
+    mut commands: Commands,
+    mut query: Query<(&mut PlayerView, Entity, &Transform, &PlayerInput, Option<&mut RayCaster>, Option<&RayHits>)>,
     time: Res<Time>,
-    mut tied_camera_query: Query<(&GlobalTransform, &Children), With<TiedCamera>>,
-    mut camera_query: Query<(&GlobalTransform, &mut RayCaster, &RayHits), With<Camera>>,
-    name_query: Query<&Name>,
+
 ) { 
     let delta_seconds = time.delta_seconds();
-    for (mut view_direction, input) in query.iter_mut() {
+    for (mut view, entity, transform, input,mut ray, hits) in query.iter_mut() {
         // camera turn
         let rotation = Quat::from_rotation_y(
             input.turn_horizontal * SENSITIVITY * delta_seconds
         );
         // global rotation (!ORDER OF MULTIPLICATION MATTERS!)
-        view_direction.0 = rotation * view_direction.0;
+        view.direction = rotation * view.direction;
 
         let rotation = Quat::from_rotation_x(
             input.turn_vertical * SENSITIVITY * delta_seconds
         );
         // local rotation (!ORDER OF MULTIPLICATION MATTERS!)
-        view_direction.0 *= rotation;
-    }
- 
-    for (tied_camera_transform, children) in tied_camera_query.iter_mut() {
-        if let Some(child) = children.iter().next() {
-            if let Ok((camera_transform, mut ray, hits)) = camera_query.get_mut(*child) {
-                log::info!("{:?} {:?}", ray.global_origin(), ray.direction);
-                for hit in hits.iter() {
-                    log::info!("{:?}, {:?}, {:?}", hit.entity, name_query.get(hit.entity), ray.origin);
-                }
-            }
+        view.direction *= rotation;
+
+        // let norm_vec = view_direction.direction.normalize();
+        
+        if let (Some(hits), Some(mut ray)) = (hits, ray) {
+            let start_point = transform.rotation.mul_vec3(Vec3::Y * 2.);
+            let offset = view.direction.mul_vec3(DEFAULT_CAMERA_LOCAL_POSITION);
+            ray.origin = start_point;
+            ray.direction = offset; // transform.rotation.mul_vec3(offset);
+            log::info!("{:#?} {:#?}", ray.global_origin(), ray.global_direction());
+            // for hit in hits.iter() { }
         }
     }
-}
-
-fn system_for_tracking_all_the_obstacles_and_avoiding_them_by_moving_the_camera_right_in_front_of_the_closest_to_character_object(
-
-) {
-
 }
 
 extend_commands!(
@@ -226,6 +226,10 @@ extend_commands!(
       .resource_mut::<Assets<StandardMaterial>>()
       .add(color.into());
 
+      // some raycast magic
+    let start_point = Vec3::Y * 2.;
+    let offset = DEFAULT_CAMERA_LOCAL_POSITION;
+
     world
      .entity_mut(entity_id)
      .insert((
@@ -234,6 +238,7 @@ extend_commands!(
           material,
           ..Default::default()
        },
+       RayCaster::new(start_point, offset),
        Friction::new(0.4),
        RigidBody::Dynamic,
        Position::from_xyz(spawn_point.x, spawn_point.y, spawn_point.z),
@@ -245,7 +250,7 @@ extend_commands!(
      .insert(Respawn::new(DespawnReason::Less(-10., AxisName::Y), SpawnPoint::new(spawn_point),  NoclipDuration::Timer(10.)))
      .insert(PlayerInput::default())
      .insert(Character { id: player_id })
-     .insert(PlayerViewDirection(Quat::default()));
+     .insert(PlayerView::new(Quat::default(), 325.0.sqrt()));
   }
 );
 
@@ -276,7 +281,7 @@ extend_commands!(
        },
      ))
      .insert(PlayerInput::default())
-     .insert(PlayerViewDirection(Quat::default()));
+     .insert(PlayerView::new(Quat::default(), 325.0.sqrt()));
   }
 );
 
@@ -297,7 +302,6 @@ extend_commands!(
               ..default()
           }
       );
-    let default_camera_local_position = Vec3::new(0.0, 10.0, 15.0);
     world
       .entity_mut(entity_id)
       .insert((
@@ -310,11 +314,10 @@ extend_commands!(
         // spawn tied camera
         parent.spawn((
             Camera3dBundle {
-                transform: Transform::from_translation(default_camera_local_position).looking_at(Vec3::ZERO, Vec3::Y),
+                transform: Transform::from_translation(DEFAULT_CAMERA_LOCAL_POSITION).looking_at(Vec3::ZERO, Vec3::Y),
                 ..Default::default()
             },
             MainCamera,
-            RayCaster::new(Vec3::ZERO, default_camera_local_position),
         ));
       });
   }

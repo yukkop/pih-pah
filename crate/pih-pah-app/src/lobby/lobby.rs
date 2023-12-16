@@ -5,6 +5,7 @@ use bevy::app::{App, Plugin};
 use bevy::ecs::event::Event;
 use bevy::math::{Quat, Vec3};
 use bevy::prelude::{Color, Component, Entity, Resource, States};
+use bevy::reflect::Reflect;
 use renet::transport::NETCODE_USER_DATA_BYTES;
 use renet::ClientId;
 use serde::{Deserialize, Serialize};
@@ -160,7 +161,7 @@ pub struct PlayerData {
     pub username: String,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize, Component, Resource)]
+#[derive(Debug, Default, Serialize, Deserialize, Component, Resource, Reflect)]
 pub struct PlayerInput {
     pub up: bool,
     pub down: bool,
@@ -182,7 +183,7 @@ pub struct Character {
 pub struct PlayerTransportData {
     pub position: Vec3,
     pub rotation: Quat,
-    pub tied_camera_rotation: Quat,
+    pub player_view: PlayerView,
 }
 
 #[derive(Resource, Default, Debug, Serialize, Deserialize)]
@@ -202,8 +203,20 @@ pub struct TransportDataResource {
     pub data: TransportData,
 }
 
-#[derive(Debug, Component, Default)]
-pub struct PlayerViewDirection(pub Quat);
+#[derive(Debug, Component, Default, Serialize, Deserialize, Clone, Copy, Reflect)]
+pub struct PlayerView{
+    pub direction: Quat,
+    pub distance: f32,
+}
+
+impl PlayerView {
+    pub fn new(direction: Quat, distance: f32) -> Self {
+        Self {
+            direction,
+            distance,
+        }
+    }
+}
 
 #[derive(Debug, Event)]
 pub struct ChangeMapLobbyEvent(pub MapState);
@@ -212,7 +225,8 @@ pub struct LobbyPlugins;
 
 impl Plugin for LobbyPlugins {
     fn build(&self, app: &mut App) {
-        app.add_event::<ChangeMapLobbyEvent>()
+        app
+            .add_event::<ChangeMapLobbyEvent>()
             .add_state::<LobbyState>()
             .add_state::<MapLoaderState>()
             .init_resource::<HostResource>()

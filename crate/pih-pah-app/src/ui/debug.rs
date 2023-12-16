@@ -10,10 +10,12 @@ use bevy_inspector_egui::bevy_inspector::hierarchy::{hierarchy_ui, SelectedEntit
 use bevy_inspector_egui::bevy_inspector::{
     self, ui_for_entities_shared_components, ui_for_entity_with_children,
 };
+use bevy_xpbd_3d::plugins::spatial_query::RayCaster;
 use egui::{Align2, Pos2};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use egui_gizmo::{Gizmo, GizmoMode, GizmoOrientation};
 
+use crate::lobby::{PlayerInput, PlayerView};
 use crate::util::i18n::Uniq;
 
 use super::{rich_text, MainCamera, ViewportRect};
@@ -70,7 +72,10 @@ pub struct DebugUiPlugins;
 
 impl Plugin for DebugUiPlugins {
     fn build(&self, app: &mut App) {
-        app.add_event::<DebugMenuEvent>()
+        app
+            .register_type::<PlayerInput>()
+            .register_type::<PlayerView>()
+            .add_event::<DebugMenuEvent>()
             .add_state::<DebugFrameState>()
             .add_state::<DebugState>()
             .add_state::<DebugMenuState>();
