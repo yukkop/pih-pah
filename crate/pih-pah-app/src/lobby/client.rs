@@ -1,7 +1,7 @@
 use std::net::UdpSocket;
 use std::time::SystemTime;
 
-use crate::character::{spawn_character_shell, spawn_tied_camera, TiedCamera};
+use crate::actor::{spawn_character_shell, spawn_tied_camera, TiedCamera};
 use crate::lobby::{LobbyState, PlayerId};
 use crate::map::MapState;
 use crate::world::{LinkId, Me};

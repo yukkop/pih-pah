@@ -15,6 +15,7 @@ use egui::{Align2, Pos2};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use egui_gizmo::{Gizmo, GizmoMode, GizmoOrientation};
 
+use crate::component::Respawn;
 use crate::lobby::{PlayerInput, PlayerView};
 use crate::util::i18n::Uniq;
 
@@ -75,6 +76,7 @@ impl Plugin for DebugUiPlugins {
         app
             .register_type::<PlayerInput>()
             .register_type::<PlayerView>()
+            .register_type::<Respawn>()
             .add_event::<DebugMenuEvent>()
             .add_state::<DebugFrameState>()
             .add_state::<DebugState>()

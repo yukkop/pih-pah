@@ -1,7 +1,7 @@
 use std::net::UdpSocket;
 use std::time::SystemTime;
 
-use crate::character::{spawn_character, spawn_tied_camera, TiedCamera};
+use crate::actor::{spawn_character, spawn_tied_camera, TiedCamera};
 use crate::component::{DespawnReason, Respawn};
 use crate::lobby::{LobbyState, PlayerData, PlayerId, ServerMessages, Username};
 use crate::map::{is_loaded, MapState, SpawnPoint};

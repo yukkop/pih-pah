@@ -1,3 +1,9 @@
+//! need use this to extend commands
+//! ```
+//! use bevy::{ecs::system::EntityCommands, prelude::*};
+//! use crate::extend_commands;
+//! ```
+
 /// Extends the `Commands` type with a new command.
 #[macro_export]
 macro_rules! extend_commands {

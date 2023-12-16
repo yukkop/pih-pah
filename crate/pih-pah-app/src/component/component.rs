@@ -1,11 +1,15 @@
+use std::time::Duration;
+
 use bevy::app::{App, PreUpdate, Update};
 use bevy::ecs::entity::Entity;
 use bevy::ecs::query::With;
 use bevy::ecs::system::{Commands, Query, Res};
 use bevy::log::info;
 use bevy::prelude::{Component, Deref, DerefMut, Plugin, Vec3};
+use bevy::reflect::Reflect;
 use bevy::time::{Time, Timer};
 use bevy::transform::components::{GlobalTransform, Transform};
+use bevy::utils::info;
 use bevy_xpbd_3d::components::{AngularVelocity, CollisionLayers, LinearVelocity};
 
 use crate::component::AxisName;
@@ -18,7 +22,7 @@ use super::despawn_type::{DespawnReason, IntoDespawnTypeVec};
 ///
 /// The [`Respawn`] component is used to control how an entity respawns in a game. It includes information about the respawn reasons,
 /// the spawn point, and a timer value for keeping the entity untouched upon spawn.
-#[derive(Component)]
+#[derive(Component, Reflect)]
 pub struct Respawn {
     /// Reasons for respawning.
     reason: Vec<DespawnReason>,
@@ -31,7 +35,7 @@ pub struct Respawn {
 /// An enumeration representing the duration of time an actor will remain [`noclip`](CollisionLayer::ActorNoclip).
 ///
 /// The [`NoclipDuration`] enum is used to specify how long an actor should remain [`noclip`](CollisionLayer::ActorNoclip) before some action or event takes place.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Reflect)]
 pub enum NoclipDuration {
     /// Indicates that there is no [`noclip`](CollisionLayer::ActorNoclip) duration, and the actor can be acted upon immediately.
     None,
@@ -151,6 +155,35 @@ fn noclip_timer(
     }
 }
 
+fn match_reason (
+    respawn: &mut Respawn,
+    global_translation: &Vec3,
+    delta_time: &Duration,
+) -> bool {
+    for reason in respawn.reason.iter_mut() {
+        if match reason {
+            DespawnReason::Forced => {
+                true
+            },
+            DespawnReason::After(ref mut timer) => timer.update(*delta_time).just_finished(),
+            DespawnReason::Less(val, axis) => match axis {
+                AxisName::X => global_translation.x < *val,
+                AxisName::Y => global_translation.y < *val,
+                AxisName::Z => global_translation.z < *val,
+            },
+            DespawnReason::More(val, axis) => match axis {
+                AxisName::X => global_translation.x > *val,
+                AxisName::Y => global_translation.y > *val,
+                AxisName::Z => global_translation.z > *val
+            },
+        } {
+            return true;
+        }
+    }
+
+    false
+}
+
 /// Processes a [`Entity`] with [`Respawn`] [`Component`]
 ///
 /// Move actors on respawn position and optionally rest [`LinearVelocity`] and [`AngularVelocity`]
@@ -159,14 +192,13 @@ fn respawn(
     mut commands: Commands,
     mut respawn_query: Query<(&mut Respawn, &mut Transform, &GlobalTransform, Entity)>,
     mut velocity_query: Query<(&mut LinearVelocity, &mut AngularVelocity), With<Respawn>>,
+    time: Res<Time>,
 ) {
-    fn respawn_act(
-        commands: &mut Commands,
-        respawn: &mut Respawn,
-        transform: &mut Transform,
-        entity: Entity,
-        velocity_query: &mut Query<(&mut LinearVelocity, &mut AngularVelocity), With<Respawn>>,
-    ) {
+    for (mut respawn, mut transform, global_transform, entity) in respawn_query.iter_mut() {
+        if !match_reason(&mut respawn, &global_transform.translation(), &time.delta()) {
+            continue;
+        }
+
         info!("Respawn entity: {:?}", entity);
         info!("Respawn cords: {:?}", respawn.spawn_point);
         if let NoclipDuration::Timer(val) = respawn.noclip {
@@ -186,95 +218,10 @@ fn respawn(
             linear_velocity.0 = Vec3::ZERO;
             angular_velocity.0 = Vec3::ZERO;
         }
-    }
 
-    for (mut respawn, mut transform, global_transform, entity) in respawn_query.iter_mut() {
-        for reason in respawn.reason.clone() {
-            match reason {
-                DespawnReason::Forced => {
-                    respawn_act(
-                        &mut commands,
-                        &mut respawn,
-                        &mut transform,
-                        entity,
-                        &mut velocity_query,
-                    );
-                    respawn
-                        .reason
-                        .retain(|reason| reason != &DespawnReason::Forced);
-                }
-                DespawnReason::Less(val, axis) => match axis {
-                    AxisName::X => {
-                        if global_transform.translation().x < val {
-                            respawn_act(
-                                &mut commands,
-                                &mut respawn,
-                                &mut transform,
-                                entity,
-                                &mut velocity_query,
-                            );
-                        }
-                    }
-                    AxisName::Y => {
-                        if global_transform.translation().y < val {
-                            respawn_act(
-                                &mut commands,
-                                &mut respawn,
-                                &mut transform,
-                                entity,
-                                &mut velocity_query,
-                            );
-                        }
-                    }
-                    AxisName::Z => {
-                        if global_transform.translation().z < val {
-                            respawn_act(
-                                &mut commands,
-                                &mut respawn,
-                                &mut transform,
-                                entity,
-                                &mut velocity_query,
-                            );
-                        }
-                    }
-                },
-                DespawnReason::More(val, axis) => match axis {
-                    AxisName::X => {
-                        if global_transform.translation().x > val {
-                            respawn_act(
-                                &mut commands,
-                                &mut respawn,
-                                &mut transform,
-                                entity,
-                                &mut velocity_query,
-                            );
-                        }
-                    }
-                    AxisName::Y => {
-                        if global_transform.translation().y > val {
-                            respawn_act(
-                                &mut commands,
-                                &mut respawn,
-                                &mut transform,
-                                entity,
-                                &mut velocity_query,
-                            );
-                        }
-                    }
-                    AxisName::Z => {
-                        if global_transform.translation().z > val {
-                            respawn_act(
-                                &mut commands,
-                                &mut respawn,
-                                &mut transform,
-                                entity,
-                                &mut velocity_query,
-                            );
-                        }
-                    }
-                },
-            }
-        }
+        respawn
+            .reason
+            .retain(|reason| reason != &DespawnReason::Forced);
     }
 }
 

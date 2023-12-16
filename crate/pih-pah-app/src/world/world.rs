@@ -1,4 +1,4 @@
-use crate::character::CharacterPlugins;
+use crate::actor::CharacterPlugins;
 use crate::component::{ComponentPlugins, Respawn};
 use crate::lobby::{LobbyPlugins, LobbyState, PlayerInput};
 use crate::map::MapPlugins;

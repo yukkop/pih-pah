@@ -1,6 +1,6 @@
 use std::ops::Add;
 
-use crate::component::{AxisName, DespawnReason, NoclipDuration, Respawn};
+use crate::component::{AxisName, DespawnReason, NoclipDuration, Respawn, DespawnTimer};
 use crate::extend_commands;
 use crate::lobby::Character;
 use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerView};
@@ -208,7 +208,7 @@ fn rotate_camera(
             let offset = view.direction.mul_vec3(DEFAULT_CAMERA_LOCAL_POSITION);
             ray.origin = start_point;
             ray.direction = offset; // transform.rotation.mul_vec3(offset);
-            log::info!("{:#?} {:#?}", ray.global_origin(), ray.global_direction());
+            // log::info!("{:#?} {:#?}", ray.global_origin(), ray.global_direction());
             // for hit in hits.iter() { }
         }
     }
@@ -247,7 +247,7 @@ extend_commands!(
        GravityDirection::from_xyz(0., -1., 0.),
        CollisionLayers::new([CollisionLayer::Default], [CollisionLayer::Default, CollisionLayer::ActorNoclip]),
      ))
-     .insert(Respawn::new(DespawnReason::Less(-10., AxisName::Y), SpawnPoint::new(spawn_point),  NoclipDuration::Timer(10.)))
+     .insert(Respawn::new((DespawnReason::Less(-10., AxisName::Y), DespawnReason::After(DespawnTimer::new(10.))), SpawnPoint::new(spawn_point),  NoclipDuration::Timer(10.)))
      .insert(PlayerInput::default())
      .insert(Character { id: player_id })
      .insert(PlayerView::new(Quat::default(), 325.0.sqrt()));
