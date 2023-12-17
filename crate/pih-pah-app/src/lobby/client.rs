@@ -1,7 +1,7 @@
 use std::net::UdpSocket;
 use std::time::SystemTime;
 
-use crate::actor::{spawn_character_shell, spawn_tied_camera, TiedCamera};
+use crate::actor::{spawn_character_shell, spawn_tied_camera, TiedCamera, spawn_projectile_shell, ProjectileShell};
 use crate::lobby::{LobbyState, PlayerId};
 use crate::map::MapState;
 use crate::world::{LinkId, Me};
@@ -13,6 +13,7 @@ use bevy::ecs::system::{Query, Res, ResMut, Resource};
 use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::math::Vec3;
 use bevy::prelude::{in_state, Commands, IntoSystemConfigs, OnEnter};
+use bevy::render::color::Color;
 use bevy::transform::components::Transform;
 use bevy_renet::transport::NetcodeClientPlugin;
 use bevy_renet::RenetClientPlugin;
@@ -169,6 +170,16 @@ pub fn client_sync_players(
                     commands.entity(player_data.entity).despawn();
                 }
             }
+            ServerMessages::ProjectileSpawn { id } => {
+                commands.spawn_projectile_shell(ProjectileShell {color: Color::RED, id});
+            }
+            ServerMessages::ActorDespawn { id } => {
+                for (entity, link_id) in lincked_obj_query.iter() {
+                    if link_id == &id {
+                        commands.entity(entity).despawn_recursive();
+                    }
+                }
+            }
         }
     }
 
@@ -190,7 +201,7 @@ pub fn client_sync_players(
             }
         }
 
-        for (link_id, data) in transport_data.data.objects.iter() {
+        for (link_id, data) in transport_data.data.actors.iter() {
             for (entity, id) in lincked_obj_query.iter() {
                 if id == link_id {
                     let transform = Transform {
@@ -198,7 +209,7 @@ pub fn client_sync_players(
                         rotation: data.rotation,
                         ..Default::default()
                     };
-                    commands.entity(entity).insert(transform);
+                    commands.entity(entity).try_insert(transform);
                 }
             }
         }

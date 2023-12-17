@@ -8,7 +8,7 @@ use crate::map::{is_loaded, MapState, SpawnPoint};
 use crate::world::{LinkId, Me};
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
-use bevy::ecs::event::{EventReader, EventWriter};
+use bevy::ecs::event::{EventReader, EventWriter, Event};
 use bevy::ecs::query::With;
 use bevy::ecs::schedule::{Condition, NextState, OnExit, State};
 use bevy::ecs::system::{Query, Res, ResMut};
@@ -23,19 +23,27 @@ use renet::transport::{NetcodeServerTransport, ServerAuthentication, ServerConfi
 use renet::{ConnectionConfig, DefaultChannel, RenetServer, ServerEvent};
 
 use super::{
-    ChangeMapLobbyEvent, Character, HostResource, Lobby, MapLoaderState, ObjectTransportData,
+    ChangeMapLobbyEvent, Character, HostResource, Lobby, MapLoaderState, ActorTransportData,
     PlayerInput, PlayerTransportData, PlayerView, TransportDataResource, PROTOCOL_ID,
 };
+
+#[derive(Debug, Event)]
+pub struct DespawnActorEvent(pub LinkId);
+#[derive(Debug, Event)]
+pub struct SpawnProjectileEvent(pub LinkId);
 
 pub struct HostLobbyPlugins;
 
 impl Plugin for HostLobbyPlugins {
     fn build(&self, app: &mut App) {
-        app.add_plugins((RenetServerPlugin, NetcodeServerPlugin))
+        app
+            .add_event::<DespawnActorEvent>()
+            .add_event::<SpawnProjectileEvent>()
+            .add_plugins((RenetServerPlugin, NetcodeServerPlugin))
             .add_systems(OnEnter(LobbyState::Host), setup)
             .add_systems(
                 Update,
-                (server_update_system, send_change_map, server_sync_players)
+                (server_update_system, send_change_map, server_sync_actor, spawn_projectile, despawn_actor)
                     .run_if(in_state(LobbyState::Host)),
             )
             .add_systems(OnExit(LobbyState::Host), teardown)
@@ -44,6 +52,26 @@ impl Plugin for HostLobbyPlugins {
                 load_processing
                     .run_if(in_state(LobbyState::Host).and_then(in_state(MapLoaderState::No))),
             );
+    }
+}
+
+pub fn spawn_projectile(
+    mut event_reader: EventReader<SpawnProjectileEvent>,
+    mut server: ResMut<RenetServer>,
+) {
+    for SpawnProjectileEvent(link_id) in event_reader.read() {
+        let message = bincode::serialize(&ServerMessages::ProjectileSpawn { id: link_id.clone() }).unwrap();
+        server.broadcast_message(DefaultChannel::ReliableOrdered, message);
+    }
+}
+
+pub fn despawn_actor(
+    mut event_reader: EventReader<DespawnActorEvent>,
+    mut server: ResMut<RenetServer>,
+) {
+    for DespawnActorEvent(link_id) in event_reader.read() {
+        let message = bincode::serialize(&ServerMessages::ActorDespawn { id: link_id.clone() }).unwrap();
+        server.broadcast_message(DefaultChannel::ReliableOrdered, message);
     }
 }
 
@@ -255,12 +283,12 @@ pub fn server_update_system(
     }
 }
 
-pub fn server_sync_players(
+pub fn server_sync_actor(
     mut server: ResMut<RenetServer>,
     // TODO a nahooya tut resours, daun
     mut data: ResMut<TransportDataResource>,
     character_query: Query<(&Position, &Rotation, &PlayerView, &Character)>,
-    moveble_object_query: Query<(&Transform, &LinkId)>,
+    moveble_actor_query: Query<(&Transform, &LinkId)>,
 ) {
     let data = &mut data.data;
     for (position, rotation, view_direction, character) in character_query.iter() {
@@ -274,10 +302,10 @@ pub fn server_sync_players(
         );
     }
 
-    for (transform, link_id) in moveble_object_query.iter() {
-        data.objects.insert(
+    for (transform, link_id) in moveble_actor_query.iter() {
+        data.actors.insert(
             link_id.clone(),
-            ObjectTransportData {
+            ActorTransportData {
                 position: transform.translation,
                 rotation: transform.rotation,
             },
@@ -288,5 +316,5 @@ pub fn server_sync_players(
     server.broadcast_message(DefaultChannel::Unreliable, sync_message);
 
     data.players.clear();
-    data.objects.clear();
+    data.actors.clear();
 }

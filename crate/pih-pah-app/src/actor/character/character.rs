@@ -1,6 +1,8 @@
+use crate::actor::{Projectile, spawn_projectile, spawn_projectile_shell};
 use crate::component::{AxisName, DespawnReason, NoclipDuration, Respawn};
 use crate::extend_commands;
 use crate::lobby::Character;
+use crate::lobby::host::generate_player_color;
 use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerView};
 use crate::map::SpawnPoint;
 use crate::ui::MainCamera;
@@ -39,7 +41,7 @@ impl Plugin for CharacterPlugins {
         )
         .add_systems(
             Update,
-            (jump, rotate_camera, gravity_direction).run_if(
+            (jump, rotate_camera, gravity_direction, shoot).run_if(
                 not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
             ),
         )
@@ -175,6 +177,25 @@ fn move_characters(
     }
 }
 
+fn shoot(
+    mut commands: Commands,
+    mut query: Query<(&PlayerInput, &PlayerView, &Transform)>,
+) {
+    for (input, view, transform) in query.iter_mut() {
+        if input.fire {
+            let random_i32 = rand::random::<i32>();
+            let color = generate_player_color(random_i32 as u32);
+            commands.spawn_projectile(Projectile {
+                position: transform.translation + Vec3::Y * 2.,
+                direction: view.direction * Vec3::NEG_Z,
+                power: 80.,
+                mass: 1.,
+                color,
+            });
+        }
+    }
+}
+
 #[allow(clippy::type_complexity)]
 fn rotate_camera(
     mut query: Query<(
@@ -204,8 +225,9 @@ fn rotate_camera(
             let offset = h
                 .mul_vec3(
                     view.direction
-                        .mul_vec3(Vec3::new(0., 0., DEFAULT_CAMERA_DISTANCE)),
+                        .mul_vec3(DEFAULT_CAMERA_DISTANCE * Vec3::Z),
                 )
+                // need to normalize ray.direction to time_of_impact work correctly
                 .normalize();
             ray.origin = start_point;
             ray.direction = offset;
@@ -252,7 +274,16 @@ extend_commands!(
        GravityDirection::from_xyz(0., -1., 0.),
        CollisionLayers::new([CollisionLayer::Default], [CollisionLayer::Default, CollisionLayer::ActorNoclip]),
      ))
-     .insert(Respawn::new(DespawnReason::Less(-10., AxisName::Y), SpawnPoint::new(spawn_point),  NoclipDuration::Timer(10.)))
+     .insert(Respawn::new((
+            DespawnReason::More(200., AxisName::Y),
+            DespawnReason::Less(-10., AxisName::Y),
+            DespawnReason::More(100., AxisName::X),
+            DespawnReason::Less(-100., AxisName::X),
+            DespawnReason::More(100., AxisName::Z),
+            DespawnReason::Less(-100., AxisName::Z)
+        ),
+        SpawnPoint::new(spawn_point), 
+        NoclipDuration::Timer(10.)))
      .insert(PlayerInput::default())
      .insert(Character { id: player_id })
      .insert(PlayerView::new(Quat::default(), 325.0.sqrt()));

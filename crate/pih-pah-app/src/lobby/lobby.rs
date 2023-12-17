@@ -73,6 +73,8 @@ pub enum ServerMessages {
     ///
     /// * `id` - Unique identifier for the player who has disconnected.
     PlayerDisconnected { id: PlayerId },
+    ProjectileSpawn { id: LinkId },
+    ActorDespawn { id: LinkId },
 }
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
@@ -172,6 +174,7 @@ pub struct PlayerInput {
     pub turn_horizontal: f32,
     pub turn_vertical: f32,
     pub special: bool,
+    pub fire: bool,
 }
 
 #[derive(Debug, Component)]
@@ -187,7 +190,7 @@ pub struct PlayerTransportData {
 }
 
 #[derive(Resource, Default, Debug, Serialize, Deserialize)]
-pub struct ObjectTransportData {
+pub struct ActorTransportData {
     pub position: Vec3,
     pub rotation: Quat,
 }
@@ -195,7 +198,7 @@ pub struct ObjectTransportData {
 #[derive(Resource, Default, Debug, Serialize, Deserialize)]
 pub struct TransportData {
     pub players: HashMap<PlayerId, PlayerTransportData>,
-    pub objects: HashMap<LinkId, ObjectTransportData>,
+    pub actors: HashMap<LinkId, ActorTransportData>,
 }
 
 #[derive(Resource, Default, Debug, Serialize, Deserialize)]

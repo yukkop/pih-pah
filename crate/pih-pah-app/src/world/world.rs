@@ -47,13 +47,30 @@ pub enum CollisionLayer {
 pub struct PromisedScene;
 
 #[derive(Component, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct LinkId(String);
+pub enum LinkId {
+    Scene(String),
+    Projectile(usize),
+}
+
+#[derive(Resource, Default, Reflect, Debug, Clone, Copy, PartialEq, Eq, Deref, DerefMut)]
+pub struct ProjectileIdSeq(usize);
+
+impl ProjectileIdSeq {
+    /// Returns the next projectile ID. A new ID is generated each time this method is called.
+    pub fn shift(&mut self) -> LinkId {
+        self.0 += 1;
+        LinkId::Projectile(self.0)
+    }
+}
 
 pub struct WorldPlugins;
 
 impl Plugin for WorldPlugins {
     fn build(&self, app: &mut App) {
-        app.add_plugins((
+        app
+        .init_resource::<ProjectileIdSeq>()
+        .register_type::<ProjectileIdSeq>()
+        .add_plugins((
             SettingsPlugins,
             SoundPlugins,
             MapPlugins,
@@ -82,8 +99,7 @@ pub struct Me;
 
 /// Processes the input keys and manages them from a resource or event deep in the program.
 #[allow(clippy::too_many_arguments)]
-fn input(
-    keyboard_input: Res<Input<KeyCode>>,
+fn input( keyboard_input: Res<Input<KeyCode>>,
     mut next_state_debug_frame: ResMut<NextState<DebugFrameState>>,
     debug_frame_state: Res<State<DebugFrameState>>,
     mut next_state_debug: ResMut<NextState<DebugState>>,
@@ -96,6 +112,7 @@ fn input(
     mut motion_evr: EventReader<MouseMotion>,
     mut next_state_mouse_grab: ResMut<NextState<MouseGrabState>>,
     mouse_grab_state: Res<State<MouseGrabState>>,
+    buttons: Res<Input<MouseButton>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Escape) && *ui_state.get() == UiState::GameMenu {
         next_state_game_menu_action.set(game_menu_action.get().clone().toggle());
@@ -133,6 +150,13 @@ fn input(
             for ev in motion_evr.read() {
                 player_input.turn_horizontal = -ev.delta.x;
                 player_input.turn_vertical = -ev.delta.y;
+            }
+
+            player_input.fire = false;
+            for button in buttons.get_just_pressed() {
+                if *button == MouseButton::Left {
+                    player_input.fire = true;
+                }
             }
         }
     }
@@ -218,7 +242,7 @@ fn process_scene_child(
                             }
                         }
                     } else if name == "id" {
-                        commands.entity(entity).insert(LinkId(val.to_string()));
+                        commands.entity(entity).insert(LinkId::Scene(val.to_string()));
                     } else if name == "m" {
                         commands.entity(entity).insert(Mass(val.parse().unwrap()));
                     }
@@ -290,7 +314,7 @@ fn process_scene_child_simplified(
                 let name = split.next().unwrap();
                 if let Some(val) = split.next() {
                     if name == "id" {
-                        commands.entity(entity).insert(LinkId(val.to_string()));
+                        commands.entity(entity).insert(LinkId::Scene(val.to_string()));
                     }
                 }
             }

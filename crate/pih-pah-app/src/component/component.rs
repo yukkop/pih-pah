@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use bevy::app::{App, PreUpdate, Update};
 use bevy::ecs::entity::Entity;
+use bevy::ecs::event::EventWriter;
 use bevy::ecs::query::With;
 use bevy::ecs::system::{Commands, Query, Res};
 use bevy::hierarchy::DespawnRecursiveExt;
@@ -12,8 +13,9 @@ use bevy::transform::components::{GlobalTransform, Transform};
 use bevy_xpbd_3d::components::{AngularVelocity, CollisionLayers, LinearVelocity};
 
 use crate::component::AxisName;
+use crate::lobby::host::DespawnActorEvent;
 use crate::map::SpawnPoint;
-use crate::world::CollisionLayer;
+use crate::world::{CollisionLayer, LinkId};
 
 use super::despawn_type::{DespawnReason, IntoDespawnTypeVec};
 
@@ -239,16 +241,21 @@ fn respawn(
 
 fn despawn(
     mut commands: Commands,
-    mut despawn_query: Query<(&mut Despawn, &GlobalTransform, Entity)>,
+    mut despawn_query: Query<(&mut Despawn, &GlobalTransform, Option<&LinkId>, Entity)>,
+    mut despawn_actor_event: EventWriter<DespawnActorEvent>,
     time: Res<Time>,
 ) {
-    for (mut respawn, global_transform, entity) in despawn_query.iter_mut() {
+    for (mut respawn, global_transform, id_option, entity) in despawn_query.iter_mut() {
         if !match_reason(
             &mut respawn.reason,
             &global_transform.translation(),
             &time.delta(),
         ) {
             continue;
+        }
+
+        if let Some(id) = id_option {
+            despawn_actor_event.send(DespawnActorEvent(id.clone()));
         }
 
         commands.entity(entity).despawn_recursive();
