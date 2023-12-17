@@ -1,7 +1,7 @@
 use crate::actor::{CharacterPlugins, TracePlugins};
-use crate::component::{ComponentPlugins, Respawn};
+use crate::component::{ComponentPlugins, Respawn, DespawnReason, AxisName, NoclipDuration};
 use crate::lobby::{LobbyPlugins, LobbyState, PlayerInput};
-use crate::map::MapPlugins;
+use crate::map::{MapPlugins, SpawnPoint};
 use crate::settings::SettingsPlugins;
 use crate::sound::SoundPlugins;
 use crate::ui::GameMenuActionState;
@@ -250,7 +250,16 @@ fn process_scene_child(
                     let transform = transform_query.get(entity).unwrap();
                     commands
                         .entity(entity)
-                        .insert(Respawn::from_vec3(transform.translation));
+                        .insert(Respawn::new((
+                            DespawnReason::More(200., AxisName::Y),
+                            DespawnReason::Less(-10., AxisName::Y),
+                            DespawnReason::More(100., AxisName::X),
+                            DespawnReason::Less(-100., AxisName::X),
+                            DespawnReason::More(100., AxisName::Z),
+                            DespawnReason::Less(-100., AxisName::Z)
+                        ),
+                        SpawnPoint::new(transform.translation), 
+                        NoclipDuration::Timer(10.)));
                 }
             }
         }
