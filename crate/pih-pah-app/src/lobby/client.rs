@@ -1,7 +1,7 @@
 use std::net::UdpSocket;
 use std::time::SystemTime;
 
-use crate::character::{spawn_character_shell, spawn_tied_camera, TiedCamera};
+use crate::actor::{spawn_character_shell, spawn_tied_camera, TiedCamera};
 use crate::lobby::{LobbyState, PlayerId};
 use crate::map::MapState;
 use crate::world::{LinkId, Me};
@@ -114,7 +114,6 @@ pub fn client_sync_players(
     mut transport_data: ResMut<TransportDataResource>,
     mut lobby: ResMut<Lobby>,
     mut own_id: ResMut<OwnId>,
-    mut tied_camera_query: Query<&mut Transform, With<TiedCamera>>,
     mut next_state_map: ResMut<NextState<MapState>>,
     lincked_obj_query: Query<(Entity, &LinkId)>,
 ) {
@@ -184,15 +183,10 @@ pub fn client_sync_players(
                     ..Default::default()
                 };
                 // TODO: why transform to default?
-                commands.entity(player_data.entity).insert(transform);
-                if let PlayerId::Client(id) = player_id {
-                    if Some(id) == own_id.0.as_ref() {
-                        if let Ok(mut camera_transform) = tied_camera_query.get_single_mut() {
-                            camera_transform.translation = transform.translation;
-                            camera_transform.rotation = data.tied_camera_rotation;
-                        }
-                    }
-                }
+                commands
+                    .entity(player_data.entity)
+                    .insert(transform)
+                    .insert(data.player_view);
             }
         }
 

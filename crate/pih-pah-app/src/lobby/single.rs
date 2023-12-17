@@ -1,4 +1,4 @@
-use crate::character::{spawn_character, spawn_tied_camera, TiedCamera};
+use crate::actor::{spawn_character, spawn_tied_camera, TiedCamera};
 use crate::component::{DespawnReason, Respawn};
 use crate::lobby::host::generate_player_color;
 use crate::lobby::LobbyState;

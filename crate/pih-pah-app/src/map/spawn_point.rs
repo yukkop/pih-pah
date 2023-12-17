@@ -1,7 +1,7 @@
-use bevy::{ecs::system::Resource, math::Vec3, prelude::Deref};
+use bevy::{ecs::system::Resource, math::Vec3, prelude::Deref, reflect::Reflect};
 use rand::Rng;
 
-#[derive(Debug, Clone, Resource, Deref, Default)]
+#[derive(Debug, Clone, Resource, Deref, Default, Reflect)]
 pub struct SpawnPoint(Vec<Vec3>);
 
 impl SpawnPoint {

@@ -1,7 +1,7 @@
 use std::net::UdpSocket;
 use std::time::SystemTime;
 
-use crate::character::{spawn_character, spawn_tied_camera, TiedCamera};
+use crate::actor::{spawn_character, spawn_tied_camera, TiedCamera};
 use crate::component::{DespawnReason, Respawn};
 use crate::lobby::{LobbyState, PlayerData, PlayerId, ServerMessages, Username};
 use crate::map::{is_loaded, MapState, SpawnPoint};
@@ -24,7 +24,7 @@ use renet::{ConnectionConfig, DefaultChannel, RenetServer, ServerEvent};
 
 use super::{
     ChangeMapLobbyEvent, Character, HostResource, Lobby, MapLoaderState, ObjectTransportData,
-    PlayerInput, PlayerTransportData, PlayerViewDirection, TransportDataResource, PROTOCOL_ID,
+    PlayerInput, PlayerTransportData, PlayerView, TransportDataResource, PROTOCOL_ID,
 };
 
 pub struct HostLobbyPlugins;
@@ -259,7 +259,7 @@ pub fn server_sync_players(
     mut server: ResMut<RenetServer>,
     // TODO a nahooya tut resours, daun
     mut data: ResMut<TransportDataResource>,
-    character_query: Query<(&Position, &Rotation, &PlayerViewDirection, &Character)>,
+    character_query: Query<(&Position, &Rotation, &PlayerView, &Character)>,
     moveble_object_query: Query<(&Transform, &LinkId)>,
 ) {
     let data = &mut data.data;
@@ -269,7 +269,7 @@ pub fn server_sync_players(
             PlayerTransportData {
                 position: position.0,
                 rotation: rotation.0,
-                tied_camera_rotation: view_direction.0,
+                player_view: *view_direction,
             },
         );
     }

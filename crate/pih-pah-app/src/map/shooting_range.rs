@@ -1,5 +1,6 @@
 use crate::{lobby::MapLoaderState, world::PromisedScene};
 use bevy::{pbr::CascadeShadowConfigBuilder, prelude::*};
+use bevy_xpbd_3d::math::PI;
 
 use super::{spawn_point::SpawnPoint, MapState};
 
@@ -26,7 +27,7 @@ fn load(mut commands: Commands, asset_server: Res<AssetServer>) {
             },
             transform: Transform {
                 translation: Vec3::new(0.0, 200.0, 0.0),
-                rotation: Quat::from_rotation_x((-1.0_f32).atan()),
+                rotation: Quat::from_rotation_x(PI * 1.5),
                 ..default()
             },
             cascade_shadow_config: CascadeShadowConfigBuilder {

@@ -1,7 +1,14 @@
+use std::time::Duration;
+
+use bevy::{
+    reflect::Reflect,
+    time::{Timer, TimerMode},
+};
+
 /// An enumeration representing various reasons for despawning an entity.
 ///
 /// The [`DespawnReason`] enum is used to indicate different conditions or events that lead to the despawning of an entity.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Reflect)]
 pub enum DespawnReason {
     /// Indicates that the entity was forcefully despawned. After been removed if object must respawn ([`Respawn`](crate::component::Respawn))
     Forced,
@@ -9,12 +16,36 @@ pub enum DespawnReason {
     More(f32, AxisName),
     /// Specifies that the entity was despawned because it fell below a certain value along a specific axis.
     Less(f32, AxisName),
+    /// Specifies that the entity was despawned after timeout.
+    After(DespawnTimer),
+}
+
+/// A timer used to despawn an entity after a certain amount of time.
+#[derive(Debug, Clone, PartialEq, Reflect)]
+pub struct DespawnTimer(Timer);
+
+impl DespawnTimer {
+    /// Creates a new [`DespawnTimer`] with the specified duration.
+    pub fn new(duration: f32) -> Self {
+        Self(Timer::from_seconds(duration, TimerMode::Repeating))
+    }
+
+    /// Updates the timer.
+    pub fn update(&mut self, delta: Duration) -> &mut Self {
+        self.0.tick(delta);
+        self
+    }
+
+    /// Returns `true` if the timer has finished.
+    pub fn just_finished(&self) -> bool {
+        self.0.just_finished()
+    }
 }
 
 /// An enumeration representing axis names.
 ///
 /// The [`AxisName`] enum is used to specify the names of different axes in 3D space.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Reflect)]
 pub enum AxisName {
     X,
     Y,
