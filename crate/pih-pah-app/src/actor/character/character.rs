@@ -1,5 +1,6 @@
 use std::ops::Add;
 
+use crate::actor::Trace;
 use crate::component::{AxisName, DespawnReason, NoclipDuration, Respawn, DespawnTimer};
 use crate::extend_commands;
 use crate::lobby::Character;
@@ -246,6 +247,7 @@ extend_commands!(
        JumpHelper{last_viable_normal: Vec3::Y},
        GravityDirection::from_xyz(0., -1., 0.),
        CollisionLayers::new([CollisionLayer::Default], [CollisionLayer::Default, CollisionLayer::ActorNoclip]),
+       Trace::new(0.5, 0.1)
      ))
      .insert(Respawn::new(DespawnReason::Less(-10., AxisName::Y), SpawnPoint::new(spawn_point),  NoclipDuration::Timer(10.)))
      .insert(PlayerInput::default())

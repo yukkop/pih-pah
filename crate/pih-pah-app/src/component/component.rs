@@ -114,7 +114,7 @@ impl Respawn {
 }
 
 #[derive(Component, Deref, Reflect)]
-struct Despawn{
+pub struct Despawn{
     /// Reasons for respawning.
     reason: Vec<DespawnReason>,
 }

@@ -1,5 +1,5 @@
 mod character;
-mod trase;
+mod trace;
 
 pub use character::*;
-pub use trase::*;
+pub use trace::*;
