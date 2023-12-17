@@ -210,8 +210,6 @@ fn respawn(
             continue;
         }
 
-        info!("Respawn entity: {:?}", entity);
-        info!("Respawn cords: {:?}", respawn.spawn_point);
         if let NoclipDuration::Timer(val) = respawn.noclip {
             commands
                 .entity(entity)
@@ -246,7 +244,6 @@ fn despawn(
             continue;
         }
 
-        info!("Despawn entity: {:?}", entity);
         commands.entity(entity).despawn_recursive();
     }
 }

@@ -1,6 +1,6 @@
 use std::ops::Add;
 
-use crate::actor::Trace;
+use crate::actor::{Trace, spawn_tracepoint};
 use crate::component::{AxisName, DespawnReason, NoclipDuration, Respawn, DespawnTimer};
 use crate::extend_commands;
 use crate::lobby::Character;
@@ -188,7 +188,7 @@ fn rotate_camera(
 
 ) { 
     let delta_seconds = time.delta_seconds();
-    for (mut view, entity, transform, input,mut ray, hits) in query.iter_mut() {
+    for (mut view, entity, transform, input, ray, hits) in query.iter_mut() {
         // camera turn
         let rotation = Quat::from_rotation_y(
             input.turn_horizontal * SENSITIVITY * delta_seconds
@@ -204,13 +204,16 @@ fn rotate_camera(
 
         // let norm_vec = view_direction.direction.normalize();
         
-        if let (Some(hits), Some(mut ray)) = (hits, ray) {
-            let start_point = transform.rotation.mul_vec3(Vec3::Y * 2.);
-            let offset = view.direction.mul_vec3(DEFAULT_CAMERA_LOCAL_POSITION);
+        if let Some(mut ray) = ray {
+            let h = transform.rotation.conjugate();
+            let start_point = h.mul_vec3(Vec3::Y * 2.);
+            log::info!("{:#?}", DEFAULT_CAMERA_LOCAL_POSITION);
+            let offset = h.mul_vec3(view.direction.mul_vec3(DEFAULT_CAMERA_LOCAL_POSITION));
             ray.origin = start_point;
-            ray.direction = offset; // transform.rotation.mul_vec3(offset);
-            // log::info!("{:#?} {:#?}", ray.global_origin(), ray.global_direction());
-            // for hit in hits.iter() { }
+            ray.direction = offset;
+            log::info!("{:#?} {:#?}", ray.global_origin(), ray.global_origin()+ray.global_direction());
+            commands.spawn_tracepoint(ray.global_origin(), 0.5);
+            commands.spawn_tracepoint(ray.global_origin() + ray.global_direction(), 0.5);
         }
     }
 }
@@ -247,7 +250,6 @@ extend_commands!(
        JumpHelper{last_viable_normal: Vec3::Y},
        GravityDirection::from_xyz(0., -1., 0.),
        CollisionLayers::new([CollisionLayer::Default], [CollisionLayer::Default, CollisionLayer::ActorNoclip]),
-       Trace::new(0.5, 0.1)
      ))
      .insert(Respawn::new(DespawnReason::Less(-10., AxisName::Y), SpawnPoint::new(spawn_point),  NoclipDuration::Timer(10.)))
      .insert(PlayerInput::default())
