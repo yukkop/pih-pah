@@ -22,7 +22,7 @@ const SENSITIVITY: f32 = 0.5;
 const JUMP_HEIGHT_MULTIPLICATOR: f32 = 1.1;
 
 
-const DEFAULT_CAMERA_LOCAL_POSITION: Vec3 = Vec3::new(0.0, 10.0, 15.0);
+const DEFAULT_CAMERA_DISTANCE: f32 = 20.;
 
 #[derive(Component, Debug, Serialize, Deserialize)]
 pub struct TiedCamera(Entity);
@@ -83,15 +83,21 @@ fn gravity_direction(
 }
 
 fn tied_camera_follow(
-    mut tied_camera_query: Query<(&TiedCamera, &mut Transform)>,
+    mut tied_camera_query: Query<(&TiedCamera, &Children, &mut Transform)>,
+    mut camera_query: Query<&mut Transform, (Without<TiedCamera>, With<Camera>)>,
     view_direction_query: Query<&PlayerView, With<Me>>,
-    transform_query: Query<&Transform, Without<TiedCamera>>,
+    transform_query: Query<&Transform, (Without<TiedCamera>, Without<Camera>)>,
 ) {
-    for (TiedCamera(target), mut transform) in tied_camera_query.iter_mut() {
+    for (TiedCamera(target), children, mut transform) in tied_camera_query.iter_mut() {
         if let Ok(target_transform) = transform_query.get(*target) {
             transform.translation = target_transform.translation + Vec3::Y * 2.;
-            if let Ok(view_dirrection) = view_direction_query.get_single() {
-                transform.rotation = view_dirrection.direction;
+            if let Ok(view) = view_direction_query.get_single() {
+                transform.rotation = view.direction;
+                if let Some(child) = children.iter().next() {
+                    if let Ok(mut camera_transform) = camera_query.get_mut(*child) {
+                        camera_transform.translation = view.distance * Vec3::Z;
+                    }
+                }
             }
         } else {
             warn!(
@@ -202,18 +208,20 @@ fn rotate_camera(
         // local rotation (!ORDER OF MULTIPLICATION MATTERS!)
         view.direction *= rotation;
 
-        // let norm_vec = view_direction.direction.normalize();
-        
-        if let Some(mut ray) = ray {
+        view.distance = DEFAULT_CAMERA_DISTANCE;
+        if let (Some(hits), Some(mut ray)) = (hits, ray) {
             let h = transform.rotation.conjugate();
             let start_point = h.mul_vec3(Vec3::Y * 2.);
-            log::info!("{:#?}", DEFAULT_CAMERA_LOCAL_POSITION);
-            let offset = h.mul_vec3(view.direction.mul_vec3(DEFAULT_CAMERA_LOCAL_POSITION));
+            let offset = h.mul_vec3(view.direction.mul_vec3(Vec3::new(0., 0., DEFAULT_CAMERA_DISTANCE))).normalize();
             ray.origin = start_point;
             ray.direction = offset;
-            log::info!("{:#?} {:#?}", ray.global_origin(), ray.global_origin()+ray.global_direction());
-            commands.spawn_tracepoint(ray.global_origin(), 0.5);
-            commands.spawn_tracepoint(ray.global_origin() + ray.global_direction(), 0.5);
+
+
+            if let Some(firs_hit) = hits.iter_sorted().next() {
+                if firs_hit.time_of_impact < DEFAULT_CAMERA_DISTANCE {
+                    view.distance = firs_hit.time_of_impact;    
+                }
+            }
         }
     }
 }
@@ -232,7 +240,7 @@ extend_commands!(
 
       // some raycast magic
     let start_point = Vec3::Y * 2.;
-    let offset = DEFAULT_CAMERA_LOCAL_POSITION;
+    let offset = Vec3::new(0., 0., DEFAULT_CAMERA_DISTANCE);
 
     world
      .entity_mut(entity_id)
@@ -318,7 +326,7 @@ extend_commands!(
         // spawn tied camera
         parent.spawn((
             Camera3dBundle {
-                transform: Transform::from_translation(DEFAULT_CAMERA_LOCAL_POSITION).looking_at(Vec3::ZERO, Vec3::Y),
+                transform: Transform::from_translation(Vec3::new(0., 0., DEFAULT_CAMERA_DISTANCE)).looking_at(Vec3::ZERO, Vec3::Y),
                 ..Default::default()
             },
             MainCamera,
