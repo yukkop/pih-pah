@@ -78,7 +78,10 @@ impl Plugin for DebugUiPlugins {
             .add_event::<DebugMenuEvent>()
             .add_state::<DebugFrameState>()
             .add_state::<DebugState>()
-            .add_state::<DebugMenuState>();
+            .add_state::<DebugMenuState>()
+            .add_systems(
+                Update,
+                (get_window_rect, set_camera_viewport.after(get_window_rect).run_if(in_state(DebugState::Disable))));
         let is_debug = std::env::var("DEBUG").is_ok();
 
         if is_debug {
@@ -105,10 +108,6 @@ impl Plugin for DebugUiPlugins {
                     push_window_menu.run_if(
                         in_state(DebugState::Enable).and_then(in_state(DebugMenuState::Enable)),
                     ),
-                )
-                .add_systems(
-                    OnEnter(DebugState::Disable),
-                    (exit_debug, set_camera_viewport.after(exit_debug)),
                 )
                 .register_type::<Option<Handle<Image>>>()
                 .add_systems(OnEnter(DebugFrameState::Enable), debug_frame_enable)
@@ -226,7 +225,7 @@ fn push_window_menu(
         });
 }
 
-fn exit_debug(mut viewport_rect: ResMut<ViewportRect>, windows: Query<&Window>) {
+fn get_window_rect(mut viewport_rect: ResMut<ViewportRect>, windows: Query<&Window>) {
     let window = windows.single();
     let window_size = egui::vec2(window.width(), window.height());
     viewport_rect.set(egui::Rect::from_min_size(Default::default(), window_size));
