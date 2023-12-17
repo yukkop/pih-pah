@@ -5,7 +5,6 @@ use bevy::ecs::entity::Entity;
 use bevy::ecs::query::With;
 use bevy::ecs::system::{Commands, Query, Res};
 use bevy::hierarchy::DespawnRecursiveExt;
-use bevy::log::info;
 use bevy::prelude::{Component, Deref, DerefMut, Plugin, Vec3};
 use bevy::reflect::Reflect;
 use bevy::time::{Time, Timer};
@@ -114,7 +113,7 @@ impl Respawn {
 }
 
 #[derive(Component, Deref, Reflect)]
-pub struct Despawn{
+pub struct Despawn {
     /// Reasons for respawning.
     reason: Vec<DespawnReason>,
 }
@@ -122,7 +121,9 @@ pub struct Despawn{
 impl Despawn {
     #[allow(dead_code)]
     pub fn new<T: IntoDespawnTypeVec>(reason: T) -> Self {
-        Self{reason: reason.into_despawn_type_vec()}
+        Self {
+            reason: reason.into_despawn_type_vec(),
+        }
     }
 
     /// Adds a new respawn reason to the list of reasons.
@@ -166,16 +167,14 @@ fn noclip_timer(
     }
 }
 
-fn match_reason (
-    reason: &mut Vec<DespawnReason>,
+fn match_reason(
+    reason: &mut [DespawnReason],
     global_translation: &Vec3,
     delta_time: &Duration,
 ) -> bool {
     for reason in reason.iter_mut() {
         if match reason {
-            DespawnReason::Forced => {
-                true
-            },
+            DespawnReason::Forced => true,
             DespawnReason::After(ref mut timer) => timer.update(*delta_time).just_finished(),
             DespawnReason::Less(val, axis) => match axis {
                 AxisName::X => global_translation.x < *val,
@@ -185,7 +184,7 @@ fn match_reason (
             DespawnReason::More(val, axis) => match axis {
                 AxisName::X => global_translation.x > *val,
                 AxisName::Y => global_translation.y > *val,
-                AxisName::Z => global_translation.z > *val
+                AxisName::Z => global_translation.z > *val,
             },
         } {
             return true;
@@ -206,7 +205,11 @@ fn respawn(
     time: Res<Time>,
 ) {
     for (mut respawn, mut transform, global_transform, entity) in respawn_query.iter_mut() {
-        if !match_reason(&mut respawn.reason, &global_transform.translation(), &time.delta()) {
+        if !match_reason(
+            &mut respawn.reason,
+            &global_transform.translation(),
+            &time.delta(),
+        ) {
             continue;
         }
 
@@ -240,7 +243,11 @@ fn despawn(
     time: Res<Time>,
 ) {
     for (mut respawn, global_transform, entity) in despawn_query.iter_mut() {
-        if !match_reason(&mut respawn.reason, &global_transform.translation(), &time.delta()) {
+        if !match_reason(
+            &mut respawn.reason,
+            &global_transform.translation(),
+            &time.delta(),
+        ) {
             continue;
         }
 

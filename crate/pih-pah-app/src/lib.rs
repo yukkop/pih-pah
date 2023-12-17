@@ -1,3 +1,4 @@
+pub mod actor;
 pub mod component;
 pub mod lobby;
 pub mod map;
@@ -6,4 +7,3 @@ pub mod sound;
 pub mod ui;
 pub mod util;
 pub mod world;
-pub mod actor;

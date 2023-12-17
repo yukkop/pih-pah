@@ -204,7 +204,7 @@ pub struct TransportDataResource {
 }
 
 #[derive(Debug, Component, Default, Serialize, Deserialize, Clone, Copy, Reflect)]
-pub struct PlayerView{
+pub struct PlayerView {
     pub direction: Quat,
     pub distance: f32,
 }
@@ -225,8 +225,7 @@ pub struct LobbyPlugins;
 
 impl Plugin for LobbyPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_event::<ChangeMapLobbyEvent>()
+        app.add_event::<ChangeMapLobbyEvent>()
             .add_state::<LobbyState>()
             .add_state::<MapLoaderState>()
             .init_resource::<HostResource>()

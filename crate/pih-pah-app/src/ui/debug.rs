@@ -10,7 +10,6 @@ use bevy_inspector_egui::bevy_inspector::hierarchy::{hierarchy_ui, SelectedEntit
 use bevy_inspector_egui::bevy_inspector::{
     self, ui_for_entities_shared_components, ui_for_entity_with_children,
 };
-use bevy_xpbd_3d::plugins::spatial_query::RayCaster;
 use egui::{Align2, Pos2};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use egui_gizmo::{Gizmo, GizmoMode, GizmoOrientation};
@@ -73,8 +72,7 @@ pub struct DebugUiPlugins;
 
 impl Plugin for DebugUiPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .register_type::<PlayerInput>()
+        app.register_type::<PlayerInput>()
             .register_type::<PlayerView>()
             .register_type::<Respawn>()
             .add_event::<DebugMenuEvent>()

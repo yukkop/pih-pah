@@ -1,6 +1,9 @@
 use std::time::Duration;
 
-use bevy::{time::{Timer, TimerMode}, reflect::Reflect};
+use bevy::{
+    reflect::Reflect,
+    time::{Timer, TimerMode},
+};
 
 /// An enumeration representing various reasons for despawning an entity.
 ///
@@ -37,7 +40,6 @@ impl DespawnTimer {
     pub fn just_finished(&self) -> bool {
         self.0.just_finished()
     }
-    
 }
 
 /// An enumeration representing axis names.

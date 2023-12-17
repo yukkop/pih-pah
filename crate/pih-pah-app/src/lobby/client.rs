@@ -183,7 +183,8 @@ pub fn client_sync_players(
                     ..Default::default()
                 };
                 // TODO: why transform to default?
-                commands.entity(player_data.entity)
+                commands
+                    .entity(player_data.entity)
                     .insert(transform)
                     .insert(data.player_view);
             }

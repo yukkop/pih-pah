@@ -1,14 +1,10 @@
-use std::ops::Add;
-
-use crate::actor::{Trace, spawn_tracepoint};
-use crate::component::{AxisName, DespawnReason, NoclipDuration, Respawn, DespawnTimer};
+use crate::component::{AxisName, DespawnReason, NoclipDuration, Respawn};
 use crate::extend_commands;
 use crate::lobby::Character;
 use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerView};
 use crate::map::SpawnPoint;
 use crate::ui::MainCamera;
 use crate::world::{CollisionLayer, Me};
-use bevy::transform::{self, commands};
 use bevy::{ecs::system::EntityCommands, prelude::*};
 use bevy_xpbd_3d::math::PI;
 use bevy_xpbd_3d::parry::na::ComplexField;
@@ -20,7 +16,6 @@ pub const PLAYER_SIZE: f32 = 2.0;
 const SHIFT_ACCELERATION: f32 = 2.0;
 const SENSITIVITY: f32 = 0.5;
 const JUMP_HEIGHT_MULTIPLICATOR: f32 = 1.1;
-
 
 const DEFAULT_CAMERA_DISTANCE: f32 = 20.;
 
@@ -61,13 +56,7 @@ impl Plugin for CharacterPlugins {
     }
 }
 
-fn gravity_direction(
-    mut query: Query<(
-        &mut GravityDirection,
-        &mut PlayerView,
-        &PlayerInput,
-    )>,
-) {
+fn gravity_direction(mut query: Query<(&mut GravityDirection, &mut PlayerView, &PlayerInput)>) {
     for (mut direction_resource, mut view_direction, player_input) in query.iter_mut() {
         if player_input.special {
             // change gravity direction
@@ -153,8 +142,7 @@ fn jump(
                 .next()
                 .is_some()
         {
-            **linear_velocity +=
-                ((jump_direction.last_viable_normal + local_x * dx + local_y * dy)
+            **linear_velocity += ((jump_direction.last_viable_normal + local_x * dx + local_y * dy)
                     .normalize_or_zero())
                     * (-gravity.0.y * 2.0 * PLAYER_SIZE).sqrt() // sqrt(2gh)
                     * JUMP_HEIGHT_MULTIPLICATOR;
@@ -187,24 +175,25 @@ fn move_characters(
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn rotate_camera(
-    mut commands: Commands,
-    mut query: Query<(&mut PlayerView, Entity, &Transform, &PlayerInput, Option<&mut RayCaster>, Option<&RayHits>)>,
+    mut query: Query<(
+        &mut PlayerView,
+        &Transform,
+        &PlayerInput,
+        Option<&mut RayCaster>,
+        Option<&RayHits>,
+    )>,
     time: Res<Time>,
-
-) { 
+) {
     let delta_seconds = time.delta_seconds();
-    for (mut view, entity, transform, input, ray, hits) in query.iter_mut() {
+    for (mut view, transform, input, ray, hits) in query.iter_mut() {
         // camera turn
-        let rotation = Quat::from_rotation_y(
-            input.turn_horizontal * SENSITIVITY * delta_seconds
-        );
+        let rotation = Quat::from_rotation_y(input.turn_horizontal * SENSITIVITY * delta_seconds);
         // global rotation (!ORDER OF MULTIPLICATION MATTERS!)
         view.direction = rotation * view.direction;
 
-        let rotation = Quat::from_rotation_x(
-            input.turn_vertical * SENSITIVITY * delta_seconds
-        );
+        let rotation = Quat::from_rotation_x(input.turn_vertical * SENSITIVITY * delta_seconds);
         // local rotation (!ORDER OF MULTIPLICATION MATTERS!)
         view.direction *= rotation;
 
@@ -212,14 +201,18 @@ fn rotate_camera(
         if let (Some(hits), Some(mut ray)) = (hits, ray) {
             let h = transform.rotation.conjugate();
             let start_point = h.mul_vec3(Vec3::Y * 2.);
-            let offset = h.mul_vec3(view.direction.mul_vec3(Vec3::new(0., 0., DEFAULT_CAMERA_DISTANCE))).normalize();
+            let offset = h
+                .mul_vec3(
+                    view.direction
+                        .mul_vec3(Vec3::new(0., 0., DEFAULT_CAMERA_DISTANCE)),
+                )
+                .normalize();
             ray.origin = start_point;
             ray.direction = offset;
 
-
             if let Some(firs_hit) = hits.iter_sorted().next() {
                 if firs_hit.time_of_impact < DEFAULT_CAMERA_DISTANCE {
-                    view.distance = firs_hit.time_of_impact;    
+                    view.distance = firs_hit.time_of_impact;
                 }
             }
         }
