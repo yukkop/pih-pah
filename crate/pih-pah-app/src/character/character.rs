@@ -42,7 +42,7 @@ impl Plugin for CharacterPlugins {
         )
         .add_systems(
             Update,
-            (jump, rotate_camera, gravity_direction, shoot).run_if(
+            (jump, rotate_camera, gravity_direction, fire).run_if(
                 not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
             ),
         )
@@ -178,13 +178,14 @@ fn move_characters(
     }
 }
 
-fn shoot(
+fn fire(
     mut commands: Commands,
-    mut query: Query<(&PlayerInput, &PlayerView, &Transform)>,
+    mut query: Query<(&mut PlayerInput, &PlayerView, &Transform)>,
 ) {
-    for (input, view, transform) in query.iter_mut() {
+    for (mut input, view, transform) in query.iter_mut() {
         if input.fire {
             let random_i32 = rand::random::<i32>();
+                    info!("shoot {}", random_i32);
             let color = generate_player_color(random_i32 as u32);
             commands.spawn_projectile(Projectile {
                 position: transform.translation + Vec3::Y * 2.,
@@ -193,6 +194,7 @@ fn shoot(
                 mass: 1.,
                 color,
             });
+            input.fire = false;
         }
     }
 }
@@ -286,14 +288,15 @@ extend_commands!(
             NoclipDuration::Timer(10.)),
             PlayerInput::default(),
             Character { id: player_id },
-            PlayerView::new(Quat::default(), 325.0.sqrt())
+            PlayerView::new(Quat::default(), 325.0.sqrt()),
+            Name::new(format!("Character:{:#?}", player_id)),
         ));
   }
 );
 
 extend_commands!(
-  spawn_character_shell(color: Color, spawn_point: Vec3),
-  |world: &mut World, entity_id: Entity, color: Color, spawn_point: Vec3| {
+  spawn_character_shell(player_id: PlayerId, color: Color, spawn_point: Vec3),
+  |world: &mut World, entity_id: Entity, player_id: PlayerId, color: Color, spawn_point: Vec3| {
 
     let mesh = world
       .resource_mut::<Assets<Mesh>>()
@@ -318,6 +321,7 @@ extend_commands!(
        },
         TransformOptimalTrace::new(0.5, 0.05, color, PLAYER_SIZE / 2.),
         PlayerInput::default(),
+        Name::new(format!("Character:{:#?}", player_id)),
         PlayerView::new(Quat::default(), 325.0.sqrt())));
   }
 );

@@ -5,7 +5,7 @@ use crate::actor::{spawn_projectile_shell, ProjectileShell, UnloadActorsEvent};
 use crate::character::{TiedCamera, spawn_character_shell, spawn_tied_camera};
 use crate::lobby::{LobbyState, PlayerId};
 use crate::map::MapState;
-use crate::world::{LinkId, Me};
+use crate::world::{LinkId, Me, input};
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
 use bevy::ecs::event::EventWriter;
@@ -37,7 +37,7 @@ impl Plugin for ClientLobbyPlugins {
             .add_systems(OnEnter(LobbyState::Client), (setup, new_renet_client))
             .add_systems(
                 Update,
-                (client_send_input, client_sync_players)
+                (client_send_input, client_sync_players).after(input)
                     .run_if(in_state(LobbyState::Client).and_then(bevy_renet::client_connected())),
             )
             .add_systems(OnExit(LobbyState::Client), teardown);
@@ -144,19 +144,17 @@ pub fn client_sync_players(
                 color,
                 username,
             } => {
-                let name = "noname";
-
-                let player_entity = commands.spawn_character_shell(color, Vec3::ZERO).id();
+                let player_entity = commands.spawn_character_shell(player_id, color, Vec3::ZERO).id();
                 if let PlayerId::Client(id) = player_id {
                     if Some(id) == own_id.0 {
                         commands.entity(player_entity).insert(Me);
                         commands.spawn_tied_camera(player_entity);
-                        log::info!("{name} ({id}), welcome.");
+                        log::info!("{username} ({id}), welcome.");
                     } else {
-                        log::info!("Player {} ({}) connected.", name, id);
+                        log::info!("Player {} ({}) connected.", username, id);
                     }
                 } else {
-                    log::info!("Host {} ({:?}).", name, player_id);
+                    log::info!("Host {} ({:?}).", username, player_id);
                 }
 
                 lobby.players.insert(

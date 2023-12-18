@@ -72,6 +72,7 @@ impl Plugin for WorldPlugins {
         app
         .init_resource::<ProjectileIdSeq>()
         .register_type::<ProjectileIdSeq>()
+        .add_systems(Update, input)
         .add_plugins((
             SettingsPlugins,
             SoundPlugins,
@@ -82,7 +83,6 @@ impl Plugin for WorldPlugins {
             ComponentPlugins,
             CharacterPlugins,
         ))
-        .add_systems(Update, input)
         .add_systems(
             Update,
             process_scene.run_if(
@@ -101,7 +101,7 @@ pub struct Me;
 
 /// Processes the input keys and manages them from a resource or event deep in the program.
 #[allow(clippy::too_many_arguments)]
-fn input( keyboard_input: Res<Input<KeyCode>>,
+pub fn input( keyboard_input: Res<Input<KeyCode>>,
     mut next_state_debug_frame: ResMut<NextState<DebugFrameState>>,
     debug_frame_state: Res<State<DebugFrameState>>,
     mut next_state_debug: ResMut<NextState<DebugState>>,

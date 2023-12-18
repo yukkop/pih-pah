@@ -7,7 +7,7 @@ use crate::component::{DespawnReason, Respawn};
 use crate::lobby::{LobbyState, PlayerData, PlayerId, ServerMessages, Username};
 use crate::map::{is_loaded, MapState, SpawnPoint};
 use crate::world::{LinkId, Me};
-use bevy::app::{App, Plugin, Update};
+use bevy::app::{App, Plugin, PreUpdate};
 use bevy::ecs::entity::Entity;
 use bevy::ecs::event::{EventReader, EventWriter, Event};
 use bevy::ecs::query::With;
@@ -43,13 +43,13 @@ impl Plugin for HostLobbyPlugins {
             .add_plugins((RenetServerPlugin, NetcodeServerPlugin))
             .add_systems(OnEnter(LobbyState::Host), setup)
             .add_systems(
-                Update,
+                PreUpdate,
                 (server_update_system, send_change_map, server_sync_actor, spawn_projectile, despawn_actor)
                     .run_if(in_state(LobbyState::Host)),
             )
             .add_systems(OnExit(LobbyState::Host), teardown)
             .add_systems(
-                Update,
+                PreUpdate,
                 load_processing
                     .run_if(in_state(LobbyState::Host).and_then(in_state(MapLoaderState::No))),
             );
@@ -284,6 +284,7 @@ pub fn server_update_system(
         {
             let player_input: PlayerInput = bincode::deserialize(&message).unwrap();
             if let Some(player_data) = lobby.players.get(&PlayerId::Client(client_id)) {
+
                 commands.entity(player_data.entity).insert(player_input);
             }
         }
