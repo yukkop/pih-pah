@@ -73,7 +73,7 @@ pub enum ServerMessages {
     ///
     /// * `id` - Unique identifier for the player who has disconnected.
     PlayerDisconnected { id: PlayerId },
-    ProjectileSpawn { id: LinkId },
+    ProjectileSpawn { id: LinkId, color: Color },
     ActorDespawn { id: LinkId },
 }
 

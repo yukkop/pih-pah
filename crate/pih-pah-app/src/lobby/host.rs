@@ -31,7 +31,7 @@ use super::{
 #[derive(Debug, Event)]
 pub struct DespawnActorEvent(pub LinkId);
 #[derive(Debug, Event)]
-pub struct SpawnProjectileEvent(pub LinkId);
+pub struct SpawnProjectileEvent(pub LinkId, pub Color);
 
 pub struct HostLobbyPlugins;
 
@@ -60,8 +60,8 @@ pub fn spawn_projectile(
     mut event_reader: EventReader<SpawnProjectileEvent>,
     mut server: ResMut<RenetServer>,
 ) {
-    for SpawnProjectileEvent(link_id) in event_reader.read() {
-        let message = bincode::serialize(&ServerMessages::ProjectileSpawn { id: link_id.clone() }).unwrap();
+    for SpawnProjectileEvent(link_id, color) in event_reader.read() {
+        let message = bincode::serialize(&ServerMessages::ProjectileSpawn { id: link_id.clone(), color: *color }).unwrap();
         server.broadcast_message(DefaultChannel::ReliableOrdered, message);
     }
 }

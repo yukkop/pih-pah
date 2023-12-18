@@ -15,7 +15,6 @@ use bevy::ecs::system::{Query, Res, ResMut, Resource};
 use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::math::Vec3;
 use bevy::prelude::{in_state, Commands, IntoSystemConfigs, OnEnter};
-use bevy::render::color::Color;
 use bevy::transform::components::Transform;
 use bevy_renet::transport::NetcodeClientPlugin;
 use bevy_renet::RenetClientPlugin;
@@ -177,8 +176,8 @@ pub fn client_sync_players(
                     commands.entity(player_data.entity).despawn();
                 }
             }
-            ServerMessages::ProjectileSpawn { id } => {
-                commands.spawn_projectile_shell(ProjectileShell {color: Color::RED, id});
+            ServerMessages::ProjectileSpawn { id, color } => {
+                commands.spawn_projectile_shell(ProjectileShell {color, id});
             }
             ServerMessages::ActorDespawn { id } => {
                 for (entity, link_id) in lincked_obj_query.iter() {

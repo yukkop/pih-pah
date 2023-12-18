@@ -25,13 +25,14 @@ pub struct ProjectileShell{
     pub id: LinkId,
 }
 
+const SIZE: f32 = 0.3;
+
 extend_commands!(
     spawn_projectile(projectile: Projectile),
     |world: &mut World, entity_id: Entity, projectile: Projectile| {
-        let size = 0.5;
         let mesh = world
             .resource_mut::<Assets<Mesh>>()
-            .add(Mesh::try_from(shape::Cube { size }).unwrap());
+            .add(Mesh::try_from(shape::Cube { size: SIZE }).unwrap());
         let material = world
             .resource_mut::<Assets<StandardMaterial>>()
             .add(StandardMaterial {
@@ -49,9 +50,9 @@ extend_commands!(
                 ..default()
             },
             PhysicsBundle::from_rigid_body(RigidBody::Dynamic),
-            Collider::cuboid(size, size, size),
+            Collider::cuboid(SIZE, SIZE, SIZE),
             Despawn::new((
-                // DespawnReason::More(200., AxisName::Y),
+                DespawnReason::More(200., AxisName::Y),
                 DespawnReason::Less(-10., AxisName::Y),
                 DespawnReason::More(100., AxisName::X),
                 DespawnReason::Less(-100., AxisName::X),
@@ -66,17 +67,16 @@ extend_commands!(
             link_id.clone(),
         ));
 
-        world.send_event(SpawnProjectileEvent(link_id));
+        world.send_event(SpawnProjectileEvent(link_id, projectile.color));
     }
 );
 
 extend_commands!(
     spawn_projectile_shell(projectile: ProjectileShell),
     |world: &mut World, entity_id: Entity, projectile: ProjectileShell| {
-        let size = 0.3;
         let mesh = world
             .resource_mut::<Assets<Mesh>>()
-            .add(Mesh::try_from(shape::Cube { size }).unwrap());
+            .add(Mesh::try_from(shape::Cube { size: SIZE }).unwrap());
         let material = world
             .resource_mut::<Assets<StandardMaterial>>()
             .add(StandardMaterial {
