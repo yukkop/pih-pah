@@ -81,7 +81,7 @@ impl Plugin for DebugUiPlugins {
             .add_state::<DebugMenuState>()
             .add_systems(
                 Update,
-                (get_window_rect, set_camera_viewport.after(get_window_rect).run_if(in_state(DebugState::Disable))));
+                (get_window_rect, set_camera_viewport.after(get_window_rect)).run_if(in_state(DebugState::Disable)));
 
         #[cfg(debug_assertions)]
         {
