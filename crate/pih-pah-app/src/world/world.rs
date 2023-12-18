@@ -228,19 +228,13 @@ fn process_scene_child(
                             let collider = Collider::trimesh_from_mesh(mesh).unwrap();
                             commands
                                 .entity(entity)
-                                .insert(collider)
-                                .insert(CollisionLayers::new(
-                                    [CollisionLayer::Default],
-                                    [CollisionLayer::Default, CollisionLayer::ActorNoclip],
-                                ));
+                                .insert(collider);
 
                             if val == "d" {
-                                let mut commands_entity = commands.entity(entity);
-                                commands_entity.insert(PhysicsBundle::from_rigid_body(RigidBody::Dynamic));
+                                commands.entity(entity).insert(PhysicsBundle::from_rigid_body(RigidBody::Dynamic));
                             }
                             if val == "s" {
-                                let mut commands_entity = commands.entity(entity);
-                                commands_entity.insert(PhysicsBundle::from_rigid_body(RigidBody::Static));
+                                commands.entity(entity).insert(PhysicsBundle::from_rigid_body(RigidBody::Static));
                             }
                         }
                     } else if name == "id" {

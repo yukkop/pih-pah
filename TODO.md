@@ -15,11 +15,11 @@
     [ ] sensetivity
 [ ] nickname above character
 [ ] projectile
-    [ ] collision
-    [ ] speed
-    [ ] lifetime
-    [ ] ballistics
-    [ ] spawn point
+    [x] collision
+    [x] speed
+    [x] lifetime
+    [x] ballistics
+    [x] spawn point
     [ ] spawn delay
     [ ] spawn sound
 [ ] terrain
@@ -47,4 +47,5 @@
 [ ] intuitiv mouse position in game menu (I mean that mouse position in game menu shold be on last position or in center of screen) 
 [ ] if open game menu during camera movement it will be spin ever
 [x] viewport size do not update after window size hase been changed
-[x] Game menu do not use debug viewport for size
+[x] game menu do not use debug viewport for size
+[x] gravity layers broken
