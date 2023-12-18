@@ -1,7 +1,8 @@
 use std::net::UdpSocket;
 use std::time::SystemTime;
 
-use crate::actor::{spawn_character, spawn_tied_camera, TiedCamera};
+use crate::actor::UnloadActorsEvent;
+use crate::character::{TiedCamera, spawn_character, spawn_tied_camera};
 use crate::component::{DespawnReason, Respawn};
 use crate::lobby::{LobbyState, PlayerData, PlayerId, ServerMessages, Username};
 use crate::map::{is_loaded, MapState, SpawnPoint};
@@ -158,11 +159,14 @@ pub fn send_change_map(
     mut change_map_event: EventReader<ChangeMapLobbyEvent>,
     mut server: ResMut<RenetServer>,
     mut next_state_map: ResMut<NextState<MapState>>,
+    mut unload_actors_event: EventWriter<UnloadActorsEvent>,
 ) {
     for ChangeMapLobbyEvent(state) in change_map_event.read() {
         next_state_map.set(*state);
         let message = bincode::serialize(&ServerMessages::ChangeMap { map_state: *state }).unwrap();
         server.broadcast_message(DefaultChannel::ReliableOrdered, message);
+
+        unload_actors_event.send(UnloadActorsEvent);
     }
 }
 
@@ -170,6 +174,7 @@ fn teardown(
     mut commands: Commands,
     tied_camera_query: Query<Entity, With<TiedCamera>>,
     char_query: Query<Entity, With<PlayerInput>>,
+    mut unload_actors_event: EventWriter<UnloadActorsEvent>,
 ) {
     for entity in tied_camera_query.iter() {
         commands.entity(entity).despawn_recursive();
@@ -179,6 +184,8 @@ fn teardown(
     }
     commands.remove_resource::<Lobby>();
     commands.remove_resource::<TransportDataResource>();
+    
+    unload_actors_event.send(UnloadActorsEvent);
 }
 
 pub fn generate_player_color(player_number: u32) -> Color {

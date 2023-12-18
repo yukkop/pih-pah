@@ -228,7 +228,8 @@ pub struct LobbyPlugins;
 
 impl Plugin for LobbyPlugins {
     fn build(&self, app: &mut App) {
-        app.add_event::<ChangeMapLobbyEvent>()
+        app
+            .add_event::<ChangeMapLobbyEvent>()
             .add_state::<LobbyState>()
             .add_state::<MapLoaderState>()
             .init_resource::<HostResource>()

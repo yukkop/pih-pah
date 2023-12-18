@@ -1,4 +1,5 @@
-use crate::actor::{spawn_character, spawn_tied_camera, TiedCamera};
+use crate::actor::UnloadActorsEvent;
+use crate::character::{spawn_character, spawn_tied_camera, TiedCamera};
 use crate::component::{DespawnReason, Respawn};
 use crate::lobby::host::generate_player_color;
 use crate::lobby::LobbyState;
@@ -6,7 +7,7 @@ use crate::map::{is_loaded, MapState, SpawnPoint};
 use crate::world::Me;
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
-use bevy::ecs::event::{EventReader, Events};
+use bevy::ecs::event::{EventReader, Events, EventWriter};
 use bevy::ecs::query::With;
 use bevy::ecs::schedule::{Condition, NextState, OnExit};
 use bevy::ecs::system::{Query, Res, ResMut};
@@ -26,7 +27,7 @@ impl Plugin for SingleLobbyPlugins {
                 load_processing
                     .run_if(in_state(LobbyState::Single).and_then(in_state(MapLoaderState::No))),
             )
-            .add_systems(Update, send_change_map.run_if(in_state(LobbyState::Single)))
+            .add_systems(Update, change_map.run_if(in_state(LobbyState::Single)))
             .add_systems(OnExit(LobbyState::Single), teardown);
     }
 }
@@ -65,12 +66,15 @@ pub fn load_processing(
     }
 }
 
-pub fn send_change_map(
+pub fn change_map(
     mut change_map_event: EventReader<ChangeMapLobbyEvent>,
     mut next_state_map: ResMut<NextState<MapState>>,
+    mut unload_actors_event: EventWriter<UnloadActorsEvent>,
 ) {
     for ChangeMapLobbyEvent(state) in change_map_event.read() {
         next_state_map.set(*state);
+
+        unload_actors_event.send(UnloadActorsEvent);
     }
 }
 
@@ -78,6 +82,7 @@ fn teardown(
     mut commands: Commands,
     tied_camera_query: Query<Entity, With<TiedCamera>>,
     char_query: Query<Entity, With<PlayerInput>>,
+    mut unload_actors_event: EventWriter<UnloadActorsEvent>,
 ) {
     if let Ok(entity) = tied_camera_query.get_single() {
         commands.entity(entity).despawn_recursive();
@@ -85,4 +90,6 @@ fn teardown(
     if let Ok(entity) = char_query.get_single() {
         commands.entity(entity).despawn_recursive();
     }
+
+    unload_actors_event.send(UnloadActorsEvent);
 }

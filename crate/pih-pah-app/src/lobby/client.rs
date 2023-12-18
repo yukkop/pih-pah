@@ -1,12 +1,14 @@
 use std::net::UdpSocket;
 use std::time::SystemTime;
 
-use crate::actor::{spawn_character_shell, spawn_tied_camera, TiedCamera, spawn_projectile_shell, ProjectileShell};
+use crate::actor::{spawn_projectile_shell, ProjectileShell, UnloadActorsEvent};
+use crate::character::{TiedCamera, spawn_character_shell, spawn_tied_camera};
 use crate::lobby::{LobbyState, PlayerId};
 use crate::map::MapState;
 use crate::world::{LinkId, Me};
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
+use bevy::ecs::event::EventWriter;
 use bevy::ecs::query::With;
 use bevy::ecs::schedule::{Condition, NextState, OnExit};
 use bevy::ecs::system::{Query, Res, ResMut, Resource};
@@ -96,6 +98,7 @@ fn teardown(
     mut commands: Commands,
     tied_camera_query: Query<Entity, With<TiedCamera>>,
     char_query: Query<Entity, With<PlayerInput>>,
+    mut unload_actors_event: EventWriter<UnloadActorsEvent>,
 ) {
     for entity in tied_camera_query.iter() {
         commands.entity(entity).despawn_recursive();
@@ -106,6 +109,8 @@ fn teardown(
     commands.remove_resource::<Lobby>();
     commands.remove_resource::<OwnId>();
     commands.remove_resource::<TransportDataResource>();
+
+    unload_actors_event.send(UnloadActorsEvent);
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -117,6 +122,7 @@ pub fn client_sync_players(
     mut own_id: ResMut<OwnId>,
     mut next_state_map: ResMut<NextState<MapState>>,
     lincked_obj_query: Query<(Entity, &LinkId)>,
+    mut unload_actors_event: EventWriter<UnloadActorsEvent>,
 ) {
     // player existence manager
     while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
@@ -132,6 +138,7 @@ pub fn client_sync_players(
             }
             ServerMessages::ChangeMap { map_state } => {
                 next_state_map.set(map_state);
+                unload_actors_event.send(UnloadActorsEvent);
             }
             ServerMessages::PlayerConnected {
                 id: player_id,

@@ -1,5 +1,6 @@
 use crate::actor::physics_bundle::PhysicsBundle;
-use crate::actor::{CharacterPlugins, TracePlugins, ActorPlugins};
+use crate::actor::ActorPlugins;
+use crate::character::CharacterPlugins;
 use crate::component::{ComponentPlugins, Respawn, DespawnReason, AxisName, NoclipDuration};
 use crate::lobby::{LobbyPlugins, LobbyState, PlayerInput};
 use crate::map::{MapPlugins, SpawnPoint};
@@ -79,6 +80,7 @@ impl Plugin for WorldPlugins {
             LobbyPlugins,
             ActorPlugins,   
             ComponentPlugins,
+            CharacterPlugins,
         ))
         .add_systems(Update, input)
         .add_systems(
