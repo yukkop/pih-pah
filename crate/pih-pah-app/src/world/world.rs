@@ -11,7 +11,7 @@ use crate::ui::{DebugFrameState, DebugMenuEvent, DebugState};
 use crate::ui::{MouseGrabState, UiPlugins, UiState};
 use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
-use bevy_xpbd_3d::components::{CollisionLayers, Mass};
+use bevy_xpbd_3d::components::Mass;
 use bevy_xpbd_3d::prelude::{Collider, PhysicsLayer, RigidBody};
 use serde::{Deserialize, Serialize};
 

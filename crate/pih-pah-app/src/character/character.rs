@@ -1,5 +1,5 @@
 use crate::actor::physics_bundle::PhysicsBundle;
-use crate::actor::{Projectile, spawn_projectile, Trace};
+use crate::actor::{Projectile, spawn_projectile, PhysicsOptimalTrace, TransformOptimalTrace};
 use crate::component::{AxisName, DespawnReason, NoclipDuration, Respawn};
 use crate::extend_commands;
 use crate::lobby::Character;
@@ -272,7 +272,7 @@ extend_commands!(
             Position::from_xyz(spawn_point.x, spawn_point.y, spawn_point.z),
             Collider::cuboid(PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE),
             JumpHelper{last_viable_normal: Vec3::Y},
-            Trace::new(0.2, 0.005, color),
+            PhysicsOptimalTrace::new(0.5, 0.05, color, PLAYER_SIZE / 2.),
             GravityDirection::from_xyz(0., -1., 0.),
             Respawn::new((
                 DespawnReason::More(200., AxisName::Y),
@@ -316,10 +316,9 @@ extend_commands!(
           transform: Transform::from_xyz(spawn_point.x, spawn_point.y, spawn_point.z),
           ..Default::default()
        },
-       Trace::new(0.2, 0.005, color),
-     ))
-     .insert(PlayerInput::default())
-     .insert(PlayerView::new(Quat::default(), 325.0.sqrt()));
+        TransformOptimalTrace::new(0.5, 0.05, color, PLAYER_SIZE / 2.),
+        PlayerInput::default(),
+        PlayerView::new(Quat::default(), 325.0.sqrt())));
   }
 );
 

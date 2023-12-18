@@ -8,7 +8,7 @@ use crate::{
     extend_commands, world::{ProjectileIdSeq, LinkId}, lobby::host::SpawnProjectileEvent,
 };
 
-use super::{Trace, physics_bundle::PhysicsBundle, Actor};
+use super::{Trace, physics_bundle::PhysicsBundle, Actor, PhysicsOptimalTrace, TransformOptimalTrace};
 
 #[derive(Default, Serialize, Deserialize)]
 pub struct Projectile{
@@ -25,7 +25,7 @@ pub struct ProjectileShell{
     pub id: LinkId,
 }
 
-const SIZE: f32 = 0.3;
+const SIZE: f32 = 0.5;
 
 extend_commands!(
     spawn_projectile(projectile: Projectile),
@@ -59,7 +59,7 @@ extend_commands!(
                 DespawnReason::More(100., AxisName::Z),
                 DespawnReason::Less(-100., AxisName::Z),
             )),
-            Trace::new(0.2, 0.005, projectile.color),
+            PhysicsOptimalTrace::new(0.2, 0.005, projectile.color, SIZE / 2.),
             LinearVelocity::from(projectile.direction * projectile.power),
             Mass(projectile.mass),
             GravityDirection::new(Vec3::Y * -0.2),
@@ -93,6 +93,7 @@ extend_commands!(
             Trace::new(0.5, 0.05, projectile.color),
             projectile.id,
             Actor,
+            TransformOptimalTrace::new(0.2, 0.005, projectile.color, SIZE / 2.),
         ));
     }
 );
