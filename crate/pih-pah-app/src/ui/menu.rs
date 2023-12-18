@@ -198,7 +198,7 @@ fn multiplayer_window(
                     {
                         nex_state_mouse_grab.set(MouseGrabState::Enable);
                         host_resource.address =
-                            Some(format!("127.0.0.1:{}", state.host_port.clone()));
+                            Some(format!("0.0.0.0:{}", state.host_port.clone()));
                         host_resource.username = Some(state.username.clone());
                         next_state_menu_window.set(WindowState::None);
                         next_state_ui.set(UiState::GameMenu);
