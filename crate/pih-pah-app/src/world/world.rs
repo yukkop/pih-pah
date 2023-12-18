@@ -1,3 +1,4 @@
+use crate::actor::physics_bundle::PhysicsBundle;
 use crate::actor::{CharacterPlugins, TracePlugins, ActorPlugins};
 use crate::component::{ComponentPlugins, Respawn, DespawnReason, AxisName, NoclipDuration};
 use crate::lobby::{LobbyPlugins, LobbyState, PlayerInput};
@@ -233,11 +234,11 @@ fn process_scene_child(
 
                             if val == "d" {
                                 let mut commands_entity = commands.entity(entity);
-                                commands_entity.insert(RigidBody::Dynamic);
+                                commands_entity.insert(PhysicsBundle::from_rigid_body(RigidBody::Dynamic));
                             }
                             if val == "s" {
                                 let mut commands_entity = commands.entity(entity);
-                                commands_entity.insert(RigidBody::Static);
+                                commands_entity.insert(PhysicsBundle::from_rigid_body(RigidBody::Static));
                             }
                         }
                     } else if name == "id" {

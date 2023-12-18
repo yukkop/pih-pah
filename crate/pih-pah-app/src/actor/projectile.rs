@@ -1,14 +1,14 @@
 use bevy::prelude::*;
-use bevy_xpbd_3d::components::{LinearVelocity, Mass, RigidBody, Collider, CollisionLayers, GravityDirection};
+use bevy_xpbd_3d::components::{LinearVelocity, Mass, RigidBody, Collider, GravityDirection};
 use serde::{Serialize, Deserialize};
 use bevy::ecs::system::EntityCommands;
 
 use crate::{
     component::{Despawn, DespawnReason, AxisName},
-    extend_commands, world::{CollisionLayer, ProjectileIdSeq, LinkId}, lobby::host::SpawnProjectileEvent,
+    extend_commands, world::{ProjectileIdSeq, LinkId}, lobby::host::SpawnProjectileEvent,
 };
 
-use super::Trace;
+use super::{Trace, physics_bundle::PhysicsBundle};
 
 #[derive(Default, Serialize, Deserialize)]
 pub struct Projectile{
@@ -28,7 +28,7 @@ pub struct ProjectileShell{
 extend_commands!(
     spawn_projectile(projectile: Projectile),
     |world: &mut World, entity_id: Entity, projectile: Projectile| {
-        let size = 0.3;
+        let size = 0.5;
         let mesh = world
             .resource_mut::<Assets<Mesh>>()
             .add(Mesh::try_from(shape::Cube { size }).unwrap());
@@ -48,7 +48,7 @@ extend_commands!(
                 transform: Transform::from_translation(projectile.position),
                 ..default()
             },
-            RigidBody::Dynamic,
+            PhysicsBundle::from_rigid_body(RigidBody::Dynamic),
             Collider::cuboid(size, size, size),
             Despawn::new((
                 // DespawnReason::More(200., AxisName::Y),
@@ -62,7 +62,6 @@ extend_commands!(
             LinearVelocity::from(projectile.direction * projectile.power),
             Mass(projectile.mass),
             GravityDirection::new(Vec3::Y * -0.2),
-            CollisionLayers::new([CollisionLayer::Default], [CollisionLayer::Default, CollisionLayer::ActorNoclip]),
             link_id.clone(),
         ));
 
@@ -90,7 +89,7 @@ extend_commands!(
                 material: material,
                 ..default()
             },
-            Trace::new(0.2, 0.005, projectile.color),
+            Trace::new(0.5, 0.05, projectile.color),
             projectile.id,
         ));
     }

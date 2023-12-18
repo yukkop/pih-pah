@@ -1,4 +1,5 @@
-use crate::actor::{Projectile, spawn_projectile, spawn_projectile_shell, Trace};
+use crate::actor::physics_bundle::PhysicsBundle;
+use crate::actor::{Projectile, spawn_projectile, Trace};
 use crate::component::{AxisName, DespawnReason, NoclipDuration, Respawn};
 use crate::extend_commands;
 use crate::lobby::Character;
@@ -6,7 +7,7 @@ use crate::lobby::host::generate_player_color;
 use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerView};
 use crate::map::SpawnPoint;
 use crate::ui::MainCamera;
-use crate::world::{CollisionLayer, Me};
+use crate::world::Me;
 use bevy::{ecs::system::EntityCommands, prelude::*};
 use bevy_xpbd_3d::math::PI;
 use bevy_xpbd_3d::parry::na::ComplexField;
@@ -258,36 +259,35 @@ extend_commands!(
     let offset = Vec3::new(0., 0., DEFAULT_CAMERA_DISTANCE);
 
     world
-     .entity_mut(entity_id)
-     .insert((
-       PbrBundle {
-          mesh,
-          material,
-          ..Default::default()
-       },
-       RayCaster::new(start_point, offset),
-       Friction::new(0.4),
-       RigidBody::Dynamic,
-       Position::from_xyz(spawn_point.x, spawn_point.y, spawn_point.z),
-       Collider::cuboid(PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE),
-       JumpHelper{last_viable_normal: Vec3::Y},
-       Trace::new(0.2, 0.005, color),
-       GravityDirection::from_xyz(0., -1., 0.),
-       CollisionLayers::new([CollisionLayer::Default], [CollisionLayer::Default, CollisionLayer::ActorNoclip]),
-     ))
-     .insert(Respawn::new((
-            DespawnReason::More(200., AxisName::Y),
-            DespawnReason::Less(-10., AxisName::Y),
-            DespawnReason::More(100., AxisName::X),
-            DespawnReason::Less(-100., AxisName::X),
-            DespawnReason::More(100., AxisName::Z),
-            DespawnReason::Less(-100., AxisName::Z)
-        ),
-        SpawnPoint::new(spawn_point), 
-        NoclipDuration::Timer(10.)))
-     .insert(PlayerInput::default())
-     .insert(Character { id: player_id })
-     .insert(PlayerView::new(Quat::default(), 325.0.sqrt()));
+        .entity_mut(entity_id)
+        .insert((
+            PbrBundle {
+            mesh,
+            material,
+            ..Default::default()
+            },
+            RayCaster::new(start_point, offset),
+            Friction::new(0.4),
+            PhysicsBundle::from_rigid_body(RigidBody::Dynamic),
+            Position::from_xyz(spawn_point.x, spawn_point.y, spawn_point.z),
+            Collider::cuboid(PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE),
+            JumpHelper{last_viable_normal: Vec3::Y},
+            Trace::new(0.2, 0.005, color),
+            GravityDirection::from_xyz(0., -1., 0.),
+            Respawn::new((
+                DespawnReason::More(200., AxisName::Y),
+                DespawnReason::Less(-10., AxisName::Y),
+                DespawnReason::More(100., AxisName::X),
+                DespawnReason::Less(-100., AxisName::X),
+                DespawnReason::More(100., AxisName::Z),
+                DespawnReason::Less(-100., AxisName::Z)
+            ),
+            SpawnPoint::new(spawn_point), 
+            NoclipDuration::Timer(10.)),
+            PlayerInput::default(),
+            Character { id: player_id },
+            PlayerView::new(Quat::default(), 325.0.sqrt())
+        ));
   }
 );
 

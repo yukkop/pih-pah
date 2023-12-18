@@ -1,6 +1,17 @@
-use std::any::type_name;
 
-use bevy::{app::{Plugin, App, Startup}, ecs::{component::Component, system::Commands}, transform::{components::{Transform, GlobalTransform}}, core::Name, render::view::{Visibility, InheritedVisibility, ViewVisibility}};
+use bevy::{ app::{Plugin, App}, ecs::component::Component }; 
+
+#[cfg(feature = "temp-container")]
+use {
+ bevy::{
+    app::Startup,
+    ecs::system::Commands,
+    transform::components::{Transform, GlobalTransform},
+    render::view::{Visibility, InheritedVisibility, ViewVisibility},
+    core::Name, 
+ },
+ std::any::type_name,
+};
 
 use super::{CharacterPlugins, TracePlugins};
 
@@ -16,11 +27,11 @@ impl Plugin for ActorPlugins {
         app .add_plugins((
                 CharacterPlugins,
                 TracePlugins
-
             ));
     }
 }
 
+#[cfg(feature = "temp-container")]
 fn setup(mut commands: Commands) {
     let full_name = type_name::<TempContainer>();
     let short_name = full_name.split("::").last().unwrap_or(full_name);

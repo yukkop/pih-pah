@@ -101,7 +101,7 @@ extend_commands!(
   |world: &mut World, entity_id: Entity, translation: Vec3, duration: f32, color: Color| {
     let mesh = world
         .resource_mut::<Assets<Mesh>>()
-        .add(Mesh::try_from(shape::Icosphere { radius: 0.1, subdivisions: 3 }).unwrap());
+        .add(Mesh::try_from(shape::Cube {size: 0.2}).unwrap());
     let material = world
         .resource_mut::<Assets<StandardMaterial>>()
         .add(StandardMaterial {
