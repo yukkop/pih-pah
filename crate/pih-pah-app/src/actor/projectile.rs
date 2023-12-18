@@ -51,7 +51,7 @@ extend_commands!(
             RigidBody::Dynamic,
             Collider::cuboid(size, size, size),
             Despawn::new((
-                DespawnReason::More(200., AxisName::Y),
+                // DespawnReason::More(200., AxisName::Y),
                 DespawnReason::Less(-10., AxisName::Y),
                 DespawnReason::More(100., AxisName::X),
                 DespawnReason::Less(-100., AxisName::X),

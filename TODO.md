@@ -35,7 +35,10 @@
     [ ] transfer map from server to client
 [ ] message on port exist in host create
 
-# Fixes
+# Tool
+[ ] extend commands for chid builder
+
+# Bug
 [x] wrong position on player spawn
     [x] loader do not work on changing map (need rewrite it all)
 [ ] do not get mass from glb in processes scene system

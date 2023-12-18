@@ -1,4 +1,4 @@
-use crate::actor::{CharacterPlugins, TracePlugins};
+use crate::actor::{CharacterPlugins, TracePlugins, ActorPlugins};
 use crate::component::{ComponentPlugins, Respawn, DespawnReason, AxisName, NoclipDuration};
 use crate::lobby::{LobbyPlugins, LobbyState, PlayerInput};
 use crate::map::{MapPlugins, SpawnPoint};
@@ -76,8 +76,7 @@ impl Plugin for WorldPlugins {
             MapPlugins,
             UiPlugins,
             LobbyPlugins,
-            TracePlugins,
-            CharacterPlugins,
+            ActorPlugins,   
             ComponentPlugins,
         ))
         .add_systems(Update, input)

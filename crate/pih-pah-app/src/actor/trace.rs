@@ -24,6 +24,7 @@ pub struct Trace {
     pub duration: f32,
     /// period of tracepoint spawn
     pub intensity: TraceTimer,
+    /// tracepoint color
     pub color: Color,
 }
 
@@ -77,12 +78,20 @@ impl Plugin for TracePlugins {
 
 fn process_tracepoint(
     mut commands: Commands,
-    mut query: Query<(&GlobalTransform, &mut Trace)>,
+    mut trace_query: Query<(&GlobalTransform, &mut Trace)>,
+    _temp_container_query: Query<Entity, With<super::TempContainer>>,
     time: Res<Time>,
 ) {
-    for (global_transform, mut trace) in query.iter_mut() {
+    for (global_transform, mut trace) in trace_query.iter_mut() {
         if trace.intensity.update(time.delta()).just_finished() {
-            commands.spawn_tracepoint(global_transform.translation(), trace.duration, trace.color);
+            let _tracepoint = commands.spawn_tracepoint(global_transform.translation(), trace.duration, trace.color).id();
+            #[cfg(feature = "temp-container")]
+            if let Ok(temp_container) = _temp_container_query.get_single() {
+                commands.entity(temp_container).add_child(_tracepoint);
+            }
+            else {
+                warn!("TempContainer not found");
+            }
         }
     }
 }
