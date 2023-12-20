@@ -286,20 +286,20 @@ pub fn server_update_system(
         }
     }
 
-    log::info!("get input");
     for client_id in server.clients_id().into_iter() {
-        while let Some(message) = server.receive_message(client_id, DefaultChannel::ReliableOrdered)
-        {
+        let mut first = true;
+        while let Some(message) = server.receive_message(client_id, DefaultChannel::ReliableOrdered) {
             let input: Inputs = bincode::deserialize(&message).unwrap();
             if let Some(player_data) = lobby.players.get(&PlayerId::Client(client_id)) {
-                if input.fire {
-                    log::info!("Player fire {:#?}", player_data.entity);
-                }
                 if let Ok(mut player_input) = input_query.get_mut(player_data.entity) {
-                    player_input.insert_inputs(input);
+                    if first {
+                        player_input.insert_inputs(input);
+                        first = false;
+                    } else {
+                        player_input.add(input);
+                    }
                 }
-            }
-            else {
+            } else {
                 log::error!("Player not found");
             }
         }

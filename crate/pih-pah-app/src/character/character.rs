@@ -2,7 +2,7 @@ use crate::actor::physics_bundle::PhysicsBundle;
 use crate::actor::{Projectile, spawn_projectile, PhysicsOptimalTrace, TransformOptimalTrace};
 use crate::component::{AxisName, DespawnReason, NoclipDuration, Respawn};
 use crate::extend_commands;
-use crate::lobby::{Character, PlayerInputs};
+use crate::lobby::{Character, PlayerInputs, InputType};
 use crate::lobby::host::{generate_player_color, server_update_system};
 use crate::lobby::{LobbyState, PlayerId, Inputs, PlayerView};
 use crate::map::SpawnPoint;
@@ -46,7 +46,7 @@ impl Plugin for CharacterPlugins {
                 not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
             ),
         )
-        .add_systems(PostUpdate, fire.after(server_update_system).run_if(
+        .add_systems(Last, fire.after(server_update_system).run_if(
                 not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client)))))
         .add_systems(
             PostUpdate,
@@ -179,10 +179,9 @@ pub fn fire(
     mut commands: Commands,
     mut query: Query<(&mut PlayerInputs, &PlayerView, &Transform)>,
 ) {
-    log::info!("fire");
     for (mut input, view, transform) in query.iter_mut() {
-        let input = input.get();
-        if input.fire {
+        // TODO bad way change input, must have independent state
+        if input.is_input_changed_to_true_and_set_to_false(InputType::Fire) {
             log::info!("projectile spawned");
             let random_i32 = rand::random::<i32>();
             let color = generate_player_color(random_i32 as u32);
