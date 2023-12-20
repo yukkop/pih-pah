@@ -250,7 +250,6 @@ impl PlayerInputs {
         }
     }
 
-    // TODO cringe, must remove
     pub fn is_input_changed_to_true_and_set_to_false(&mut self, input_type: InputType) -> bool {
         match input_type {
             InputType::Up => {
@@ -354,7 +353,6 @@ pub struct Inputs {
     pub turn_vertical: f32,
     pub special: bool,
     pub fire: bool,
-    pub adsf: bool,
 }
 
 #[derive(Debug, Component)]

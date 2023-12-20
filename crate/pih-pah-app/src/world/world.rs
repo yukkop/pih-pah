@@ -141,7 +141,7 @@ pub fn input(
                 turn_horizontal = -ev.delta.x;
                 turn_vertical = -ev.delta.y;
             }
-    
+
             let input = Inputs {
                 left: keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::Left),
                 right: keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right),
@@ -152,10 +152,11 @@ pub fn input(
                 sprint: keyboard_input.pressed(KeyCode::ControlLeft),
                 turn_horizontal,
                 turn_vertical,
-                fire: buttons.get_pressed().any(|button| *button == MouseButton::Left),
-                ..Default::default()
+                fire: buttons
+                    .get_pressed()
+                    .any(|button| *button == MouseButton::Left),
             };
-    
+
             player_input.insert_inputs(input);
         }
     }
