@@ -55,9 +55,9 @@ impl Plugin for CharacterPlugins {
     }
 }
 
-fn gravity_direction(mut query: Query<(&mut GravityDirection, &mut PlayerView, &PlayerInputs)>) {
-    for (mut direction_resource, mut view_direction, input) in query.iter_mut() {
-        if input.get().special {
+fn gravity_direction(mut query: Query<(&mut GravityDirection, &mut PlayerView, &mut PlayerInputs)>) {
+    for (mut direction_resource, mut view_direction, mut input) in query.iter_mut() {
+        if input.is_input_changed_to_true_and_set_to_false(InputType::Special) {
             // change gravity direction
             let new_y = direction_resource.y * -1.;
             direction_resource.set_y(new_y);
@@ -117,17 +117,17 @@ fn jump(
     mut query: Query<(
         &mut LinearVelocity,
         &PlayerView,
-        &PlayerInputs,
+        &mut PlayerInputs,
         Entity,
         &JumpHelper,
     )>, /* , time: Res<Time> */
     gravity: Res<Gravity>,
     collisions: Res<Collisions>,
 ) {
-    for (mut linear_velocity, view_direction, player_inputs, player_entity, jump_direction) in
+    for (mut linear_velocity, view_direction, mut player_inputs, player_entity, jump_direction) in
         query.iter_mut()
     {
-        let jumped = player_inputs.get().jump;
+        let jumped = player_inputs.is_input_changed_to_true_and_set_to_false(InputType::Jump);
 
         let dx = (player_inputs.get().right as i8 - player_inputs.get().left as i8) as f32;
         let dy = (player_inputs.get().down as i8 - player_inputs.get().up as i8) as f32;
