@@ -16,6 +16,7 @@ use bevy::{
     },
 };
 use bevy::{ecs::system::EntityCommands, prelude::*};
+use bevy_xpbd_3d::components::LinearVelocity;
 
 /// Spawn a trasepoint at the actor position.
 #[derive(Component)]
@@ -24,19 +25,91 @@ pub struct Trace {
     pub duration: f32,
     /// period of tracepoint spawn
     pub intensity: TraceTimer,
+    /// tracepoint color
+    pub color: Color,
 }
 
 impl Trace {
-    /// Creates a new `Trace` instance.
+    /// Creates a new [`Trace`] instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `duration` - tracepoint lifetime
+    /// * `intensity` - period of tracepoint spawn    
+    /// * `color` - tracepoint color
+    pub fn new(duration: f32, intensity: f32, color: Color) -> Self {
+        Self {
+            duration,
+            intensity: TraceTimer::new(intensity),
+            color,
+        }
+    }
+}
+
+/// Spawn a trasepoint at the actor position.
+/// It will check LinearVelocity and not spawn tracepoints if actor is not moving.
+#[derive(Component)]
+pub struct PhysicsOptimalTrace {
+    /// tracepoint lifetime
+    pub duration: f32,
+    /// period of tracepoint spawn
+    pub intensity: TraceTimer,
+    /// tracepoint color
+    pub color: Color,
+    /// if velocity is less than this value, tracepoint will not spawn
+    pub offset: f32,
+}
+
+impl PhysicsOptimalTrace {
+    /// Creates a new [`PhysicsOptimalTrace`] instance.
     ///
     /// # Arguments
     ///
     /// * `duration` - tracepoint lifetime
     /// * `intensity` - period of tracepoint spawn
-    pub fn new(duration: f32, intensity: f32) -> Self {
+    /// * `color` - tracepoint color
+    /// * `offset` - if velocity is less than this value, tracepoint will not spawn
+    pub fn new(duration: f32, intensity: f32, color: Color, offset: f32) -> Self {
         Self {
             duration,
             intensity: TraceTimer::new(intensity),
+            color,
+            offset,
+        }
+    }
+}
+
+/// Spawn a trasepoint at the actor position.
+/// It will check Transform and not spawn tracepoints if actor is not moving.
+#[derive(Component)]
+pub struct TransformOptimalTrace {
+    /// tracepoint lifetime
+    pub duration: f32,
+    /// period of tracepoint spawn
+    pub intensity: TraceTimer,
+    /// tracepoint color
+    pub color: Color,
+    /// if velocity is less than this value, tracepoint will not spawn
+    pub offset: f32,
+    pub(self) last_position: Vec3,
+}
+
+impl TransformOptimalTrace {
+    /// Creates a new [`TransformOptimalTrace`] instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `duration` - tracepoint lifetime
+    /// * `intensity` - period of tracepoint spawn
+    /// * `color` - tracepoint color
+    /// * `offset` - if velocity is less than this value, tracepoint will not spawn
+    pub fn new(duration: f32, intensity: f32, color: Color, offset: f32) -> Self {
+        Self {
+            duration,
+            intensity: TraceTimer::new(intensity),
+            color,
+            offset,
+            last_position: Vec3::ZERO,
         }
     }
 }
@@ -69,32 +142,91 @@ pub struct TracePlugins;
 
 impl Plugin for TracePlugins {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, process_tracepoint);
+        app.add_systems(Update, process_tracepoint)
+            .add_systems(Update, process_physics_optimal_tracepoint)
+            .add_systems(Update, process_transform_optimal_tracepoint);
     }
 }
 
 fn process_tracepoint(
     mut commands: Commands,
-    mut query: Query<(&GlobalTransform, &mut Trace)>,
+    mut trace_query: Query<(&GlobalTransform, &mut Trace)>,
+    _temp_container_query: Query<Entity, With<super::TempContainer>>,
     time: Res<Time>,
 ) {
-    for (global_transform, mut trace) in query.iter_mut() {
+    for (global_transform, mut trace) in trace_query.iter_mut() {
         if trace.intensity.update(time.delta()).just_finished() {
-            commands.spawn_tracepoint(global_transform.translation(), trace.duration);
+            let _tracepoint = commands
+                .spawn_tracepoint(global_transform.translation(), trace.duration, trace.color)
+                .id();
+            #[cfg(feature = "temp-container")]
+            if let Ok(temp_container) = _temp_container_query.get_single() {
+                commands.entity(temp_container).add_child(_tracepoint);
+            } else {
+                warn!("TempContainer not found");
+            }
         }
     }
 }
 
+fn process_physics_optimal_tracepoint(
+    mut commands: Commands,
+    mut trace_query: Query<(&GlobalTransform, &LinearVelocity, &mut PhysicsOptimalTrace)>,
+    _temp_container_query: Query<Entity, With<super::TempContainer>>,
+    time: Res<Time>,
+) {
+    for (global_transform, linear_velocity, mut trace) in trace_query.iter_mut() {
+        if linear_velocity.length() > trace.offset
+            && trace.intensity.update(time.delta()).just_finished()
+        {
+            let _tracepoint = commands
+                .spawn_tracepoint(global_transform.translation(), trace.duration, trace.color)
+                .id();
+            #[cfg(feature = "temp-container")]
+            if let Ok(temp_container) = _temp_container_query.get_single() {
+                commands.entity(temp_container).add_child(_tracepoint);
+            } else {
+                warn!("TempContainer not found");
+            }
+        }
+    }
+}
+
+fn process_transform_optimal_tracepoint(
+    mut commands: Commands,
+    mut trace_query: Query<(&GlobalTransform, &mut TransformOptimalTrace)>,
+    _temp_container_query: Query<Entity, With<super::TempContainer>>,
+    time: Res<Time>,
+) {
+    for (global_transform, mut trace) in trace_query.iter_mut() {
+        let global_translation = global_transform.translation();
+        if (global_translation - trace.last_position).length() > trace.offset
+            && trace.intensity.update(time.delta()).just_finished()
+        {
+            let _tracepoint = commands
+                .spawn_tracepoint(global_translation, trace.duration, trace.color)
+                .id();
+            #[cfg(feature = "temp-container")]
+            if let Ok(temp_container) = _temp_container_query.get_single() {
+                commands.entity(temp_container).add_child(_tracepoint);
+            } else {
+                warn!("TempContainer not found");
+            }
+        }
+        trace.last_position = global_translation;
+    }
+}
+
 extend_commands!(
-  spawn_tracepoint(translation: Vec3, duration: f32),
-  |world: &mut World, entity_id: Entity, translation: Vec3, duration: f32| {
+  spawn_tracepoint(translation: Vec3, duration: f32, color: Color),
+  |world: &mut World, entity_id: Entity, translation: Vec3, duration: f32, color: Color| {
     let mesh = world
         .resource_mut::<Assets<Mesh>>()
-        .add(Mesh::try_from(shape::Icosphere { radius: 0.1, subdivisions: 3 }).unwrap());
+        .add(Mesh::try_from(shape::Cube {size: 0.2}).unwrap());
     let material = world
         .resource_mut::<Assets<StandardMaterial>>()
         .add(StandardMaterial {
-            base_color: Color::RED,
+            base_color: color,
             ..default()
         });
 

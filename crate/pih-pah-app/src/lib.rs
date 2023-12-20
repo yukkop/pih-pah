@@ -1,4 +1,5 @@
 pub mod actor;
+pub mod character;
 pub mod component;
 pub mod lobby;
 pub mod map;

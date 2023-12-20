@@ -12,7 +12,7 @@ use winit::window::Icon;
 fn main() {
     std::env::set_var(
         "RUST_LOG",
-        std::env::var("RUST_LOG").unwrap_or(String::from("info")),
+        std::env::var("RUST_LOG").unwrap_or(String::from("info,wgpu_core=error")),
     );
 
     env_logger::init();

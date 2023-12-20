@@ -1,14 +1,15 @@
 use std::net::UdpSocket;
 use std::time::SystemTime;
 
-use crate::actor::{spawn_character, spawn_tied_camera, TiedCamera};
+use crate::actor::UnloadActorsEvent;
+use crate::character::{fire, spawn_character, spawn_tied_camera, TiedCamera};
 use crate::component::{DespawnReason, Respawn};
 use crate::lobby::{LobbyState, PlayerData, PlayerId, ServerMessages, Username};
 use crate::map::{is_loaded, MapState, SpawnPoint};
 use crate::world::{LinkId, Me};
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
-use bevy::ecs::event::{EventReader, EventWriter};
+use bevy::ecs::event::{Event, EventReader, EventWriter};
 use bevy::ecs::query::With;
 use bevy::ecs::schedule::{Condition, NextState, OnExit, State};
 use bevy::ecs::system::{Query, Res, ResMut};
@@ -23,19 +24,38 @@ use renet::transport::{NetcodeServerTransport, ServerAuthentication, ServerConfi
 use renet::{ConnectionConfig, DefaultChannel, RenetServer, ServerEvent};
 
 use super::{
-    ChangeMapLobbyEvent, Character, HostResource, Lobby, MapLoaderState, ObjectTransportData,
-    PlayerInput, PlayerTransportData, PlayerView, TransportDataResource, PROTOCOL_ID,
+    ActorTransportData, ChangeMapLobbyEvent, Character, HostResource, Inputs, Lobby,
+    MapLoaderState, PlayerInputs, PlayerTransportData, PlayerView, TransportDataResource,
+    PROTOCOL_ID,
 };
+
+#[derive(Debug, Event)]
+pub struct DespawnActorEvent(pub LinkId);
+#[derive(Debug, Event)]
+pub struct SpawnProjectileEvent(pub LinkId, pub Color);
 
 pub struct HostLobbyPlugins;
 
 impl Plugin for HostLobbyPlugins {
     fn build(&self, app: &mut App) {
-        app.add_plugins((RenetServerPlugin, NetcodeServerPlugin))
+        app.add_event::<DespawnActorEvent>()
+            .add_event::<SpawnProjectileEvent>()
+            .add_plugins((RenetServerPlugin, NetcodeServerPlugin))
             .add_systems(OnEnter(LobbyState::Host), setup)
             .add_systems(
                 Update,
-                (server_update_system, send_change_map, server_sync_players)
+                (
+                    send_change_map,
+                    server_sync_actor,
+                    spawn_projectile,
+                    despawn_actor,
+                )
+                    .run_if(in_state(LobbyState::Host)),
+            )
+            .add_systems(
+                Update,
+                server_update_system
+                    .before(fire)
                     .run_if(in_state(LobbyState::Host)),
             )
             .add_systems(OnExit(LobbyState::Host), teardown)
@@ -44,6 +64,33 @@ impl Plugin for HostLobbyPlugins {
                 load_processing
                     .run_if(in_state(LobbyState::Host).and_then(in_state(MapLoaderState::No))),
             );
+    }
+}
+
+pub fn spawn_projectile(
+    mut event_reader: EventReader<SpawnProjectileEvent>,
+    mut server: ResMut<RenetServer>,
+) {
+    for SpawnProjectileEvent(link_id, color) in event_reader.read() {
+        let message = bincode::serialize(&ServerMessages::ProjectileSpawn {
+            id: link_id.clone(),
+            color: *color,
+        })
+        .unwrap();
+        server.broadcast_message(DefaultChannel::ReliableOrdered, message);
+    }
+}
+
+pub fn despawn_actor(
+    mut event_reader: EventReader<DespawnActorEvent>,
+    mut server: ResMut<RenetServer>,
+) {
+    for DespawnActorEvent(link_id) in event_reader.read() {
+        let message = bincode::serialize(&ServerMessages::ActorDespawn {
+            id: link_id.clone(),
+        })
+        .unwrap();
+        server.broadcast_message(DefaultChannel::ReliableOrdered, message);
     }
 }
 
@@ -130,18 +177,22 @@ pub fn send_change_map(
     mut change_map_event: EventReader<ChangeMapLobbyEvent>,
     mut server: ResMut<RenetServer>,
     mut next_state_map: ResMut<NextState<MapState>>,
+    mut unload_actors_event: EventWriter<UnloadActorsEvent>,
 ) {
     for ChangeMapLobbyEvent(state) in change_map_event.read() {
         next_state_map.set(*state);
         let message = bincode::serialize(&ServerMessages::ChangeMap { map_state: *state }).unwrap();
         server.broadcast_message(DefaultChannel::ReliableOrdered, message);
+
+        unload_actors_event.send(UnloadActorsEvent);
     }
 }
 
 fn teardown(
     mut commands: Commands,
     tied_camera_query: Query<Entity, With<TiedCamera>>,
-    char_query: Query<Entity, With<PlayerInput>>,
+    char_query: Query<Entity, With<Character>>,
+    mut unload_actors_event: EventWriter<UnloadActorsEvent>,
 ) {
     for entity in tied_camera_query.iter() {
         commands.entity(entity).despawn_recursive();
@@ -151,6 +202,8 @@ fn teardown(
     }
     commands.remove_resource::<Lobby>();
     commands.remove_resource::<TransportDataResource>();
+
+    unload_actors_event.send(UnloadActorsEvent);
 }
 
 pub fn generate_player_color(player_number: u32) -> Color {
@@ -159,6 +212,7 @@ pub fn generate_player_color(player_number: u32) -> Color {
     Color::hsl(hue, 1.0, 0.5)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn server_update_system(
     mut server_events: EventReader<ServerEvent>,
     mut commands: Commands,
@@ -167,6 +221,8 @@ pub fn server_update_system(
     transport: Res<NetcodeServerTransport>,
     spawn_point: Res<SpawnPoint>,
     map_state: ResMut<State<MapState>>,
+
+    mut input_query: Query<&mut PlayerInputs>,
 ) {
     for event in server_events.read() {
         match event {
@@ -245,22 +301,32 @@ pub fn server_update_system(
     }
 
     for client_id in server.clients_id().into_iter() {
+        let mut first = true;
         while let Some(message) = server.receive_message(client_id, DefaultChannel::ReliableOrdered)
         {
-            let player_input: PlayerInput = bincode::deserialize(&message).unwrap();
+            let input: Inputs = bincode::deserialize(&message).unwrap();
             if let Some(player_data) = lobby.players.get(&PlayerId::Client(client_id)) {
-                commands.entity(player_data.entity).insert(player_input);
+                if let Ok(mut player_input) = input_query.get_mut(player_data.entity) {
+                    if first {
+                        player_input.insert_inputs(input);
+                        first = false;
+                    } else {
+                        player_input.add(input);
+                    }
+                }
+            } else {
+                log::error!("Player not found");
             }
         }
     }
 }
 
-pub fn server_sync_players(
+pub fn server_sync_actor(
     mut server: ResMut<RenetServer>,
     // TODO a nahooya tut resours, daun
     mut data: ResMut<TransportDataResource>,
     character_query: Query<(&Position, &Rotation, &PlayerView, &Character)>,
-    moveble_object_query: Query<(&Transform, &LinkId)>,
+    moveble_actor_query: Query<(&Transform, &LinkId)>,
 ) {
     let data = &mut data.data;
     for (position, rotation, view_direction, character) in character_query.iter() {
@@ -274,10 +340,10 @@ pub fn server_sync_players(
         );
     }
 
-    for (transform, link_id) in moveble_object_query.iter() {
-        data.objects.insert(
+    for (transform, link_id) in moveble_actor_query.iter() {
+        data.actors.insert(
             link_id.clone(),
-            ObjectTransportData {
+            ActorTransportData {
                 position: transform.translation,
                 rotation: transform.rotation,
             },
@@ -288,5 +354,5 @@ pub fn server_sync_players(
     server.broadcast_message(DefaultChannel::Unreliable, sync_message);
 
     data.players.clear();
-    data.objects.clear();
+    data.actors.clear();
 }

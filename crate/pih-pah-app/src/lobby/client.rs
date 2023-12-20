@@ -1,12 +1,14 @@
 use std::net::UdpSocket;
 use std::time::SystemTime;
 
-use crate::actor::{spawn_character_shell, spawn_tied_camera, TiedCamera};
+use crate::actor::{spawn_projectile_shell, ProjectileShell, UnloadActorsEvent};
+use crate::character::{spawn_character_shell, spawn_tied_camera, TiedCamera};
 use crate::lobby::{LobbyState, PlayerId};
 use crate::map::MapState;
-use crate::world::{LinkId, Me};
+use crate::world::{input, LinkId, Me};
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
+use bevy::ecs::event::EventWriter;
 use bevy::ecs::query::With;
 use bevy::ecs::schedule::{Condition, NextState, OnExit};
 use bevy::ecs::system::{Query, Res, ResMut, Resource};
@@ -23,7 +25,7 @@ use renet::{ClientId, ConnectionConfig, DefaultChannel, RenetClient};
 pub struct OwnId(Option<ClientId>);
 
 use super::{
-    ClientResource, Lobby, PlayerData, PlayerInput, ServerMessages, TransportDataResource,
+    ClientResource, Lobby, PlayerData, PlayerInputs, ServerMessages, TransportDataResource,
     Username, PROTOCOL_ID,
 };
 
@@ -36,6 +38,7 @@ impl Plugin for ClientLobbyPlugins {
             .add_systems(
                 Update,
                 (client_send_input, client_sync_players)
+                    .after(input)
                     .run_if(in_state(LobbyState::Client).and_then(bevy_renet::client_connected())),
             )
             .add_systems(OnExit(LobbyState::Client), teardown);
@@ -70,12 +73,11 @@ pub fn new_renet_client(settings: Res<ClientResource>, mut commands: Commands) {
 }
 
 pub fn client_send_input(
-    mut player_input_query: Query<&mut PlayerInput, With<Me>>,
+    mut player_input_query: Query<&mut PlayerInputs, With<Me>>,
     mut client: ResMut<RenetClient>,
 ) {
     if let Ok(player_input) = player_input_query.get_single_mut() {
-        let input_message = bincode::serialize(&*player_input).unwrap();
-
+        let input_message = bincode::serialize(&player_input.get()).unwrap();
         client.send_message(DefaultChannel::ReliableOrdered, input_message);
     }
 }
@@ -94,7 +96,8 @@ fn setup(mut commands: Commands) {
 fn teardown(
     mut commands: Commands,
     tied_camera_query: Query<Entity, With<TiedCamera>>,
-    char_query: Query<Entity, With<PlayerInput>>,
+    char_query: Query<Entity, With<PlayerInputs>>,
+    mut unload_actors_event: EventWriter<UnloadActorsEvent>,
 ) {
     for entity in tied_camera_query.iter() {
         commands.entity(entity).despawn_recursive();
@@ -105,6 +108,8 @@ fn teardown(
     commands.remove_resource::<Lobby>();
     commands.remove_resource::<OwnId>();
     commands.remove_resource::<TransportDataResource>();
+
+    unload_actors_event.send(UnloadActorsEvent);
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -116,6 +121,7 @@ pub fn client_sync_players(
     mut own_id: ResMut<OwnId>,
     mut next_state_map: ResMut<NextState<MapState>>,
     lincked_obj_query: Query<(Entity, &LinkId)>,
+    mut unload_actors_event: EventWriter<UnloadActorsEvent>,
 ) {
     // player existence manager
     while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
@@ -131,25 +137,26 @@ pub fn client_sync_players(
             }
             ServerMessages::ChangeMap { map_state } => {
                 next_state_map.set(map_state);
+                unload_actors_event.send(UnloadActorsEvent);
             }
             ServerMessages::PlayerConnected {
                 id: player_id,
                 color,
                 username,
             } => {
-                let name = "noname";
-
-                let player_entity = commands.spawn_character_shell(color, Vec3::ZERO).id();
+                let player_entity = commands
+                    .spawn_character_shell(player_id, color, Vec3::ZERO)
+                    .id();
                 if let PlayerId::Client(id) = player_id {
                     if Some(id) == own_id.0 {
                         commands.entity(player_entity).insert(Me);
                         commands.spawn_tied_camera(player_entity);
-                        log::info!("{name} ({id}), welcome.");
+                        log::info!("{username} ({id}), welcome.");
                     } else {
-                        log::info!("Player {} ({}) connected.", name, id);
+                        log::info!("Player {} ({}) connected.", username, id);
                     }
                 } else {
-                    log::info!("Host {} ({:?}).", name, player_id);
+                    log::info!("Host {} ({:?}).", username, player_id);
                 }
 
                 lobby.players.insert(
@@ -167,6 +174,16 @@ pub fn client_sync_players(
                 log::info!("Player {} ({:?}) disconnected.", name, id);
                 if let Some(player_data) = lobby.players.remove(&id) {
                     commands.entity(player_data.entity).despawn();
+                }
+            }
+            ServerMessages::ProjectileSpawn { id, color } => {
+                commands.spawn_projectile_shell(ProjectileShell { color, id });
+            }
+            ServerMessages::ActorDespawn { id } => {
+                for (entity, link_id) in lincked_obj_query.iter() {
+                    if link_id == &id {
+                        commands.entity(entity).despawn_recursive();
+                    }
                 }
             }
         }
@@ -190,7 +207,7 @@ pub fn client_sync_players(
             }
         }
 
-        for (link_id, data) in transport_data.data.objects.iter() {
+        for (link_id, data) in transport_data.data.actors.iter() {
             for (entity, id) in lincked_obj_query.iter() {
                 if id == link_id {
                     let transform = Transform {
@@ -198,7 +215,7 @@ pub fn client_sync_players(
                         rotation: data.rotation,
                         ..Default::default()
                     };
-                    commands.entity(entity).insert(transform);
+                    commands.entity(entity).try_insert(transform);
                 }
             }
         }

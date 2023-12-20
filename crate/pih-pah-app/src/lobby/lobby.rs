@@ -48,13 +48,18 @@ pub enum ServerMessages {
     ///
     /// * `id` - Unique identifier for the connecting client.
     /// * `map_state` - Initial state of the client's map.
-    InitConnection { id: ClientId, map_state: MapState },
+    InitConnection {
+        id: ClientId,
+        map_state: MapState,
+    },
     /// Sent to notify a change in the map's state.
     ///
     /// # Fields
     ///
     /// * `map_state` - The new state of the map.
-    ChangeMap { map_state: MapState },
+    ChangeMap {
+        map_state: MapState,
+    },
     /// Indicates that a player has connected to the server.
     ///
     /// # Fields
@@ -72,7 +77,16 @@ pub enum ServerMessages {
     /// # Fields
     ///
     /// * `id` - Unique identifier for the player who has disconnected.
-    PlayerDisconnected { id: PlayerId },
+    PlayerDisconnected {
+        id: PlayerId,
+    },
+    ProjectileSpawn {
+        id: LinkId,
+        color: Color,
+    },
+    ActorDespawn {
+        id: LinkId,
+    },
 }
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
@@ -161,8 +175,174 @@ pub struct PlayerData {
     pub username: String,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize, Component, Resource, Reflect)]
-pub struct PlayerInput {
+// TODO resource????????
+#[derive(Debug, Default, Component, Reflect)]
+pub struct PlayerInputs {
+    input: Inputs,
+    previouse_input: Inputs,
+}
+
+pub enum InputValue {
+    Boolean(bool),
+    Float(f32),
+}
+
+pub const THRESHOLD: f32 = 0.1;
+
+impl PlayerInputs {
+    pub fn insert_inputs(&mut self, input: Inputs) {
+        self.previouse_input = self.input;
+        self.input = input;
+    }
+
+    pub fn add(&mut self, input: Inputs) {
+        self.input.up |= input.up;
+        self.input.down |= input.down;
+        self.input.left |= input.left;
+        self.input.right |= input.right;
+        self.input.jump |= input.jump;
+        self.input.sprint |= input.sprint;
+        self.input.turn_horizontal += input.turn_horizontal;
+        self.input.turn_vertical += input.turn_vertical;
+        self.input.special |= input.special;
+        self.input.fire |= input.fire;
+    }
+
+    pub fn get(&self) -> Inputs {
+        self.input
+    }
+
+    pub fn is_input_changed(&self, input_type: InputType) -> bool {
+        match input_type {
+            InputType::Up => self.input.up != self.previouse_input.up,
+            InputType::Down => self.input.down != self.previouse_input.down,
+            InputType::Left => self.input.left != self.previouse_input.left,
+            InputType::Right => self.input.right != self.previouse_input.right,
+            InputType::Jump => self.input.jump != self.previouse_input.jump,
+            InputType::Sprint => self.input.sprint != self.previouse_input.sprint,
+            InputType::TurnHorizontal => {
+                self.input.turn_horizontal != self.previouse_input.turn_horizontal
+            }
+            InputType::TurnVertical => {
+                self.input.turn_vertical != self.previouse_input.turn_vertical
+            }
+            InputType::Special => self.input.special != self.previouse_input.special,
+            InputType::Fire => self.input.fire != self.previouse_input.fire,
+        }
+    }
+
+    pub fn is_input_changed_to_true(&self, input_type: InputType) -> bool {
+        match input_type {
+            InputType::Up => !self.previouse_input.up && self.input.up,
+            InputType::Down => !self.previouse_input.down && self.input.down,
+            InputType::Left => !self.previouse_input.left && self.input.left,
+            InputType::Right => !self.previouse_input.right && self.input.right,
+            InputType::Jump => !self.previouse_input.jump && self.input.jump,
+            InputType::Sprint => !self.previouse_input.sprint && self.input.sprint,
+            InputType::TurnHorizontal => {
+                self.input.turn_horizontal - self.previouse_input.turn_horizontal > THRESHOLD
+            }
+            InputType::TurnVertical => {
+                self.input.turn_vertical - self.previouse_input.turn_vertical > THRESHOLD
+            }
+            InputType::Special => !self.previouse_input.special && self.input.special,
+            InputType::Fire => !self.previouse_input.fire && self.input.fire,
+        }
+    }
+
+    pub fn is_input_changed_to_true_and_set_to_false(&mut self, input_type: InputType) -> bool {
+        match input_type {
+            InputType::Up => {
+                let val = !self.previouse_input.up && self.input.up;
+                if val {
+                    self.previouse_input.up = true;
+                }
+                val
+            }
+            InputType::Down => {
+                let val = !self.previouse_input.down && self.input.down;
+                if val {
+                    self.previouse_input.down = true;
+                }
+                val
+            }
+            InputType::Left => {
+                let val = !self.previouse_input.left && self.input.left;
+                if val {
+                    self.previouse_input.left = true;
+                }
+                val
+            }
+            InputType::Right => {
+                let val = !self.previouse_input.right && self.input.right;
+                if val {
+                    self.previouse_input.right = true;
+                }
+                val
+            }
+            InputType::Jump => {
+                let val = !self.previouse_input.jump && self.input.jump;
+                if val {
+                    self.previouse_input.jump = true;
+                }
+                val
+            }
+            InputType::Sprint => {
+                let val = !self.previouse_input.sprint && self.input.sprint;
+                if val {
+                    self.previouse_input.sprint = true;
+                }
+                val
+            }
+            InputType::TurnHorizontal => {
+                let val =
+                    self.input.turn_horizontal - self.previouse_input.turn_horizontal > THRESHOLD;
+                if val {
+                    self.previouse_input.turn_horizontal = 0.2;
+                }
+                val
+            }
+            InputType::TurnVertical => {
+                let val = self.input.turn_vertical - self.previouse_input.turn_vertical > THRESHOLD;
+                if val {
+                    self.previouse_input.turn_vertical = 0.2;
+                }
+                val
+            }
+            InputType::Special => {
+                let val = !self.previouse_input.special && self.input.special;
+                if val {
+                    self.previouse_input.special = true;
+                }
+                val
+            }
+            InputType::Fire => {
+                let val = !self.previouse_input.fire && self.input.fire;
+                if val {
+                    self.previouse_input.fire = true;
+                }
+                val
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum InputType {
+    Up,
+    Down,
+    Left,
+    Right,
+    Jump,
+    Sprint,
+    TurnHorizontal,
+    TurnVertical,
+    Special,
+    Fire,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize, Reflect, Clone, Copy)]
+pub struct Inputs {
     pub up: bool,
     pub down: bool,
     pub left: bool,
@@ -172,6 +352,7 @@ pub struct PlayerInput {
     pub turn_horizontal: f32,
     pub turn_vertical: f32,
     pub special: bool,
+    pub fire: bool,
 }
 
 #[derive(Debug, Component)]
@@ -187,7 +368,7 @@ pub struct PlayerTransportData {
 }
 
 #[derive(Resource, Default, Debug, Serialize, Deserialize)]
-pub struct ObjectTransportData {
+pub struct ActorTransportData {
     pub position: Vec3,
     pub rotation: Quat,
 }
@@ -195,7 +376,7 @@ pub struct ObjectTransportData {
 #[derive(Resource, Default, Debug, Serialize, Deserialize)]
 pub struct TransportData {
     pub players: HashMap<PlayerId, PlayerTransportData>,
-    pub objects: HashMap<LinkId, ObjectTransportData>,
+    pub actors: HashMap<LinkId, ActorTransportData>,
 }
 
 #[derive(Resource, Default, Debug, Serialize, Deserialize)]

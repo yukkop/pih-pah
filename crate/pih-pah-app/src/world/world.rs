@@ -1,7 +1,9 @@
-use crate::actor::{CharacterPlugins, TracePlugins};
-use crate::component::{ComponentPlugins, Respawn};
-use crate::lobby::{LobbyPlugins, LobbyState, PlayerInput};
-use crate::map::MapPlugins;
+use crate::actor::physics_bundle::PhysicsBundle;
+use crate::actor::ActorPlugins;
+use crate::character::CharacterPlugins;
+use crate::component::{AxisName, ComponentPlugins, DespawnReason, NoclipDuration, Respawn};
+use crate::lobby::{Inputs, LobbyPlugins, LobbyState, PlayerInputs};
+use crate::map::{MapPlugins, SpawnPoint};
 use crate::settings::SettingsPlugins;
 use crate::sound::SoundPlugins;
 use crate::ui::GameMenuActionState;
@@ -9,7 +11,7 @@ use crate::ui::{DebugFrameState, DebugMenuEvent, DebugState};
 use crate::ui::{MouseGrabState, UiPlugins, UiState};
 use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
-use bevy_xpbd_3d::components::{CollisionLayers, Mass};
+use bevy_xpbd_3d::components::Mass;
 use bevy_xpbd_3d::prelude::{Collider, PhysicsLayer, RigidBody};
 use serde::{Deserialize, Serialize};
 
@@ -47,33 +49,49 @@ pub enum CollisionLayer {
 pub struct PromisedScene;
 
 #[derive(Component, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct LinkId(String);
+pub enum LinkId {
+    Scene(String),
+    Projectile(usize),
+}
+
+#[derive(Resource, Default, Reflect, Debug, Clone, Copy, PartialEq, Eq, Deref, DerefMut)]
+pub struct ProjectileIdSeq(usize);
+
+impl ProjectileIdSeq {
+    /// Returns the next projectile ID. A new ID is generated each time this method is called.
+    pub fn shift(&mut self) -> LinkId {
+        self.0 += 1;
+        LinkId::Projectile(self.0)
+    }
+}
 
 pub struct WorldPlugins;
 
 impl Plugin for WorldPlugins {
     fn build(&self, app: &mut App) {
-        app.add_plugins((
-            SettingsPlugins,
-            SoundPlugins,
-            MapPlugins,
-            UiPlugins,
-            LobbyPlugins,
-            TracePlugins,
-            CharacterPlugins,
-            ComponentPlugins,
-        ))
-        .add_systems(Update, input)
-        .add_systems(
-            Update,
-            process_scene.run_if(
-                not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
-            ),
-        )
-        .add_systems(
-            Update,
-            process_scene_simplified.run_if(in_state(LobbyState::Client)),
-        );
+        app.init_resource::<ProjectileIdSeq>()
+            .register_type::<ProjectileIdSeq>()
+            .add_systems(Update, input)
+            .add_plugins((
+                SettingsPlugins,
+                SoundPlugins,
+                MapPlugins,
+                UiPlugins,
+                LobbyPlugins,
+                ActorPlugins,
+                ComponentPlugins,
+                CharacterPlugins,
+            ))
+            .add_systems(
+                Update,
+                process_scene.run_if(
+                    not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
+                ),
+            )
+            .add_systems(
+                Update,
+                process_scene_simplified.run_if(in_state(LobbyState::Client)),
+            );
     }
 }
 
@@ -82,7 +100,7 @@ pub struct Me;
 
 /// Processes the input keys and manages them from a resource or event deep in the program.
 #[allow(clippy::too_many_arguments)]
-fn input(
+pub fn input(
     keyboard_input: Res<Input<KeyCode>>,
     mut next_state_debug_frame: ResMut<NextState<DebugFrameState>>,
     debug_frame_state: Res<State<DebugFrameState>>,
@@ -92,10 +110,11 @@ fn input(
     ui_state: Res<State<UiState>>,
     mut next_state_game_menu_action: ResMut<NextState<GameMenuActionState>>,
     game_menu_action: Res<State<GameMenuActionState>>,
-    mut player_input_query: Query<&mut PlayerInput, With<Me>>,
+    mut player_input_query: Query<&mut PlayerInputs, With<Me>>,
     mut motion_evr: EventReader<MouseMotion>,
     mut next_state_mouse_grab: ResMut<NextState<MouseGrabState>>,
     mouse_grab_state: Res<State<MouseGrabState>>,
+    buttons: Res<Input<MouseButton>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Escape) && *ui_state.get() == UiState::GameMenu {
         next_state_game_menu_action.set(game_menu_action.get().clone().toggle());
@@ -116,24 +135,29 @@ fn input(
 
     if *game_menu_action.get() == GameMenuActionState::Disable {
         if let Ok(mut player_input) = player_input_query.get_single_mut() {
-            player_input.left =
-                keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::Left);
-            player_input.right =
-                keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right);
-            player_input.up =
-                keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
-            player_input.down =
-                keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
-            player_input.special = keyboard_input.just_pressed(KeyCode::F);
-            player_input.jump = keyboard_input.just_pressed(KeyCode::Space);
-            player_input.sprint = keyboard_input.pressed(KeyCode::ControlLeft);
-
-            player_input.turn_horizontal = 0.;
-            player_input.turn_vertical = 0.;
+            let mut turn_horizontal = 0.;
+            let mut turn_vertical = 0.;
             for ev in motion_evr.read() {
-                player_input.turn_horizontal = -ev.delta.x;
-                player_input.turn_vertical = -ev.delta.y;
+                turn_horizontal = -ev.delta.x;
+                turn_vertical = -ev.delta.y;
             }
+
+            let input = Inputs {
+                left: keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::Left),
+                right: keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right),
+                up: keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up),
+                down: keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down),
+                special: keyboard_input.pressed(KeyCode::F),
+                jump: keyboard_input.pressed(KeyCode::Space),
+                sprint: keyboard_input.pressed(KeyCode::ControlLeft),
+                turn_horizontal,
+                turn_vertical,
+                fire: buttons
+                    .get_pressed()
+                    .any(|button| *button == MouseButton::Left),
+            };
+
+            player_input.insert_inputs(input);
         }
     }
 }
@@ -200,33 +224,40 @@ fn process_scene_child(
                         let collider_handler = mesh_handle_query.get(entity).unwrap();
                         if let Some(mesh) = meshes.get(collider_handler) {
                             let collider = Collider::trimesh_from_mesh(mesh).unwrap();
-                            commands
-                                .entity(entity)
-                                .insert(collider)
-                                .insert(CollisionLayers::new(
-                                    [CollisionLayer::Default],
-                                    [CollisionLayer::Default, CollisionLayer::ActorNoclip],
-                                ));
+                            commands.entity(entity).insert(collider);
 
                             if val == "d" {
-                                let mut commands_entity = commands.entity(entity);
-                                commands_entity.insert(RigidBody::Dynamic);
+                                commands
+                                    .entity(entity)
+                                    .insert(PhysicsBundle::from_rigid_body(RigidBody::Dynamic));
                             }
                             if val == "s" {
-                                let mut commands_entity = commands.entity(entity);
-                                commands_entity.insert(RigidBody::Static);
+                                commands
+                                    .entity(entity)
+                                    .insert(PhysicsBundle::from_rigid_body(RigidBody::Static));
                             }
                         }
                     } else if name == "id" {
-                        commands.entity(entity).insert(LinkId(val.to_string()));
+                        commands
+                            .entity(entity)
+                            .insert(LinkId::Scene(val.to_string()));
                     } else if name == "m" {
                         commands.entity(entity).insert(Mass(val.parse().unwrap()));
                     }
                 } else if name == "r" {
                     let transform = transform_query.get(entity).unwrap();
-                    commands
-                        .entity(entity)
-                        .insert(Respawn::from_vec3(transform.translation));
+                    commands.entity(entity).insert(Respawn::new(
+                        (
+                            DespawnReason::More(200., AxisName::Y),
+                            DespawnReason::Less(-10., AxisName::Y),
+                            DespawnReason::More(100., AxisName::X),
+                            DespawnReason::Less(-100., AxisName::X),
+                            DespawnReason::More(100., AxisName::Z),
+                            DespawnReason::Less(-100., AxisName::Z),
+                        ),
+                        SpawnPoint::new(transform.translation),
+                        NoclipDuration::Timer(10.),
+                    ));
                 }
             }
         }
@@ -290,7 +321,9 @@ fn process_scene_child_simplified(
                 let name = split.next().unwrap();
                 if let Some(val) = split.next() {
                     if name == "id" {
-                        commands.entity(entity).insert(LinkId(val.to_string()));
+                        commands
+                            .entity(entity)
+                            .insert(LinkId::Scene(val.to_string()));
                     }
                 }
             }

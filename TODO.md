@@ -15,11 +15,11 @@
     [ ] sensetivity
 [ ] nickname above character
 [ ] projectile
-    [ ] collision
-    [ ] speed
-    [ ] lifetime
-    [ ] ballistics
-    [ ] spawn point
+    [x] collision
+    [x] speed
+    [x] lifetime
+    [x] ballistics
+    [x] spawn point
     [ ] spawn delay
     [ ] spawn sound
 [ ] terrain
@@ -33,8 +33,12 @@
 [ ] map
     [ ] option load custom map
     [ ] transfer map from server to client
+[ ] message on port exist in host create
 
-# Fixes
+# Tool
+[ ] extend commands for chid builder
+
+# Bug
 [x] wrong position on player spawn
     [x] loader do not work on changing map (need rewrite it all)
 [ ] do not get mass from glb in processes scene system
@@ -42,4 +46,12 @@
 [x] widow do not hide after game menu close
 [ ] intuitiv mouse position in game menu (I mean that mouse position in game menu shold be on last position or in center of screen) 
 [ ] if open game menu during camera movement it will be spin ever
-[ ] viewport size do not update after window size hase been changed
+[x] viewport size do not update after window size hase been changed
+[x] game menu do not use debug viewport for size
+[x] gravity layers broken
+[ ] random orders in game systems
+[ ] Camera raycast must ignore projectile
+[ ] just presed realisation for multiplayr inputs
+
+# Critical
+[ ] Insert, Spawn etc. add commands into command list that have non-obvious order. need to change it in parts where order important

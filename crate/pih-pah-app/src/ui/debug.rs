@@ -15,7 +15,7 @@ use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use egui_gizmo::{Gizmo, GizmoMode, GizmoOrientation};
 
 use crate::component::Respawn;
-use crate::lobby::{PlayerInput, PlayerView};
+use crate::lobby::{Inputs, PlayerView};
 use crate::util::i18n::Uniq;
 
 use super::{rich_text, MainCamera, ViewportRect};
@@ -72,52 +72,58 @@ pub struct DebugUiPlugins;
 
 impl Plugin for DebugUiPlugins {
     fn build(&self, app: &mut App) {
-        app.register_type::<PlayerInput>()
+        app.register_type::<Inputs>()
             .register_type::<PlayerView>()
             .register_type::<Respawn>()
             .add_event::<DebugMenuEvent>()
             .add_state::<DebugFrameState>()
             .add_state::<DebugState>()
-            .add_state::<DebugMenuState>();
-        let is_debug = std::env::var("DEBUG").is_ok();
+            .add_state::<DebugMenuState>()
+            .add_systems(
+                Update,
+                (get_window_rect, set_camera_viewport.after(get_window_rect))
+                    .run_if(in_state(DebugState::Disable)),
+            );
 
-        if is_debug {
-            app.insert_resource(UiState::new())
-                .add_systems(
-                    PostUpdate,
-                    show_ui_system
-                        .run_if(in_state(DebugState::Enable))
-                        .before(EguiSet::ProcessOutput)
-                        .before(bevy::transform::TransformSystem::TransformPropagate),
-                )
-                .add_systems(
-                    PostUpdate,
-                    set_camera_viewport
-                        .run_if(in_state(DebugState::Enable))
-                        .after(show_ui_system),
-                )
-                .add_systems(
-                    Update,
-                    (set_gizmo_mode, push_window_menu_event).run_if(in_state(DebugState::Enable)),
-                )
-                .add_systems(
-                    Update,
-                    push_window_menu.run_if(
-                        in_state(DebugState::Enable).and_then(in_state(DebugMenuState::Enable)),
-                    ),
-                )
-                .add_systems(
-                    OnEnter(DebugState::Disable),
-                    (exit_debug, set_camera_viewport.after(exit_debug)),
-                )
-                .register_type::<Option<Handle<Image>>>()
-                .add_systems(OnEnter(DebugFrameState::Enable), debug_frame_enable)
-                .add_systems(OnEnter(DebugFrameState::Disable), debug_frame_disable)
-                .register_type::<AlphaMode>();
+        #[cfg(debug_assertions)]
+        {
+            let is_debug = std::env::var("DEBUG").is_ok();
+            if is_debug {
+                app.insert_resource(UiState::new())
+                    .add_systems(
+                        PostUpdate,
+                        show_ui_system
+                            .run_if(in_state(DebugState::Enable))
+                            .before(EguiSet::ProcessOutput)
+                            .before(bevy::transform::TransformSystem::TransformPropagate),
+                    )
+                    .add_systems(
+                        PostUpdate,
+                        set_camera_viewport
+                            .run_if(in_state(DebugState::Enable))
+                            .after(show_ui_system),
+                    )
+                    .add_systems(
+                        Update,
+                        (set_gizmo_mode, push_window_menu_event)
+                            .run_if(in_state(DebugState::Enable)),
+                    )
+                    .add_systems(
+                        Update,
+                        push_window_menu.run_if(
+                            in_state(DebugState::Enable).and_then(in_state(DebugMenuState::Enable)),
+                        ),
+                    )
+                    .register_type::<Option<Handle<Image>>>()
+                    .add_systems(OnEnter(DebugFrameState::Enable), debug_frame_enable)
+                    .add_systems(OnEnter(DebugFrameState::Disable), debug_frame_disable)
+                    .register_type::<AlphaMode>();
+            }
         }
     }
 }
 
+#[cfg(debug_assertions)]
 fn push_window_menu_event(
     mut next_state_debug_menu: ResMut<NextState<DebugMenuState>>,
     mut debug_menu_event: EventReader<DebugMenuEvent>,
@@ -136,6 +142,7 @@ fn push_window_menu_event(
     }
 }
 
+#[cfg(debug_assertions)]
 fn push_window_menu(
     mut next_state_debug_menu: ResMut<NextState<DebugMenuState>>,
     mut ui_state: ResMut<UiState>,
@@ -226,12 +233,13 @@ fn push_window_menu(
         });
 }
 
-fn exit_debug(mut viewport_rect: ResMut<ViewportRect>, windows: Query<&Window>) {
+fn get_window_rect(mut viewport_rect: ResMut<ViewportRect>, windows: Query<&Window>) {
     let window = windows.single();
     let window_size = egui::vec2(window.width(), window.height());
     viewport_rect.set(egui::Rect::from_min_size(Default::default(), window_size));
 }
 
+#[cfg(debug_assertions)]
 fn debug_frame_disable(mut context: EguiContexts) {
     context.ctx_mut().set_style(egui::Style {
         debug: egui::style::DebugOptions {
@@ -242,6 +250,7 @@ fn debug_frame_disable(mut context: EguiContexts) {
     });
 }
 
+#[cfg(debug_assertions)]
 fn debug_frame_enable(mut context: EguiContexts) {
     context.ctx_mut().set_style(egui::Style {
         debug: egui::style::DebugOptions {
@@ -252,6 +261,7 @@ fn debug_frame_enable(mut context: EguiContexts) {
     });
 }
 
+#[cfg(debug_assertions)]
 fn show_ui_system(world: &mut World) {
     let Ok(egui_context) = world
         .query_filtered::<&mut EguiContext, With<PrimaryWindow>>()
@@ -291,6 +301,7 @@ fn set_camera_viewport(
     }
 }
 
+#[cfg(debug_assertions)]
 fn set_gizmo_mode(input: Res<Input<KeyCode>>, mut ui_state: ResMut<UiState>) {
     for (key, mode) in [
         (KeyCode::R, GizmoMode::Rotate),
@@ -304,6 +315,7 @@ fn set_gizmo_mode(input: Res<Input<KeyCode>>, mut ui_state: ResMut<UiState>) {
 }
 
 #[derive(Eq, PartialEq)]
+#[cfg(debug_assertions)]
 enum InspectorSelection {
     Entities,
     Resource(TypeId, String),
@@ -311,6 +323,7 @@ enum InspectorSelection {
 }
 
 #[derive(Resource)]
+#[cfg(debug_assertions)]
 struct UiState {
     state: DockState<EguiWindow>,
     selected_entities: SelectedEntities,
@@ -320,6 +333,7 @@ struct UiState {
     menu_pos: Vec2,
 }
 
+#[cfg(debug_assertions)]
 impl UiState {
     pub fn new() -> Self {
         let mut state = DockState::new(vec![EguiWindow::GameView]);
@@ -358,6 +372,7 @@ impl UiState {
 }
 
 #[derive(Debug)]
+#[cfg(debug_assertions)]
 enum EguiWindow {
     GameView,
     Hierarchy,
@@ -366,6 +381,7 @@ enum EguiWindow {
     Inspector,
 }
 
+#[cfg(debug_assertions)]
 struct TabViewer<'a> {
     world: &'a mut World,
     selected_entities: &'a mut SelectedEntities,
@@ -373,6 +389,7 @@ struct TabViewer<'a> {
     gizmo_mode: GizmoMode,
 }
 
+#[cfg(debug_assertions)]
 impl egui_dock::TabViewer for TabViewer<'_> {
     type Tab = EguiWindow;
 
@@ -434,6 +451,7 @@ impl egui_dock::TabViewer for TabViewer<'_> {
     }
 }
 
+#[cfg(debug_assertions)]
 fn draw_gizmo(
     ui: &mut egui::Ui,
     world: &mut World,
@@ -478,6 +496,7 @@ fn draw_gizmo(
     }
 }
 
+#[cfg(debug_assertions)]
 fn select_resource(
     ui: &mut egui::Ui,
     type_registry: &TypeRegistry,
@@ -507,6 +526,7 @@ fn select_resource(
     }
 }
 
+#[cfg(debug_assertions)]
 fn select_asset(
     ui: &mut egui::Ui,
     type_registry: &TypeRegistry,
