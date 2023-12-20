@@ -15,7 +15,7 @@ use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::prelude::{in_state, Commands, IntoSystemConfigs, OnEnter};
 use log::info;
 
-use super::{ChangeMapLobbyEvent, MapLoaderState, PlayerId, PlayerInput};
+use super::{ChangeMapLobbyEvent, MapLoaderState, PlayerId, Inputs, PlayerInputs, Character};
 
 pub struct SingleLobbyPlugins;
 
@@ -81,7 +81,7 @@ pub fn change_map(
 fn teardown(
     mut commands: Commands,
     tied_camera_query: Query<Entity, With<TiedCamera>>,
-    char_query: Query<Entity, With<PlayerInput>>,
+    char_query: Query<Entity, With<Character>>,
     mut unload_actors_event: EventWriter<UnloadActorsEvent>,
 ) {
     if let Ok(entity) = tied_camera_query.get_single() {

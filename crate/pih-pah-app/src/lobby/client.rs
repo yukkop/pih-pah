@@ -25,8 +25,8 @@ use renet::{ClientId, ConnectionConfig, DefaultChannel, RenetClient};
 pub struct OwnId(Option<ClientId>);
 
 use super::{
-    ClientResource, Lobby, PlayerData, PlayerInput, ServerMessages, TransportDataResource,
-    Username, PROTOCOL_ID,
+    ClientResource, Lobby, PlayerData, Inputs, ServerMessages, TransportDataResource,
+    Username, PROTOCOL_ID, PlayerInputs,
 };
 
 pub struct ClientLobbyPlugins;
@@ -72,12 +72,11 @@ pub fn new_renet_client(settings: Res<ClientResource>, mut commands: Commands) {
 }
 
 pub fn client_send_input(
-    mut player_input_query: Query<&mut PlayerInput, With<Me>>,
+    mut player_input_query: Query<&mut PlayerInputs, With<Me>>,
     mut client: ResMut<RenetClient>,
 ) {
     if let Ok(player_input) = player_input_query.get_single_mut() {
-        let input_message = bincode::serialize(&*player_input).unwrap();
-
+        let input_message = bincode::serialize(&player_input.get()).unwrap();
         client.send_message(DefaultChannel::ReliableOrdered, input_message);
     }
 }
@@ -96,7 +95,7 @@ fn setup(mut commands: Commands) {
 fn teardown(
     mut commands: Commands,
     tied_camera_query: Query<Entity, With<TiedCamera>>,
-    char_query: Query<Entity, With<PlayerInput>>,
+    char_query: Query<Entity, With<PlayerInputs>>,
     mut unload_actors_event: EventWriter<UnloadActorsEvent>,
 ) {
     for entity in tied_camera_query.iter() {

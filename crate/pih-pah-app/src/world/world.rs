@@ -2,7 +2,7 @@ use crate::actor::physics_bundle::PhysicsBundle;
 use crate::actor::ActorPlugins;
 use crate::character::CharacterPlugins;
 use crate::component::{ComponentPlugins, Respawn, DespawnReason, AxisName, NoclipDuration};
-use crate::lobby::{LobbyPlugins, LobbyState, PlayerInput};
+use crate::lobby::{LobbyPlugins, LobbyState, Inputs, PlayerInputs};
 use crate::map::{MapPlugins, SpawnPoint};
 use crate::settings::SettingsPlugins;
 use crate::sound::SoundPlugins;
@@ -101,7 +101,8 @@ pub struct Me;
 
 /// Processes the input keys and manages them from a resource or event deep in the program.
 #[allow(clippy::too_many_arguments)]
-pub fn input( keyboard_input: Res<Input<KeyCode>>,
+pub fn input( 
+    keyboard_input: Res<Input<KeyCode>>,
     mut next_state_debug_frame: ResMut<NextState<DebugFrameState>>,
     debug_frame_state: Res<State<DebugFrameState>>,
     mut next_state_debug: ResMut<NextState<DebugState>>,
@@ -110,7 +111,7 @@ pub fn input( keyboard_input: Res<Input<KeyCode>>,
     ui_state: Res<State<UiState>>,
     mut next_state_game_menu_action: ResMut<NextState<GameMenuActionState>>,
     game_menu_action: Res<State<GameMenuActionState>>,
-    mut player_input_query: Query<&mut PlayerInput, With<Me>>,
+    mut player_input_query: Query<&mut PlayerInputs, With<Me>>,
     mut motion_evr: EventReader<MouseMotion>,
     mut next_state_mouse_grab: ResMut<NextState<MouseGrabState>>,
     mouse_grab_state: Res<State<MouseGrabState>>,
@@ -135,31 +136,33 @@ pub fn input( keyboard_input: Res<Input<KeyCode>>,
 
     if *game_menu_action.get() == GameMenuActionState::Disable {
         if let Ok(mut player_input) = player_input_query.get_single_mut() {
-            player_input.left =
+            let mut input = Inputs::default();
+            input.left =
                 keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::Left);
-            player_input.right =
+            input.right =
                 keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right);
-            player_input.up =
+            input.up =
                 keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
-            player_input.down =
+            input.down =
                 keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
-            player_input.special = keyboard_input.just_pressed(KeyCode::F);
-            player_input.jump = keyboard_input.just_pressed(KeyCode::Space);
-            player_input.sprint = keyboard_input.pressed(KeyCode::ControlLeft);
+            input.special = keyboard_input.pressed(KeyCode::F);
+            input.jump = keyboard_input.pressed(KeyCode::Space);
+            input.sprint = keyboard_input.pressed(KeyCode::ControlLeft);
 
-            player_input.turn_horizontal = 0.;
-            player_input.turn_vertical = 0.;
+            input.turn_horizontal = 0.;
+            input.turn_vertical = 0.;
             for ev in motion_evr.read() {
-                player_input.turn_horizontal = -ev.delta.x;
-                player_input.turn_vertical = -ev.delta.y;
+                input.turn_horizontal = -ev.delta.x;
+                input.turn_vertical = -ev.delta.y;
             }
 
-            player_input.fire = false;
-            for button in buttons.get_just_pressed() {
+            for button in buttons.get_pressed() {
                 if *button == MouseButton::Left {
-                    player_input.fire = true;
+                    input.fire = true;
                 }
             }
+
+            player_input.insert_inputs(input);
         }
     }
 }

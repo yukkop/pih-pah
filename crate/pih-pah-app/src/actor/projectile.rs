@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_xpbd_3d::components::{LinearVelocity, Mass, RigidBody, Collider, GravityDirection};
+use bevy_xpbd_3d::{components::{LinearVelocity, Mass, RigidBody, Collider, GravityDirection, MassPropertiesBundle}, parry::mass_properties::MassProperties};
 use serde::{Serialize, Deserialize};
 use bevy::ecs::system::EntityCommands;
 
@@ -49,8 +49,6 @@ extend_commands!(
                 transform: Transform::from_translation(projectile.position),
                 ..default()
             },
-            PhysicsBundle::from_rigid_body(RigidBody::Dynamic),
-            Collider::cuboid(SIZE, SIZE, SIZE),
             Despawn::new((
                 DespawnReason::More(200., AxisName::Y),
                 DespawnReason::Less(-10., AxisName::Y),
@@ -59,13 +57,16 @@ extend_commands!(
                 DespawnReason::More(100., AxisName::Z),
                 DespawnReason::Less(-100., AxisName::Z),
             )),
-            PhysicsOptimalTrace::new(0.2, 0.005, projectile.color, SIZE / 2.),
-            LinearVelocity::from(projectile.direction * projectile.power),
-            Mass(projectile.mass),
+            // PhysicsOptimalTrace::new(0.2, 0.005, projectile.color, SIZE / 2.),
             GravityDirection::new(Vec3::Y * -0.2),
             Actor,
             link_id.clone(),
-        ));
+        ))
+        .insert((
+            PhysicsBundle::from_rigid_body(RigidBody::Dynamic),
+            Collider::cuboid(SIZE, SIZE, SIZE),
+            MassPropertiesBundle::default(),
+            LinearVelocity::from(projectile.direction * projectile.power)));
 
         world.send_event(SpawnProjectileEvent(link_id, projectile.color));
     }
@@ -90,7 +91,7 @@ extend_commands!(
                 material: material,
                 ..default()
             },
-            Trace::new(0.5, 0.05, projectile.color),
+            // Trace::new(0.5, 0.05, projectile.color),
             projectile.id,
             Actor,
             TransformOptimalTrace::new(0.2, 0.005, projectile.color, SIZE / 2.),

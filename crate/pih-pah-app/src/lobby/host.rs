@@ -2,12 +2,12 @@ use std::net::UdpSocket;
 use std::time::SystemTime;
 
 use crate::actor::UnloadActorsEvent;
-use crate::character::{TiedCamera, spawn_character, spawn_tied_camera};
+use crate::character::{TiedCamera, spawn_character, spawn_tied_camera, fire};
 use crate::component::{DespawnReason, Respawn};
 use crate::lobby::{LobbyState, PlayerData, PlayerId, ServerMessages, Username};
 use crate::map::{is_loaded, MapState, SpawnPoint};
 use crate::world::{LinkId, Me};
-use bevy::app::{App, Plugin, PreUpdate};
+use bevy::app::{App, Plugin, PreUpdate, Update};
 use bevy::ecs::entity::Entity;
 use bevy::ecs::event::{EventReader, EventWriter, Event};
 use bevy::ecs::query::With;
@@ -25,7 +25,7 @@ use renet::{ConnectionConfig, DefaultChannel, RenetServer, ServerEvent};
 
 use super::{
     ChangeMapLobbyEvent, Character, HostResource, Lobby, MapLoaderState, ActorTransportData,
-    PlayerInput, PlayerTransportData, PlayerView, TransportDataResource, PROTOCOL_ID,
+    Inputs, PlayerTransportData, PlayerView, TransportDataResource, PROTOCOL_ID, PlayerInputs,
 };
 
 #[derive(Debug, Event)]
@@ -43,13 +43,18 @@ impl Plugin for HostLobbyPlugins {
             .add_plugins((RenetServerPlugin, NetcodeServerPlugin))
             .add_systems(OnEnter(LobbyState::Host), setup)
             .add_systems(
-                PreUpdate,
-                (server_update_system, send_change_map, server_sync_actor, spawn_projectile, despawn_actor)
+                Update,
+                (send_change_map, server_sync_actor, spawn_projectile, despawn_actor)
+                    .run_if(in_state(LobbyState::Host)),
+            )
+            .add_systems(
+                Update,
+                server_update_system.before(fire)
                     .run_if(in_state(LobbyState::Host)),
             )
             .add_systems(OnExit(LobbyState::Host), teardown)
             .add_systems(
-                PreUpdate,
+                Update,
                 load_processing
                     .run_if(in_state(LobbyState::Host).and_then(in_state(MapLoaderState::No))),
             );
@@ -173,7 +178,7 @@ pub fn send_change_map(
 fn teardown(
     mut commands: Commands,
     tied_camera_query: Query<Entity, With<TiedCamera>>,
-    char_query: Query<Entity, With<PlayerInput>>,
+    char_query: Query<Entity, With<Character>>,
     mut unload_actors_event: EventWriter<UnloadActorsEvent>,
 ) {
     for entity in tied_camera_query.iter() {
@@ -202,6 +207,8 @@ pub fn server_update_system(
     transport: Res<NetcodeServerTransport>,
     spawn_point: Res<SpawnPoint>,
     map_state: ResMut<State<MapState>>,
+
+    mut input_query: Query<&mut PlayerInputs>,
 ) {
     for event in server_events.read() {
         match event {
@@ -279,13 +286,21 @@ pub fn server_update_system(
         }
     }
 
+    log::info!("get input");
     for client_id in server.clients_id().into_iter() {
         while let Some(message) = server.receive_message(client_id, DefaultChannel::ReliableOrdered)
         {
-            let player_input: PlayerInput = bincode::deserialize(&message).unwrap();
+            let input: Inputs = bincode::deserialize(&message).unwrap();
             if let Some(player_data) = lobby.players.get(&PlayerId::Client(client_id)) {
-
-                commands.entity(player_data.entity).insert(player_input);
+                if input.fire {
+                    log::info!("Player fire {:#?}", player_data.entity);
+                }
+                if let Ok(mut player_input) = input_query.get_mut(player_data.entity) {
+                    player_input.insert_inputs(input);
+                }
+            }
+            else {
+                log::error!("Player not found");
             }
         }
     }

@@ -49,3 +49,9 @@
 [x] viewport size do not update after window size hase been changed
 [x] game menu do not use debug viewport for size
 [x] gravity layers broken
+[ ] random orders in game systems
+[ ] Camera raycast must ignore projectile
+[ ] just presed realisation for multiplayr inputs
+
+# Critical
+[ ] Insert, Spawn etc. add commands into command list that have non-obvious order. need to change it in parts where order important

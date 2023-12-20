@@ -163,8 +163,27 @@ pub struct PlayerData {
     pub username: String,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize, Component, Resource, Reflect)]
-pub struct PlayerInput {
+
+// TODO resource????????
+#[derive(Debug, Default, Component, Reflect)]
+pub struct PlayerInputs {
+    input: Inputs,
+    previouse_input: Inputs,
+}
+
+impl PlayerInputs {
+    pub fn insert_inputs(&mut self, input: Inputs) {
+        self.previouse_input = self.input;
+        self.input = input;
+    }
+
+    pub fn get(&self) -> Inputs {
+        self.input
+    }
+}
+
+#[derive(Debug, Default, Serialize, Deserialize, Reflect, Clone, Copy)]
+pub struct Inputs {
     pub up: bool,
     pub down: bool,
     pub left: bool,

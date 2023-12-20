@@ -2,9 +2,9 @@ use crate::actor::physics_bundle::PhysicsBundle;
 use crate::actor::{Projectile, spawn_projectile, PhysicsOptimalTrace, TransformOptimalTrace};
 use crate::component::{AxisName, DespawnReason, NoclipDuration, Respawn};
 use crate::extend_commands;
-use crate::lobby::Character;
-use crate::lobby::host::generate_player_color;
-use crate::lobby::{LobbyState, PlayerId, PlayerInput, PlayerView};
+use crate::lobby::{Character, PlayerInputs};
+use crate::lobby::host::{generate_player_color, server_update_system};
+use crate::lobby::{LobbyState, PlayerId, Inputs, PlayerView};
 use crate::map::SpawnPoint;
 use crate::ui::MainCamera;
 use crate::world::Me;
@@ -36,32 +36,28 @@ impl Plugin for CharacterPlugins {
     fn build(&self, app: &mut App) {
         app.add_systems(
             FixedUpdate,
-            move_characters.run_if(
+            (move_characters, update_jump_normals).run_if(
                 not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
             ),
         )
         .add_systems(
             Update,
-            (jump, rotate_camera, gravity_direction, fire).run_if(
+            (jump, rotate_camera, gravity_direction).run_if(
                 not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
             ),
         )
+        .add_systems(PostUpdate, fire.after(server_update_system).run_if(
+                not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client)))))
         .add_systems(
             PostUpdate,
             tied_camera_follow.run_if(not(in_state(LobbyState::None))),
-        )
-        .add_systems(
-            FixedUpdate,
-            update_jump_normals.run_if(
-                not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
-            ),
         );
     }
 }
 
-fn gravity_direction(mut query: Query<(&mut GravityDirection, &mut PlayerView, &PlayerInput)>) {
-    for (mut direction_resource, mut view_direction, player_input) in query.iter_mut() {
-        if player_input.special {
+fn gravity_direction(mut query: Query<(&mut GravityDirection, &mut PlayerView, &PlayerInputs)>) {
+    for (mut direction_resource, mut view_direction, input) in query.iter_mut() {
+        if input.get().special {
             // change gravity direction
             let new_y = direction_resource.y * -1.;
             direction_resource.set_y(new_y);
@@ -121,20 +117,20 @@ fn jump(
     mut query: Query<(
         &mut LinearVelocity,
         &PlayerView,
-        &PlayerInput,
+        &PlayerInputs,
         Entity,
         &JumpHelper,
     )>, /* , time: Res<Time> */
     gravity: Res<Gravity>,
     collisions: Res<Collisions>,
 ) {
-    for (mut linear_velocity, view_direction, input, player_entity, jump_direction) in
+    for (mut linear_velocity, view_direction, player_inputs, player_entity, jump_direction) in
         query.iter_mut()
     {
-        let jumped = input.jump;
+        let jumped = player_inputs.get().jump;
 
-        let dx = (input.right as i8 - input.left as i8) as f32;
-        let dy = (input.down as i8 - input.up as i8) as f32;
+        let dx = (player_inputs.get().right as i8 - player_inputs.get().left as i8) as f32;
+        let dy = (player_inputs.get().down as i8 - player_inputs.get().up as i8) as f32;
 
         let local_x = view_direction.direction.mul_vec3(Vec3::X);
         let local_y = view_direction.direction.mul_vec3(Vec3::Z);
@@ -155,9 +151,10 @@ fn jump(
 }
 
 fn move_characters(
-    mut query: Query<(&mut LinearVelocity, &PlayerView, &PlayerInput)>, /* , time: Res<Time> */
+    mut query: Query<(&mut LinearVelocity, &PlayerView, &PlayerInputs)>, /* , time: Res<Time> */
 ) {
     for (mut linear_velocity, view_direction, input) in query.iter_mut() {
+        let input = input.get(); 
         let dx = (input.right as i8 - input.left as i8) as f32;
         let dy = (input.down as i8 - input.up as i8) as f32;
 
@@ -178,14 +175,16 @@ fn move_characters(
     }
 }
 
-fn fire(
+pub fn fire(
     mut commands: Commands,
-    mut query: Query<(&mut PlayerInput, &PlayerView, &Transform)>,
+    mut query: Query<(&mut PlayerInputs, &PlayerView, &Transform)>,
 ) {
+    log::info!("fire");
     for (mut input, view, transform) in query.iter_mut() {
+        let input = input.get();
         if input.fire {
+            log::info!("projectile spawned");
             let random_i32 = rand::random::<i32>();
-                    info!("shoot {}", random_i32);
             let color = generate_player_color(random_i32 as u32);
             commands.spawn_projectile(Projectile {
                 position: transform.translation + Vec3::Y * 2.,
@@ -194,7 +193,6 @@ fn fire(
                 mass: 1.,
                 color,
             });
-            input.fire = false;
         }
     }
 }
@@ -204,7 +202,7 @@ fn rotate_camera(
     mut query: Query<(
         &mut PlayerView,
         &Transform,
-        &PlayerInput,
+        &PlayerInputs,
         Option<&mut RayCaster>,
         Option<&RayHits>,
     )>,
@@ -212,6 +210,8 @@ fn rotate_camera(
 ) {
     let delta_seconds = time.delta_seconds();
     for (mut view, transform, input, ray, hits) in query.iter_mut() {
+        let input = input.get();
+
         // camera turn
         let rotation = Quat::from_rotation_y(input.turn_horizontal * SENSITIVITY * delta_seconds);
         // global rotation (!ORDER OF MULTIPLICATION MATTERS!)
@@ -269,13 +269,7 @@ extend_commands!(
             ..Default::default()
             },
             RayCaster::new(start_point, offset),
-            Friction::new(0.4),
-            PhysicsBundle::from_rigid_body(RigidBody::Dynamic),
-            Position::from_xyz(spawn_point.x, spawn_point.y, spawn_point.z),
-            Collider::cuboid(PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE),
             JumpHelper{last_viable_normal: Vec3::Y},
-            PhysicsOptimalTrace::new(0.5, 0.05, color, PLAYER_SIZE / 2.),
-            GravityDirection::from_xyz(0., -1., 0.),
             Respawn::new((
                 DespawnReason::More(200., AxisName::Y),
                 DespawnReason::Less(-10., AxisName::Y),
@@ -286,10 +280,17 @@ extend_commands!(
             ),
             SpawnPoint::new(spawn_point), 
             NoclipDuration::Timer(10.)),
-            PlayerInput::default(),
+            PlayerInputs::default(),
             Character { id: player_id },
             PlayerView::new(Quat::default(), 325.0.sqrt()),
             Name::new(format!("Character:{:#?}", player_id)),
+            // PhysicsOptimalTrace::new(0.5, 0.05, color, PLAYER_SIZE / 2.),
+        )).insert((
+            Friction::new(0.4),
+            PhysicsBundle::from_rigid_body(RigidBody::Dynamic),
+            Position::from_xyz(spawn_point.x, spawn_point.y, spawn_point.z),
+            GravityDirection::from_xyz(0., -1., 0.),
+            Collider::cuboid(PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE),
         ));
   }
 );
@@ -319,8 +320,8 @@ extend_commands!(
           transform: Transform::from_xyz(spawn_point.x, spawn_point.y, spawn_point.z),
           ..Default::default()
        },
-        TransformOptimalTrace::new(0.5, 0.05, color, PLAYER_SIZE / 2.),
-        PlayerInput::default(),
+        // TransformOptimalTrace::new(0.5, 0.05, color, PLAYER_SIZE / 2.),
+        PlayerInputs::default(),
         Name::new(format!("Character:{:#?}", player_id)),
         PlayerView::new(Quat::default(), 325.0.sqrt())));
   }
