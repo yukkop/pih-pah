@@ -48,13 +48,18 @@ pub enum ServerMessages {
     ///
     /// * `id` - Unique identifier for the connecting client.
     /// * `map_state` - Initial state of the client's map.
-    InitConnection { id: ClientId, map_state: MapState },
+    InitConnection {
+        id: ClientId,
+        map_state: MapState,
+    },
     /// Sent to notify a change in the map's state.
     ///
     /// # Fields
     ///
     /// * `map_state` - The new state of the map.
-    ChangeMap { map_state: MapState },
+    ChangeMap {
+        map_state: MapState,
+    },
     /// Indicates that a player has connected to the server.
     ///
     /// # Fields
@@ -72,9 +77,16 @@ pub enum ServerMessages {
     /// # Fields
     ///
     /// * `id` - Unique identifier for the player who has disconnected.
-    PlayerDisconnected { id: PlayerId },
-    ProjectileSpawn { id: LinkId, color: Color },
-    ActorDespawn { id: LinkId },
+    PlayerDisconnected {
+        id: PlayerId,
+    },
+    ProjectileSpawn {
+        id: LinkId,
+        color: Color,
+    },
+    ActorDespawn {
+        id: LinkId,
+    },
 }
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
@@ -163,7 +175,6 @@ pub struct PlayerData {
     pub username: String,
 }
 
-
 // TODO resource????????
 #[derive(Debug, Default, Component, Reflect)]
 pub struct PlayerInputs {
@@ -209,8 +220,12 @@ impl PlayerInputs {
             InputType::Right => self.input.right != self.previouse_input.right,
             InputType::Jump => self.input.jump != self.previouse_input.jump,
             InputType::Sprint => self.input.sprint != self.previouse_input.sprint,
-            InputType::TurnHorizontal => self.input.turn_horizontal != self.previouse_input.turn_horizontal,
-            InputType::TurnVertical => self.input.turn_vertical != self.previouse_input.turn_vertical,
+            InputType::TurnHorizontal => {
+                self.input.turn_horizontal != self.previouse_input.turn_horizontal
+            }
+            InputType::TurnVertical => {
+                self.input.turn_vertical != self.previouse_input.turn_vertical
+            }
             InputType::Special => self.input.special != self.previouse_input.special,
             InputType::Fire => self.input.fire != self.previouse_input.fire,
         }
@@ -224,8 +239,12 @@ impl PlayerInputs {
             InputType::Right => !self.previouse_input.right && self.input.right,
             InputType::Jump => !self.previouse_input.jump && self.input.jump,
             InputType::Sprint => !self.previouse_input.sprint && self.input.sprint,
-            InputType::TurnHorizontal => self.input.turn_horizontal - self.previouse_input.turn_horizontal > THRESHOLD,
-            InputType::TurnVertical => self.input.turn_vertical - self.previouse_input.turn_vertical > THRESHOLD,
+            InputType::TurnHorizontal => {
+                self.input.turn_horizontal - self.previouse_input.turn_horizontal > THRESHOLD
+            }
+            InputType::TurnVertical => {
+                self.input.turn_vertical - self.previouse_input.turn_vertical > THRESHOLD
+            }
             InputType::Special => !self.previouse_input.special && self.input.special,
             InputType::Fire => !self.previouse_input.fire && self.input.fire,
         }
@@ -277,7 +296,8 @@ impl PlayerInputs {
                 val
             }
             InputType::TurnHorizontal => {
-                let val = self.input.turn_horizontal - self.previouse_input.turn_horizontal > THRESHOLD;
+                let val =
+                    self.input.turn_horizontal - self.previouse_input.turn_horizontal > THRESHOLD;
                 if val {
                     self.previouse_input.turn_horizontal = 0.2;
                 }
@@ -388,8 +408,7 @@ pub struct LobbyPlugins;
 
 impl Plugin for LobbyPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_event::<ChangeMapLobbyEvent>()
+        app.add_event::<ChangeMapLobbyEvent>()
             .add_state::<LobbyState>()
             .add_state::<MapLoaderState>()
             .init_resource::<HostResource>()

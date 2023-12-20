@@ -79,7 +79,6 @@ impl PhysicsOptimalTrace {
     }
 }
 
-
 /// Spawn a trasepoint at the actor position.
 /// It will check Transform and not spawn tracepoints if actor is not moving.
 #[derive(Component)]
@@ -143,8 +142,7 @@ pub struct TracePlugins;
 
 impl Plugin for TracePlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_systems(Update, process_tracepoint)
+        app.add_systems(Update, process_tracepoint)
             .add_systems(Update, process_physics_optimal_tracepoint)
             .add_systems(Update, process_transform_optimal_tracepoint);
     }
@@ -158,12 +156,13 @@ fn process_tracepoint(
 ) {
     for (global_transform, mut trace) in trace_query.iter_mut() {
         if trace.intensity.update(time.delta()).just_finished() {
-            let _tracepoint = commands.spawn_tracepoint(global_transform.translation(), trace.duration, trace.color).id();
+            let _tracepoint = commands
+                .spawn_tracepoint(global_transform.translation(), trace.duration, trace.color)
+                .id();
             #[cfg(feature = "temp-container")]
             if let Ok(temp_container) = _temp_container_query.get_single() {
                 commands.entity(temp_container).add_child(_tracepoint);
-            }
-            else {
+            } else {
                 warn!("TempContainer not found");
             }
         }
@@ -177,16 +176,17 @@ fn process_physics_optimal_tracepoint(
     time: Res<Time>,
 ) {
     for (global_transform, linear_velocity, mut trace) in trace_query.iter_mut() {
-        if linear_velocity.length() > trace.offset {
-            if trace.intensity.update(time.delta()).just_finished() {
-                let _tracepoint = commands.spawn_tracepoint(global_transform.translation(), trace.duration, trace.color).id();
-                #[cfg(feature = "temp-container")]
-                if let Ok(temp_container) = _temp_container_query.get_single() {
-                    commands.entity(temp_container).add_child(_tracepoint);
-                }
-                else {
-                    warn!("TempContainer not found");
-                }
+        if linear_velocity.length() > trace.offset
+            && trace.intensity.update(time.delta()).just_finished()
+        {
+            let _tracepoint = commands
+                .spawn_tracepoint(global_transform.translation(), trace.duration, trace.color)
+                .id();
+            #[cfg(feature = "temp-container")]
+            if let Ok(temp_container) = _temp_container_query.get_single() {
+                commands.entity(temp_container).add_child(_tracepoint);
+            } else {
+                warn!("TempContainer not found");
             }
         }
     }
@@ -200,23 +200,22 @@ fn process_transform_optimal_tracepoint(
 ) {
     for (global_transform, mut trace) in trace_query.iter_mut() {
         let global_translation = global_transform.translation();
-        if (global_translation - trace.last_position).length() > trace.offset {
-            if trace.intensity.update(time.delta()).just_finished() {
-                let _tracepoint = commands.spawn_tracepoint(global_translation, trace.duration, trace.color).id();
-                #[cfg(feature = "temp-container")]
-                if let Ok(temp_container) = _temp_container_query.get_single() {
-                    commands.entity(temp_container).add_child(_tracepoint);
-                }
-                else {
-                    warn!("TempContainer not found");
-                }
+        if (global_translation - trace.last_position).length() > trace.offset
+            && trace.intensity.update(time.delta()).just_finished()
+        {
+            let _tracepoint = commands
+                .spawn_tracepoint(global_translation, trace.duration, trace.color)
+                .id();
+            #[cfg(feature = "temp-container")]
+            if let Ok(temp_container) = _temp_container_query.get_single() {
+                commands.entity(temp_container).add_child(_tracepoint);
+            } else {
+                warn!("TempContainer not found");
             }
         }
         trace.last_position = global_translation;
     }
 }
-
-
 
 extend_commands!(
   spawn_tracepoint(translation: Vec3, duration: f32, color: Color),

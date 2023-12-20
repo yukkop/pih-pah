@@ -7,7 +7,7 @@ use crate::map::{is_loaded, MapState, SpawnPoint};
 use crate::world::Me;
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
-use bevy::ecs::event::{EventReader, Events, EventWriter};
+use bevy::ecs::event::{EventReader, EventWriter, Events};
 use bevy::ecs::query::With;
 use bevy::ecs::schedule::{Condition, NextState, OnExit};
 use bevy::ecs::system::{Query, Res, ResMut};
@@ -15,7 +15,7 @@ use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::prelude::{in_state, Commands, IntoSystemConfigs, OnEnter};
 use log::info;
 
-use super::{ChangeMapLobbyEvent, MapLoaderState, PlayerId, Inputs, PlayerInputs, Character};
+use super::{ChangeMapLobbyEvent, Character, MapLoaderState, PlayerId};
 
 pub struct SingleLobbyPlugins;
 

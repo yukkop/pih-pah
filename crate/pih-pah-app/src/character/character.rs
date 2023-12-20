@@ -1,10 +1,10 @@
 use crate::actor::physics_bundle::PhysicsBundle;
-use crate::actor::{Projectile, spawn_projectile, PhysicsOptimalTrace, TransformOptimalTrace};
+use crate::actor::{spawn_projectile, Projectile};
 use crate::component::{AxisName, DespawnReason, NoclipDuration, Respawn};
 use crate::extend_commands;
-use crate::lobby::{Character, PlayerInputs, InputType};
 use crate::lobby::host::{generate_player_color, server_update_system};
-use crate::lobby::{LobbyState, PlayerId, Inputs, PlayerView};
+use crate::lobby::{Character, InputType, PlayerInputs};
+use crate::lobby::{LobbyState, PlayerId, PlayerView};
 use crate::map::SpawnPoint;
 use crate::ui::MainCamera;
 use crate::world::Me;
@@ -46,8 +46,12 @@ impl Plugin for CharacterPlugins {
                 not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
             ),
         )
-        .add_systems(Last, fire.after(server_update_system).run_if(
-                not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client)))))
+        .add_systems(
+            Last,
+            fire.after(server_update_system).run_if(
+                not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
+            ),
+        )
         .add_systems(
             PostUpdate,
             tied_camera_follow.run_if(not(in_state(LobbyState::None))),
@@ -55,7 +59,9 @@ impl Plugin for CharacterPlugins {
     }
 }
 
-fn gravity_direction(mut query: Query<(&mut GravityDirection, &mut PlayerView, &mut PlayerInputs)>) {
+fn gravity_direction(
+    mut query: Query<(&mut GravityDirection, &mut PlayerView, &mut PlayerInputs)>,
+) {
     for (mut direction_resource, mut view_direction, mut input) in query.iter_mut() {
         if input.is_input_changed_to_true_and_set_to_false(InputType::Special) {
             // change gravity direction
@@ -154,7 +160,7 @@ fn move_characters(
     mut query: Query<(&mut LinearVelocity, &PlayerView, &PlayerInputs)>, /* , time: Res<Time> */
 ) {
     for (mut linear_velocity, view_direction, input) in query.iter_mut() {
-        let input = input.get(); 
+        let input = input.get();
         let dx = (input.right as i8 - input.left as i8) as f32;
         let dy = (input.down as i8 - input.up as i8) as f32;
 
@@ -225,10 +231,7 @@ fn rotate_camera(
             let h = transform.rotation.conjugate();
             let start_point = h.mul_vec3(Vec3::Y * 2.);
             let offset = h
-                .mul_vec3(
-                    view.direction
-                        .mul_vec3(DEFAULT_CAMERA_DISTANCE * Vec3::Z),
-                )
+                .mul_vec3(view.direction.mul_vec3(DEFAULT_CAMERA_DISTANCE * Vec3::Z))
                 // need to normalize ray.direction to time_of_impact work correctly
                 .normalize();
             ray.origin = start_point;
@@ -277,7 +280,7 @@ extend_commands!(
                 DespawnReason::More(100., AxisName::Z),
                 DespawnReason::Less(-100., AxisName::Z)
             ),
-            SpawnPoint::new(spawn_point), 
+            SpawnPoint::new(spawn_point),
             NoclipDuration::Timer(10.)),
             PlayerInputs::default(),
             Character { id: player_id },

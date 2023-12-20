@@ -1,8 +1,11 @@
-mod trace;
-mod projectile;
+#![allow(clippy::module_inception)]
+
 mod actor;
+mod projectile;
+mod trace;
+
 pub mod physics_bundle;
 
-pub use trace::*;
-pub use projectile::*;
 pub use actor::*;
+pub use projectile::*;
+pub use trace::*;

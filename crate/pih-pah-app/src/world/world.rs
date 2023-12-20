@@ -1,8 +1,8 @@
 use crate::actor::physics_bundle::PhysicsBundle;
 use crate::actor::ActorPlugins;
 use crate::character::CharacterPlugins;
-use crate::component::{ComponentPlugins, Respawn, DespawnReason, AxisName, NoclipDuration};
-use crate::lobby::{LobbyPlugins, LobbyState, Inputs, PlayerInputs};
+use crate::component::{AxisName, ComponentPlugins, DespawnReason, NoclipDuration, Respawn};
+use crate::lobby::{Inputs, LobbyPlugins, LobbyState, PlayerInputs};
 use crate::map::{MapPlugins, SpawnPoint};
 use crate::settings::SettingsPlugins;
 use crate::sound::SoundPlugins;
@@ -69,30 +69,29 @@ pub struct WorldPlugins;
 
 impl Plugin for WorldPlugins {
     fn build(&self, app: &mut App) {
-        app
-        .init_resource::<ProjectileIdSeq>()
-        .register_type::<ProjectileIdSeq>()
-        .add_systems(Update, input)
-        .add_plugins((
-            SettingsPlugins,
-            SoundPlugins,
-            MapPlugins,
-            UiPlugins,
-            LobbyPlugins,
-            ActorPlugins,   
-            ComponentPlugins,
-            CharacterPlugins,
-        ))
-        .add_systems(
-            Update,
-            process_scene.run_if(
-                not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
-            ),
-        )
-        .add_systems(
-            Update,
-            process_scene_simplified.run_if(in_state(LobbyState::Client)),
-        );
+        app.init_resource::<ProjectileIdSeq>()
+            .register_type::<ProjectileIdSeq>()
+            .add_systems(Update, input)
+            .add_plugins((
+                SettingsPlugins,
+                SoundPlugins,
+                MapPlugins,
+                UiPlugins,
+                LobbyPlugins,
+                ActorPlugins,
+                ComponentPlugins,
+                CharacterPlugins,
+            ))
+            .add_systems(
+                Update,
+                process_scene.run_if(
+                    not(in_state(LobbyState::None)).and_then(not(in_state(LobbyState::Client))),
+                ),
+            )
+            .add_systems(
+                Update,
+                process_scene_simplified.run_if(in_state(LobbyState::Client)),
+            );
     }
 }
 
@@ -101,7 +100,7 @@ pub struct Me;
 
 /// Processes the input keys and manages them from a resource or event deep in the program.
 #[allow(clippy::too_many_arguments)]
-pub fn input( 
+pub fn input(
     keyboard_input: Res<Input<KeyCode>>,
     mut next_state_debug_frame: ResMut<NextState<DebugFrameState>>,
     debug_frame_state: Res<State<DebugFrameState>>,
@@ -136,32 +135,27 @@ pub fn input(
 
     if *game_menu_action.get() == GameMenuActionState::Disable {
         if let Ok(mut player_input) = player_input_query.get_single_mut() {
-            let mut input = Inputs::default();
-            input.left =
-                keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::Left);
-            input.right =
-                keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right);
-            input.up =
-                keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
-            input.down =
-                keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
-            input.special = keyboard_input.pressed(KeyCode::F);
-            input.jump = keyboard_input.pressed(KeyCode::Space);
-            input.sprint = keyboard_input.pressed(KeyCode::ControlLeft);
-
-            input.turn_horizontal = 0.;
-            input.turn_vertical = 0.;
+            let mut turn_horizontal = 0.;
+            let mut turn_vertical = 0.;
             for ev in motion_evr.read() {
-                input.turn_horizontal = -ev.delta.x;
-                input.turn_vertical = -ev.delta.y;
+                turn_horizontal = -ev.delta.x;
+                turn_vertical = -ev.delta.y;
             }
-
-            for button in buttons.get_pressed() {
-                if *button == MouseButton::Left {
-                    input.fire = true;
-                }
-            }
-
+    
+            let input = Inputs {
+                left: keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::Left),
+                right: keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right),
+                up: keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up),
+                down: keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down),
+                special: keyboard_input.pressed(KeyCode::F),
+                jump: keyboard_input.pressed(KeyCode::Space),
+                sprint: keyboard_input.pressed(KeyCode::ControlLeft),
+                turn_horizontal,
+                turn_vertical,
+                fire: buttons.get_pressed().any(|button| *button == MouseButton::Left),
+                ..Default::default()
+            };
+    
             player_input.insert_inputs(input);
         }
     }
@@ -229,36 +223,40 @@ fn process_scene_child(
                         let collider_handler = mesh_handle_query.get(entity).unwrap();
                         if let Some(mesh) = meshes.get(collider_handler) {
                             let collider = Collider::trimesh_from_mesh(mesh).unwrap();
-                            commands
-                                .entity(entity)
-                                .insert(collider);
+                            commands.entity(entity).insert(collider);
 
                             if val == "d" {
-                                commands.entity(entity).insert(PhysicsBundle::from_rigid_body(RigidBody::Dynamic));
+                                commands
+                                    .entity(entity)
+                                    .insert(PhysicsBundle::from_rigid_body(RigidBody::Dynamic));
                             }
                             if val == "s" {
-                                commands.entity(entity).insert(PhysicsBundle::from_rigid_body(RigidBody::Static));
+                                commands
+                                    .entity(entity)
+                                    .insert(PhysicsBundle::from_rigid_body(RigidBody::Static));
                             }
                         }
                     } else if name == "id" {
-                        commands.entity(entity).insert(LinkId::Scene(val.to_string()));
+                        commands
+                            .entity(entity)
+                            .insert(LinkId::Scene(val.to_string()));
                     } else if name == "m" {
                         commands.entity(entity).insert(Mass(val.parse().unwrap()));
                     }
                 } else if name == "r" {
                     let transform = transform_query.get(entity).unwrap();
-                    commands
-                        .entity(entity)
-                        .insert(Respawn::new((
+                    commands.entity(entity).insert(Respawn::new(
+                        (
                             DespawnReason::More(200., AxisName::Y),
                             DespawnReason::Less(-10., AxisName::Y),
                             DespawnReason::More(100., AxisName::X),
                             DespawnReason::Less(-100., AxisName::X),
                             DespawnReason::More(100., AxisName::Z),
-                            DespawnReason::Less(-100., AxisName::Z)
+                            DespawnReason::Less(-100., AxisName::Z),
                         ),
-                        SpawnPoint::new(transform.translation), 
-                        NoclipDuration::Timer(10.)));
+                        SpawnPoint::new(transform.translation),
+                        NoclipDuration::Timer(10.),
+                    ));
                 }
             }
         }
@@ -322,7 +320,9 @@ fn process_scene_child_simplified(
                 let name = split.next().unwrap();
                 if let Some(val) = split.next() {
                     if name == "id" {
-                        commands.entity(entity).insert(LinkId::Scene(val.to_string()));
+                        commands
+                            .entity(entity)
+                            .insert(LinkId::Scene(val.to_string()));
                     }
                 }
             }

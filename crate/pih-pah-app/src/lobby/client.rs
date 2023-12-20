@@ -2,10 +2,10 @@ use std::net::UdpSocket;
 use std::time::SystemTime;
 
 use crate::actor::{spawn_projectile_shell, ProjectileShell, UnloadActorsEvent};
-use crate::character::{TiedCamera, spawn_character_shell, spawn_tied_camera};
+use crate::character::{spawn_character_shell, spawn_tied_camera, TiedCamera};
 use crate::lobby::{LobbyState, PlayerId};
 use crate::map::MapState;
-use crate::world::{LinkId, Me, input};
+use crate::world::{input, LinkId, Me};
 use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
 use bevy::ecs::event::EventWriter;
@@ -25,8 +25,8 @@ use renet::{ClientId, ConnectionConfig, DefaultChannel, RenetClient};
 pub struct OwnId(Option<ClientId>);
 
 use super::{
-    ClientResource, Lobby, PlayerData, Inputs, ServerMessages, TransportDataResource,
-    Username, PROTOCOL_ID, PlayerInputs,
+    ClientResource, Lobby, PlayerData, PlayerInputs, ServerMessages, TransportDataResource,
+    Username, PROTOCOL_ID,
 };
 
 pub struct ClientLobbyPlugins;
@@ -37,7 +37,8 @@ impl Plugin for ClientLobbyPlugins {
             .add_systems(OnEnter(LobbyState::Client), (setup, new_renet_client))
             .add_systems(
                 Update,
-                (client_send_input, client_sync_players).after(input)
+                (client_send_input, client_sync_players)
+                    .after(input)
                     .run_if(in_state(LobbyState::Client).and_then(bevy_renet::client_connected())),
             )
             .add_systems(OnExit(LobbyState::Client), teardown);
@@ -143,7 +144,9 @@ pub fn client_sync_players(
                 color,
                 username,
             } => {
-                let player_entity = commands.spawn_character_shell(player_id, color, Vec3::ZERO).id();
+                let player_entity = commands
+                    .spawn_character_shell(player_id, color, Vec3::ZERO)
+                    .id();
                 if let PlayerId::Client(id) = player_id {
                     if Some(id) == own_id.0 {
                         commands.entity(player_entity).insert(Me);
@@ -174,7 +177,7 @@ pub fn client_sync_players(
                 }
             }
             ServerMessages::ProjectileSpawn { id, color } => {
-                commands.spawn_projectile_shell(ProjectileShell {color, id});
+                commands.spawn_projectile_shell(ProjectileShell { color, id });
             }
             ServerMessages::ActorDespawn { id } => {
                 for (entity, link_id) in lincked_obj_query.iter() {

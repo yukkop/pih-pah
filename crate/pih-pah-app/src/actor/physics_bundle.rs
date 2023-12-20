@@ -1,5 +1,5 @@
 use bevy::ecs::bundle::Bundle;
-use bevy_xpbd_3d::components::{Restitution, RigidBody, CollisionLayers};
+use bevy_xpbd_3d::components::{CollisionLayers, Restitution, RigidBody};
 
 use crate::world::CollisionLayer;
 
@@ -17,7 +17,8 @@ impl Default for PhysicsBundle {
             restitution: Restitution::ZERO,
             collision_layers: CollisionLayers::new(
                 [CollisionLayer::Default],
-                [CollisionLayer::Default, CollisionLayer::ActorNoclip]),
+                [CollisionLayer::Default, CollisionLayer::ActorNoclip],
+            ),
         }
     }
 }

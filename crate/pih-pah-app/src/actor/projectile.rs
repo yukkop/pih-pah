@@ -1,17 +1,21 @@
-use bevy::prelude::*;
-use bevy_xpbd_3d::{components::{LinearVelocity, Mass, RigidBody, Collider, GravityDirection, MassPropertiesBundle}, parry::mass_properties::MassProperties};
-use serde::{Serialize, Deserialize};
 use bevy::ecs::system::EntityCommands;
+use bevy::prelude::*;
+use bevy_xpbd_3d::components::{
+    Collider, GravityDirection, LinearVelocity, MassPropertiesBundle, RigidBody,
+};
+use serde::{Deserialize, Serialize};
 
 use crate::{
-    component::{Despawn, DespawnReason, AxisName},
-    extend_commands, world::{ProjectileIdSeq, LinkId}, lobby::host::SpawnProjectileEvent,
+    component::{AxisName, Despawn, DespawnReason},
+    extend_commands,
+    lobby::host::SpawnProjectileEvent,
+    world::{LinkId, ProjectileIdSeq},
 };
 
-use super::{Trace, physics_bundle::PhysicsBundle, Actor, PhysicsOptimalTrace, TransformOptimalTrace};
+use super::{physics_bundle::PhysicsBundle, Actor, TransformOptimalTrace};
 
 #[derive(Default, Serialize, Deserialize)]
-pub struct Projectile{
+pub struct Projectile {
     pub position: Vec3,
     pub direction: Vec3,
     pub power: f32,
@@ -20,7 +24,7 @@ pub struct Projectile{
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct ProjectileShell{
+pub struct ProjectileShell {
     pub color: Color,
     pub id: LinkId,
 }
@@ -44,8 +48,8 @@ extend_commands!(
 
         world.entity_mut(entity_id).insert((
             PbrBundle {
-                mesh: mesh,
-                material: material,
+                mesh,
+                material,
                 transform: Transform::from_translation(projectile.position),
                 ..default()
             },
@@ -87,8 +91,8 @@ extend_commands!(
 
         world.entity_mut(entity_id).insert((
             PbrBundle {
-                mesh: mesh,
-                material: material,
+                mesh,
+                material,
                 ..default()
             },
             // Trace::new(0.5, 0.05, projectile.color),

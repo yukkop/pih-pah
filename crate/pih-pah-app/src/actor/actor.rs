@@ -1,15 +1,24 @@
-
-use bevy::{ app::{Plugin, App, Update}, ecs::{component::Component, event::{Event, EventReader}, system::{Commands, Query}, entity::Entity, query::With}, hierarchy::DespawnRecursiveExt }; 
+use bevy::{
+    app::{App, Plugin, Update},
+    ecs::{
+        component::Component,
+        entity::Entity,
+        event::{Event, EventReader},
+        query::With,
+        system::{Commands, Query},
+    },
+    hierarchy::DespawnRecursiveExt,
+};
 
 #[cfg(feature = "temp-container")]
 use {
- bevy::{
-    app::Startup,
-    transform::components::{Transform, GlobalTransform},
-    render::view::{Visibility, InheritedVisibility, ViewVisibility},
-    core::Name, 
- },
- std::any::type_name,
+    bevy::{
+        app::Startup,
+        core::Name,
+        render::view::{InheritedVisibility, ViewVisibility, Visibility},
+        transform::components::{GlobalTransform, Transform},
+    },
+    std::any::type_name,
 };
 
 use super::TracePlugins;
@@ -28,18 +37,19 @@ pub struct ActorPlugins;
 impl Plugin for ActorPlugins {
     fn build(&self, app: &mut App) {
         #[cfg(feature = "temp-container")]
-        app .add_systems(Startup, setup);
-        app 
-            .add_event::<UnloadActorsEvent>()
-            .add_plugins(
-                TracePlugins
-            )
+        app.add_systems(Startup, setup);
+        app.add_event::<UnloadActorsEvent>()
+            .add_plugins(TracePlugins)
             .add_systems(Update, unload_actors);
     }
 }
 
 // TODO on state it will be faster
-fn unload_actors(mut commands: Commands, actor_query: Query<Entity, With<Actor>>, mut event: EventReader<UnloadActorsEvent>) {
+fn unload_actors(
+    mut commands: Commands,
+    actor_query: Query<Entity, With<Actor>>,
+    mut event: EventReader<UnloadActorsEvent>,
+) {
     for _ in event.read() {
         log::info!("UnloadActorsEvent");
         for entity in actor_query.iter() {
@@ -60,6 +70,6 @@ fn setup(mut commands: Commands) {
         Visibility::default(),
         InheritedVisibility::default(),
         ViewVisibility::default(),
-        Name::new(short_name)
+        Name::new(short_name),
     ));
 }

@@ -81,11 +81,13 @@ impl Plugin for DebugUiPlugins {
             .add_state::<DebugMenuState>()
             .add_systems(
                 Update,
-                (get_window_rect, set_camera_viewport.after(get_window_rect)).run_if(in_state(DebugState::Disable)));
+                (get_window_rect, set_camera_viewport.after(get_window_rect))
+                    .run_if(in_state(DebugState::Disable)),
+            );
 
         #[cfg(debug_assertions)]
         {
-        let is_debug = std::env::var("DEBUG").is_ok();
+            let is_debug = std::env::var("DEBUG").is_ok();
             if is_debug {
                 app.insert_resource(UiState::new())
                     .add_systems(
@@ -103,7 +105,8 @@ impl Plugin for DebugUiPlugins {
                     )
                     .add_systems(
                         Update,
-                        (set_gizmo_mode, push_window_menu_event).run_if(in_state(DebugState::Enable)),
+                        (set_gizmo_mode, push_window_menu_event)
+                            .run_if(in_state(DebugState::Enable)),
                     )
                     .add_systems(
                         Update,

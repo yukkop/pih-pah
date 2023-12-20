@@ -2,14 +2,14 @@ use std::net::UdpSocket;
 use std::time::SystemTime;
 
 use crate::actor::UnloadActorsEvent;
-use crate::character::{TiedCamera, spawn_character, spawn_tied_camera, fire};
+use crate::character::{fire, spawn_character, spawn_tied_camera, TiedCamera};
 use crate::component::{DespawnReason, Respawn};
 use crate::lobby::{LobbyState, PlayerData, PlayerId, ServerMessages, Username};
 use crate::map::{is_loaded, MapState, SpawnPoint};
 use crate::world::{LinkId, Me};
-use bevy::app::{App, Plugin, PreUpdate, Update};
+use bevy::app::{App, Plugin, Update};
 use bevy::ecs::entity::Entity;
-use bevy::ecs::event::{EventReader, EventWriter, Event};
+use bevy::ecs::event::{Event, EventReader, EventWriter};
 use bevy::ecs::query::With;
 use bevy::ecs::schedule::{Condition, NextState, OnExit, State};
 use bevy::ecs::system::{Query, Res, ResMut};
@@ -24,8 +24,9 @@ use renet::transport::{NetcodeServerTransport, ServerAuthentication, ServerConfi
 use renet::{ConnectionConfig, DefaultChannel, RenetServer, ServerEvent};
 
 use super::{
-    ChangeMapLobbyEvent, Character, HostResource, Lobby, MapLoaderState, ActorTransportData,
-    Inputs, PlayerTransportData, PlayerView, TransportDataResource, PROTOCOL_ID, PlayerInputs,
+    ActorTransportData, ChangeMapLobbyEvent, Character, HostResource, Inputs, Lobby,
+    MapLoaderState, PlayerInputs, PlayerTransportData, PlayerView, TransportDataResource,
+    PROTOCOL_ID,
 };
 
 #[derive(Debug, Event)]
@@ -37,19 +38,24 @@ pub struct HostLobbyPlugins;
 
 impl Plugin for HostLobbyPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_event::<DespawnActorEvent>()
+        app.add_event::<DespawnActorEvent>()
             .add_event::<SpawnProjectileEvent>()
             .add_plugins((RenetServerPlugin, NetcodeServerPlugin))
             .add_systems(OnEnter(LobbyState::Host), setup)
             .add_systems(
                 Update,
-                (send_change_map, server_sync_actor, spawn_projectile, despawn_actor)
+                (
+                    send_change_map,
+                    server_sync_actor,
+                    spawn_projectile,
+                    despawn_actor,
+                )
                     .run_if(in_state(LobbyState::Host)),
             )
             .add_systems(
                 Update,
-                server_update_system.before(fire)
+                server_update_system
+                    .before(fire)
                     .run_if(in_state(LobbyState::Host)),
             )
             .add_systems(OnExit(LobbyState::Host), teardown)
@@ -66,7 +72,11 @@ pub fn spawn_projectile(
     mut server: ResMut<RenetServer>,
 ) {
     for SpawnProjectileEvent(link_id, color) in event_reader.read() {
-        let message = bincode::serialize(&ServerMessages::ProjectileSpawn { id: link_id.clone(), color: *color }).unwrap();
+        let message = bincode::serialize(&ServerMessages::ProjectileSpawn {
+            id: link_id.clone(),
+            color: *color,
+        })
+        .unwrap();
         server.broadcast_message(DefaultChannel::ReliableOrdered, message);
     }
 }
@@ -76,7 +86,10 @@ pub fn despawn_actor(
     mut server: ResMut<RenetServer>,
 ) {
     for DespawnActorEvent(link_id) in event_reader.read() {
-        let message = bincode::serialize(&ServerMessages::ActorDespawn { id: link_id.clone() }).unwrap();
+        let message = bincode::serialize(&ServerMessages::ActorDespawn {
+            id: link_id.clone(),
+        })
+        .unwrap();
         server.broadcast_message(DefaultChannel::ReliableOrdered, message);
     }
 }
@@ -189,7 +202,7 @@ fn teardown(
     }
     commands.remove_resource::<Lobby>();
     commands.remove_resource::<TransportDataResource>();
-    
+
     unload_actors_event.send(UnloadActorsEvent);
 }
 
@@ -199,6 +212,7 @@ pub fn generate_player_color(player_number: u32) -> Color {
     Color::hsl(hue, 1.0, 0.5)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn server_update_system(
     mut server_events: EventReader<ServerEvent>,
     mut commands: Commands,
@@ -288,7 +302,8 @@ pub fn server_update_system(
 
     for client_id in server.clients_id().into_iter() {
         let mut first = true;
-        while let Some(message) = server.receive_message(client_id, DefaultChannel::ReliableOrdered) {
+        while let Some(message) = server.receive_message(client_id, DefaultChannel::ReliableOrdered)
+        {
             let input: Inputs = bincode::deserialize(&message).unwrap();
             if let Some(player_data) = lobby.players.get(&PlayerId::Client(client_id)) {
                 if let Ok(mut player_input) = input_query.get_mut(player_data.entity) {
