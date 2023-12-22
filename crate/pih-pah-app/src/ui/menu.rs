@@ -280,8 +280,19 @@ fn settings_window(
         .movable(false)
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.label(format!("Music: {}", settings.music_volume));
+                ui.label(rich_text(format!("Music: {}", settings.music_volume),
+                    Module(&MODULE),
+                    &font,
+                ));
                 ui.add(egui::Slider::new(&mut settings.music_volume, 0.0..=200.0).text("%"));
+            });
+            ui.horizontal(|ui| {
+                ui.label(rich_text(
+                    format!("Sensativity: {}", settings.sensativity),
+                    Module(&MODULE),
+                    &font,
+                ));
+                ui.add(egui::Slider::new(&mut settings.sensativity, 0.0..=10.0).text("%"));
             });
             ui.horizontal(|ui| {
                 if ui

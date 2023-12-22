@@ -60,7 +60,8 @@ impl Plugin for UiPlugins {
         app.add_state::<UiState>()
             .add_state::<MouseGrabState>()
             .init_resource::<ViewportRect>()
-            .add_plugins((DebugUiPlugins, MenuPlugins, GameMenuPlugins))
+            // .add_plugins(DebugUiPlugins),
+            .add_plugins((MenuPlugins, GameMenuPlugins))
             .add_systems(OnEnter(MouseGrabState::Enable), grab_mouse_on)
             .add_systems(OnEnter(MouseGrabState::Disable), grab_mouse_off);
     }

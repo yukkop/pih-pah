@@ -250,6 +250,8 @@ impl PlayerInputs {
         }
     }
 
+    // TODO remove this cringe
+    #[deprecated]
     pub fn is_input_changed_to_true_and_set_to_false(&mut self, input_type: InputType) -> bool {
         match input_type {
             InputType::Up => {

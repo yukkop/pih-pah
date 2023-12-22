@@ -8,6 +8,7 @@ use bevy_inspector_egui::DefaultInspectorConfigPlugin;
 use bevy_xpbd_3d::prelude::PhysicsPlugins;
 use pih_pah_app::world::WorldPlugins;
 use winit::window::Icon;
+use bevy_editor_pls::prelude::*;
 
 fn main() {
     std::env::set_var(
@@ -50,8 +51,9 @@ fn main() {
                 file_path: "asset".into(),
                 ..default()
             }),
-            DefaultInspectorConfigPlugin,
-            EguiPlugin,
+            EditorPlugin::default(),
+            // DefaultInspectorConfigPlugin,
+            // EguiPlugin,
         ));
     }
     info!("Starting pih-pah");

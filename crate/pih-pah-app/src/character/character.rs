@@ -17,7 +17,6 @@ use serde::{Deserialize, Serialize};
 pub const PLAYER_MOVE_SPEED: f32 = 0.07;
 pub const PLAYER_SIZE: f32 = 2.0;
 const SHIFT_ACCELERATION: f32 = 2.0;
-const SENSITIVITY: f32 = 0.5;
 const JUMP_HEIGHT_MULTIPLICATOR: f32 = 1.1;
 
 const DEFAULT_CAMERA_DISTANCE: f32 = 20.;
@@ -218,11 +217,11 @@ fn rotate_camera(
         let input = input.get();
 
         // camera turn
-        let rotation = Quat::from_rotation_y(input.turn_horizontal * SENSITIVITY * delta_seconds);
+        let rotation = Quat::from_rotation_y(input.turn_horizontal * delta_seconds);
         // global rotation (!ORDER OF MULTIPLICATION MATTERS!)
         view.direction = rotation * view.direction;
 
-        let rotation = Quat::from_rotation_x(input.turn_vertical * SENSITIVITY * delta_seconds);
+        let rotation = Quat::from_rotation_x(input.turn_vertical * delta_seconds);
         // local rotation (!ORDER OF MULTIPLICATION MATTERS!)
         view.direction *= rotation;
 

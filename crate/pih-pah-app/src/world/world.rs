@@ -4,7 +4,7 @@ use crate::character::CharacterPlugins;
 use crate::component::{AxisName, ComponentPlugins, DespawnReason, NoclipDuration, Respawn};
 use crate::lobby::{Inputs, LobbyPlugins, LobbyState, PlayerInputs};
 use crate::map::{MapPlugins, SpawnPoint};
-use crate::settings::SettingsPlugins;
+use crate::settings::{SettingsPlugins, Settings};
 use crate::sound::SoundPlugins;
 use crate::ui::GameMenuActionState;
 use crate::ui::{DebugFrameState, DebugMenuEvent, DebugState};
@@ -102,11 +102,11 @@ pub struct Me;
 #[allow(clippy::too_many_arguments)]
 pub fn input(
     keyboard_input: Res<Input<KeyCode>>,
-    mut next_state_debug_frame: ResMut<NextState<DebugFrameState>>,
-    debug_frame_state: Res<State<DebugFrameState>>,
-    mut next_state_debug: ResMut<NextState<DebugState>>,
-    mut debug_menu_togl: EventWriter<DebugMenuEvent>,
-    debug_state: Res<State<DebugState>>,
+    // mut next_state_debug_frame: ResMut<NextState<DebugFrameState>>,
+    // debug_frame_state: Res<State<DebugFrameState>>,
+    // mut next_state_debug: ResMut<NextState<DebugState>>,
+    // debug_state: Res<State<DebugState>>,
+    // mut debug_menu_togl: EventWriter<DebugMenuEvent>,
     ui_state: Res<State<UiState>>,
     mut next_state_game_menu_action: ResMut<NextState<GameMenuActionState>>,
     game_menu_action: Res<State<GameMenuActionState>>,
@@ -115,31 +115,32 @@ pub fn input(
     mut next_state_mouse_grab: ResMut<NextState<MouseGrabState>>,
     mouse_grab_state: Res<State<MouseGrabState>>,
     buttons: Res<Input<MouseButton>>,
+    settings: Res<Settings>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Escape) && *ui_state.get() == UiState::GameMenu {
         next_state_game_menu_action.set(game_menu_action.get().clone().toggle());
         next_state_mouse_grab.set(mouse_grab_state.get().clone().toggle());
     }
 
-    if keyboard_input.just_pressed(KeyCode::F8) {
-        next_state_debug_frame.set(debug_frame_state.get().clone().toggle());
-    }
+    // if keyboard_input.just_pressed(KeyCode::F8) {
+    //     next_state_debug_frame.set(debug_frame_state.get().clone().toggle());
+    // }
 
-    if keyboard_input.just_pressed(KeyCode::F9) {
-        next_state_debug.set(debug_state.get().clone().toggle());
-    }
+    // if keyboard_input.just_pressed(KeyCode::F9) {
+    //     next_state_debug.set(debug_state.get().clone().toggle());
+    // }
 
-    if keyboard_input.just_pressed(KeyCode::F10) {
-        debug_menu_togl.send(DebugMenuEvent);
-    }
+    // if keyboard_input.just_pressed(KeyCode::F10) {
+    //     debug_menu_togl.send(DebugMenuEvent);
+    // }
 
     if *game_menu_action.get() == GameMenuActionState::Disable {
         if let Ok(mut player_input) = player_input_query.get_single_mut() {
             let mut turn_horizontal = 0.;
             let mut turn_vertical = 0.;
             for ev in motion_evr.read() {
-                turn_horizontal = -ev.delta.x;
-                turn_vertical = -ev.delta.y;
+                turn_horizontal = -ev.delta.x * settings.sensativity;
+                turn_vertical = -ev.delta.y * settings.sensativity;
             }
 
             let input = Inputs {
