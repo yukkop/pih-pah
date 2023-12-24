@@ -155,7 +155,7 @@ fn push_window_menu(
     };
 
     let ctx = context.ctx_mut();
-    egui::Window::new("Mouse moved")
+    egui::Window::new("New")
         .anchor(
             Align2::LEFT_TOP,
             [ui_state.menu_pos.x - 10., ui_state.menu_pos.y - 35.],

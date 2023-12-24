@@ -3,6 +3,7 @@ use crate::map::MapState;
 use crate::world::LinkId;
 use bevy::app::{App, Plugin};
 use bevy::ecs::event::Event;
+use bevy::ecs::system::In;
 use bevy::math::{Quat, Vec3};
 use bevy::prelude::{Color, Component, Entity, Resource, States};
 use bevy::reflect::Reflect;
@@ -228,6 +229,7 @@ impl PlayerInputs {
             }
             InputType::Special => self.input.special != self.previouse_input.special,
             InputType::Fire => self.input.fire != self.previouse_input.fire,
+            InputType::Inscription => self.input.inscription != self.previouse_input.inscription,
         }
     }
 
@@ -247,6 +249,7 @@ impl PlayerInputs {
             }
             InputType::Special => !self.previouse_input.special && self.input.special,
             InputType::Fire => !self.previouse_input.fire && self.input.fire,
+            InputType::Inscription => !self.previouse_input.inscription && self.input.inscription,
         }
     }
 
@@ -323,6 +326,13 @@ impl PlayerInputs {
                 }
                 val
             }
+            InputType::Inscription => {
+                let val = !self.previouse_input.inscription && self.input.inscription;
+                if val {
+                    self.previouse_input.inscription = true;
+                }
+                val
+            }
         }
     }
 }
@@ -339,6 +349,7 @@ pub enum InputType {
     TurnVertical,
     Special,
     Fire,
+    Inscription,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, Reflect, Clone, Copy)]
@@ -353,6 +364,7 @@ pub struct Inputs {
     pub turn_vertical: f32,
     pub special: bool,
     pub fire: bool,
+    pub inscription: bool,
 }
 
 #[derive(Debug, Component)]

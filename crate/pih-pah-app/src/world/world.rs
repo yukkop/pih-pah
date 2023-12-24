@@ -155,6 +155,9 @@ pub fn input(
                 fire: buttons
                     .get_pressed()
                     .any(|button| *button == MouseButton::Left),
+                inscription: buttons
+                    .get_pressed()
+                    .any(|button| *button == MouseButton::Right),
             };
 
             player_input.insert_inputs(input);

@@ -6,7 +6,7 @@ use bevy::window::CursorGrabMode;
 use bevy_egui::egui::FontId;
 use std::sync::Arc;
 
-use super::DebugUiPlugins;
+use super::{DebugUiPlugins, RunicInscriptionPlugins};
 
 #[derive(Debug, Clone, Copy, Resource, PartialEq, Deref, DerefMut)]
 pub struct ViewportRect(egui::Rect);
@@ -60,7 +60,12 @@ impl Plugin for UiPlugins {
         app.add_state::<UiState>()
             .add_state::<MouseGrabState>()
             .init_resource::<ViewportRect>()
-            .add_plugins((DebugUiPlugins, MenuPlugins, GameMenuPlugins))
+            .add_plugins((
+                DebugUiPlugins,
+                MenuPlugins,
+                GameMenuPlugins,
+                RunicInscriptionPlugins,
+            ))
             .add_systems(OnEnter(MouseGrabState::Enable), grab_mouse_on)
             .add_systems(OnEnter(MouseGrabState::Disable), grab_mouse_off);
     }
@@ -86,6 +91,12 @@ fn grab_mouse_on(mut windows: Query<&mut Window>) {
 
 fn grab_mouse_off(mut windows: Query<&mut Window>) {
     let mut window = windows.single_mut();
+
+    let center_x = window.width() / 2.0;
+    let center_y = window.height() / 2.0;
+
+    // Set cursor to the center
+    window.set_cursor_position(Some(Vec2::new(center_x, center_y)));
 
     window.cursor.visible = true;
     window.cursor.grab_mode = CursorGrabMode::None;

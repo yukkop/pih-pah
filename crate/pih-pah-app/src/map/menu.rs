@@ -34,6 +34,7 @@ fn load(
     mut mesh: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
+    // camera
     commands
         .spawn((
             Camera3dBundle {
@@ -48,6 +49,7 @@ fn load(
         ))
         .insert(Affiliation);
 
+    // light
     commands
         .spawn((
             PointLightBundle {
@@ -67,6 +69,7 @@ fn load(
         ))
         .insert(Affiliation);
 
+    // plane
     commands
         .spawn((
             PbrBundle {
@@ -79,6 +82,7 @@ fn load(
         ))
         .insert(Affiliation);
 
+    // cube
     commands
         .spawn((
             PbrBundle {

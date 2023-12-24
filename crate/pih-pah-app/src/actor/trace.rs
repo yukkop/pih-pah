@@ -90,7 +90,7 @@ pub struct TransformOptimalTrace {
     /// tracepoint color
     pub color: Color,
     /// if velocity is less than this value, tracepoint will not spawn
-    pub offset: f32,
+    pub threshold: f32,
     pub(self) last_position: Vec3,
 }
 
@@ -103,12 +103,12 @@ impl TransformOptimalTrace {
     /// * `intensity` - period of tracepoint spawn
     /// * `color` - tracepoint color
     /// * `offset` - if velocity is less than this value, tracepoint will not spawn
-    pub fn new(duration: f32, intensity: f32, color: Color, offset: f32) -> Self {
+    pub fn new(duration: f32, intensity: f32, color: Color, threshold: f32) -> Self {
         Self {
             duration,
             intensity: TraceTimer::new(intensity),
             color,
-            offset,
+            threshold,
             last_position: Vec3::ZERO,
         }
     }
@@ -200,7 +200,7 @@ fn process_transform_optimal_tracepoint(
 ) {
     for (global_transform, mut trace) in trace_query.iter_mut() {
         let global_translation = global_transform.translation();
-        if (global_translation - trace.last_position).length() > trace.offset
+        if (global_translation - trace.last_position).length() > trace.threshold
             && trace.intensity.update(time.delta()).just_finished()
         {
             let _tracepoint = commands
