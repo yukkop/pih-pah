@@ -6,7 +6,6 @@ use bevy::winit::WinitWindows;
 use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::DefaultInspectorConfigPlugin;
 use bevy_xpbd_3d::prelude::PhysicsPlugins;
-use pih_pah_app::world::WorldPlugins;
 use winit::window::Icon;
 
 fn main() {
@@ -16,7 +15,6 @@ fn main() {
     );
 
     env_logger::init();
-    info!("Starting pih-pah");
     let _args: Vec<String> = std::env::args().collect();
 
     let is_debug = std::env::var("DEBUG").is_ok();
@@ -54,11 +52,11 @@ fn main() {
             EguiPlugin,
         ));
     }
-    info!("Starting pih-pah");
 
     app.add_plugins(PhysicsPlugins::new(Update));
     app.add_systems(Startup, set_window_icon);
-    app.add_plugins(WorldPlugins);
+
+    info!("Starting pih-pah");
 
     app.run();
 }
