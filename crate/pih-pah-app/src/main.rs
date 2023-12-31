@@ -6,6 +6,7 @@ use bevy::winit::WinitWindows;
 use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::DefaultInspectorConfigPlugin;
 use bevy_xpbd_3d::prelude::PhysicsPlugins;
+use pih_pah_app::game::GamePlugins;
 use winit::window::Icon;
 
 /// default value for logging 
@@ -13,8 +14,10 @@ use winit::window::Icon;
 /// wgpu_core fluds the logs on info level therefore we need to set it to error
 const RUST_LOG_DEFAULT: &str = "info,wgpu_core=error";
 
+/// The directory where the assets are located
 const ASSET_DIR: &str = "asset";
 
+/// The path to the icon
 const ICON_PATH: &str = "icon-v1.png";
 
 /// The name of the application
@@ -27,6 +30,7 @@ lazy_static::lazy_static! {
     /// If the application is running in debug mode
     pub static ref DEBUG: bool = std::env::var("DEBUG").is_ok();
 
+    /// The name of the application with the version
     pub static ref VERSIONED_APP_NAME: String = format!("{APP_NAME} v{}", *VERSION);
 }
 
@@ -59,6 +63,8 @@ fn main() {
             EguiPlugin,
         ));
     } else {
+        use bevy_editor_pls::prelude::*;
+
         let window_plugin_override = WindowPlugin {
             primary_window: Some(Window {
                 title: VERSIONED_APP_NAME.clone(),
@@ -74,13 +80,18 @@ fn main() {
         };
         app.add_plugins((
             DefaultPlugins.set(window_plugin_override).set(asset_plugin),
-            DefaultInspectorConfigPlugin,
-            EguiPlugin,
+            // editor for easy debugging https://github.com/jakobhellermann/bevy_editor_pls
+            // its included egui plugin and egui_inspector plugin
+            EditorPlugin::default(),
         ));
     }
 
-    app.add_plugins(PhysicsPlugins::new(Update));
-    app.add_systems(Startup, set_window_icon);
+    // it can be difficult to make physics undependent from the frame rate
+    // but we cannot use FixedUpdate because it is not supported by bevy_xpbd_3d as well as
+    app.add_plugins(PhysicsPlugins::new(Update))
+        .add_systems(Startup, set_window_icon)
+        .add_plugins(GamePlugins);
+
 
 info!("Starting {APP_NAME} v{}", *VERSION);
 
