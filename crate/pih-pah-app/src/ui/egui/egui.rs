@@ -16,6 +16,9 @@ use crate::util::module_cat_off;
 use crate::ui::egui::TRANSPARENT;
 
 lazy_static::lazy_static! {
+    /// Module path for this module, 
+    /// Use it for translate text like `trans("text", Module(&MODULE))`
+    /// where `Module(&MODULE)` is `Uniq` id for translate text
     static ref MODULE: &'static str = module_cat_off(module_cut_out(module_path!(), "egui"));
 }
 
@@ -81,7 +84,7 @@ fn menu(
                 commands.run_system(menu_actions.get(MenuAction::OpenEditor));
             }
             if ui
-                .button(rich_text("Settings".to_string(), Module(&MODULE), &font))
+                .button(rich_text("Options".to_string(), Module(&MODULE), &font))
                 .clicked()
             {
             }
@@ -93,4 +96,3 @@ fn menu(
             }
         });
 }
-

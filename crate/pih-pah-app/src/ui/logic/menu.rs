@@ -45,7 +45,7 @@ pub fn register(
 
     if let Some(mut menu_actions) = world.get_resource_mut::<MenuActions>() {
         menu_actions.insert(MenuAction::OpenEditor, open_editor_id);
-        menu_actions.insert(MenuAction::OpenEditor, exit_from_game_id);
+        menu_actions.insert(MenuAction::Exit, exit_from_game_id);
 
         // If you see this error, you may add new action in menu_actions
         // or make sure that you have only one MenuAction with the same name in the MenuActions 

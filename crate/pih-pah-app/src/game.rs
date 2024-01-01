@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::ui::MenuPlugins;
+use crate::{ui::MenuPlugins, option::OptionsPlugins, sound::SoundPlugins};
 
 /// Main state of the game
 #[derive(Debug, Default, States, Hash, PartialEq, Eq, Clone)]
@@ -17,7 +17,7 @@ pub struct GamePlugins;
 
 impl Plugin for GamePlugins {
     fn build(&self, app: &mut App) {
-        app.add_state::<GameState>().add_plugins(MenuPlugins);
+        app.add_state::<GameState>().add_plugins((MenuPlugins, SoundPlugins, OptionsPlugins));
     }
 }
 

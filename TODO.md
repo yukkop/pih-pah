@@ -10,7 +10,7 @@
     [ ] chat history
     [ ] chat colors
 [ ] lobby player list
-[ ] settings
+[ ] options
     [ ] key bindings
     [ ] sensetivity
 [ ] nickname above character
