@@ -1,5 +1,6 @@
 {
     "rust-analyzer.linkedProjects": [
+        ".\\crate\\pih-pah-app\\Cargo.toml",
         ".\\crate\\pih-pah-app\\Cargo.toml"
     ],
     "rust-analyzer.cargo.features": ["dev", "ui_egui"],

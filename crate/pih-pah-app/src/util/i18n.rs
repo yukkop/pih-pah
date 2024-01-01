@@ -14,6 +14,7 @@ lazy_static::lazy_static! {
 }
 
 /// Unique id for translate text
+#[derive(Debug)]
 pub enum Uniq {
     Module(&'static str),
     Id(&'static str),

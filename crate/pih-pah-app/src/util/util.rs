@@ -35,3 +35,25 @@ where
 
     true
 }
+
+// TODO &'static str -> Uniq(Module)
+#[macro_export]
+macro_rules! define_module {
+    () => {
+        use crate::util::module_cat_off;
+
+        lazy_static::lazy_static! {
+            /// Module path for this module, 
+            /// Use it for translate text like `trans("text", Module(&MODULE))`
+            /// where `Module(&MODULE)` is `Uniq` id for translate text
+            static ref MODULE: &'static str = module_cat_off(module_path!());
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! rich_text {
+    ($text:expr, $module:expr, $font:expr) => {
+        rich_text($text.to_string(), Module($module), $font)
+    };
+}
