@@ -1,10 +1,7 @@
 use std::env;
 
 use bevy::prelude::*;
-use bevy::window::{PresentMode, WindowResolution};
 use bevy::winit::WinitWindows;
-use bevy_egui::EguiPlugin;
-use bevy_inspector_egui::DefaultInspectorConfigPlugin;
 use bevy_xpbd_3d::prelude::PhysicsPlugins;
 use pih_pah_app::game::GamePlugins;
 use winit::window::Icon;
@@ -27,11 +24,14 @@ lazy_static::lazy_static! {
     /// The current version of the application
     pub static ref VERSION: String = format!("{}.{}.{}", env!("CARGO_PKG_VERSION_MAJOR"), env!("CARGO_PKG_VERSION_MINOR"), env!("CARGO_PKG_VERSION_PATCH"));
 
-    /// If the application is running in debug mode
-    pub static ref DEBUG: bool = std::env::var("DEBUG").is_ok();
-
     /// The name of the application with the version
     pub static ref VERSIONED_APP_NAME: String = format!("{APP_NAME} v{}", *VERSION);
+}
+
+#[cfg(feature = "dev")]
+lazy_static::lazy_static! {
+    /// If the application is running in debug mode
+    pub static ref DEBUG: bool = std::env::var("DEBUG").is_ok();
 }
 
 
@@ -48,7 +48,8 @@ fn main() {
         ..default()
     };
 
-    if !*DEBUG {
+    /// Build the app with the default plugins
+    fn default_build(app: &mut App, asset_plugin: AssetPlugin) -> &mut App {
         let window_plugin_override = WindowPlugin {
             primary_window: Some(Window {
                 title: VERSIONED_APP_NAME.clone(),
@@ -60,10 +61,20 @@ fn main() {
         };
         app.add_plugins((
             DefaultPlugins.set(window_plugin_override).set(asset_plugin),
-            EguiPlugin,
-        ));
-    } else {
+        ))
+    }
+
+    #[cfg(not(feature = "dev"))]
+    default_build(&mut app, asset_plugin);
+
+    #[cfg(feature = "dev")]
+    if !*DEBUG {
+        default_build(&mut app, asset_plugin);
+    } 
+    else {
         use bevy_editor_pls::prelude::*;
+        use bevy::window::WindowResolution;
+        use bevy::window::PresentMode;
 
         let window_plugin_override = WindowPlugin {
             primary_window: Some(Window {
@@ -93,7 +104,7 @@ fn main() {
         .add_plugins(GamePlugins);
 
 
-info!("Starting {APP_NAME} v{}", *VERSION);
+    info!("Starting {APP_NAME} v{}", *VERSION);
 
     app.run();
 }
@@ -110,6 +121,7 @@ fn set_window_icon(windows: NonSend<WinitWindows>) {
             let rgba = image.into_raw();
             (rgba, width, height)
         } else {
+            // TODO load default icon from url
             warn!("Failed to load icon");
             return;
         }

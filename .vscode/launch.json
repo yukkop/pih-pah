@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "Debug",
             "program": "${workspaceFolder}/target/debug/client.exe",
-            "args": ["--features", "windows"],
+            "args": ["--features", "lunex"],
             "cwd": "${workspaceFolder}"
         }
     ]
