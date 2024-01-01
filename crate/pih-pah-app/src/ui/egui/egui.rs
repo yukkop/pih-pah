@@ -2,27 +2,31 @@ use bevy::prelude::*;
 use egui::FontId;
 
 use crate::game::GameState;
+use crate::ui::MenuAction;
+use crate::ui::MenuActions;
 use crate::util::Uniq;
+use crate::util::module_cut_out;
 use crate::util::trans;
-use bevy::app::AppExit;
 use std::sync::Arc;
-use bevy_egui::EguiPlugin;
 use bevy_egui::EguiContexts;
+use bevy_egui::EguiPlugin;
 
 use crate::util::Uniq::Module;
-use crate::util::module_cat;
+use crate::util::module_cat_off;
 use crate::ui::egui::TRANSPARENT;
 
 lazy_static::lazy_static! {
-    static ref MODULE: &'static str = module_cat(module_path!());
+    static ref MODULE: &'static str = module_cat_off(module_cut_out(module_path!(), "egui"));
 }
 
+/// Plugin that registers all egui view layer that wrapp ui logic 
 pub struct EguiPlugins;
 
 impl Plugin for EguiPlugins {
     fn build(&self, app: &mut App) {
-        #[cfg(not(feature = "dev"))]
-        app.add_plugins(EguiPlugin);
+        if !app.is_plugin_added::<EguiPlugin>() {
+            app.add_plugins(EguiPlugin);
+        }
 
         app.add_systems(Update, menu.run_if(in_state(GameState::Menu)));
     }
@@ -32,10 +36,14 @@ pub fn rich_text(text: impl Into<Arc<String>>, uniq: Uniq, font: &FontId) -> egu
     egui::RichText::new(trans(text.into(), uniq)).font(font.clone())
 }
 
+/// System for update menu 
+/// 
+/// It must only draw ui and runs metods from `MenuActions` to change game states
 fn menu(
+    mut commands: Commands,
     mut context: EguiContexts,
     mut windows: Query<&Window>,
-    mut exit: EventWriter<AppExit>,
+    menu_actions: Res<MenuActions>,
 ) {
     let ctx = context.ctx_mut();
 
@@ -64,17 +72,13 @@ fn menu(
         .show(ctx, |ui| {
             if ui
                 .button(rich_text(
-                    "Shooting range".to_string(),
+                    "Editor".to_string(),
                     Module(&MODULE),
                     &font,
                 ))
                 .clicked()
             {
-            }
-            if ui
-                .button(rich_text("Multiplayer".to_string(), Module(&MODULE), &font))
-                .clicked()
-            {
+                commands.run_system(menu_actions.get(MenuAction::OpenEditor));
             }
             if ui
                 .button(rich_text("Settings".to_string(), Module(&MODULE), &font))
@@ -85,7 +89,7 @@ fn menu(
                 .button(rich_text("Exit".to_string(), Module(&MODULE), &font))
                 .clicked()
             {
-                exit.send(AppExit);
+                commands.run_system(menu_actions.get(MenuAction::Exit));
             }
         });
 }

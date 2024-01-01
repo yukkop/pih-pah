@@ -67,6 +67,7 @@ fn main() {
     #[cfg(not(feature = "dev"))]
     default_build(&mut app, asset_plugin);
 
+    #[cfg(debug_assertions)]
     #[cfg(feature = "dev")]
     if !*DEBUG {
         default_build(&mut app, asset_plugin);

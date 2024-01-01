@@ -13,11 +13,13 @@ lazy_static::lazy_static! {
     pub static ref LANGUAGE: Language = Language::En;
 }
 
+/// Unique id for translate text
 pub enum Uniq {
     Module(&'static str),
     Id(&'static str),
 }
 
+/// Translate text to current language
 pub fn trans(text: Arc<String>, uniq: Uniq) -> String {
     let _id = match uniq {
         Uniq::Module(module) => hash_string(text.as_str(), module, HASH_LENGTH),
@@ -26,9 +28,12 @@ pub fn trans(text: Arc<String>, uniq: Uniq) -> String {
 
     // TODO get from hashmap translated data or translate by internet resources
 
+    // TODO !!! chat gpt, procedural generation of text !!!
+
     text.to_string()
 }
 
+/// Hash string with key
 fn hash_string(input: &str, key: &str, hash_length: usize) -> String {
     let mut mac = Hmac::<Sha256>::new_from_slice(key.as_bytes()).expect("help me ples");
     mac.update(input.as_bytes());

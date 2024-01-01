@@ -25,13 +25,15 @@ mod egui;
 #[cfg(feature = "ui_egui")]
 use self::egui::EguiPlugins;
 
-mod back;
-pub use back::*;
+mod logic;
+pub use logic::*;
 
 pub struct MenuPlugins;
 
 impl Plugin for MenuPlugins {
     fn build(&self, app: &mut App) {
+        app.add_plugins(UiLogicPlugins);
+
         // Add the chosen plugin based on the feature
         #[cfg(feature = "ui_lunex")]
         app.add_plugins(LunexPlugins);
