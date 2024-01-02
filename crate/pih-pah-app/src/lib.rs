@@ -3,3 +3,4 @@ pub mod ui;
 pub mod util;
 pub mod option;
 pub mod sound;
+pub mod editor;

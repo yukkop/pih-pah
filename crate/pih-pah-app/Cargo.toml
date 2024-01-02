@@ -44,6 +44,7 @@ bevy_editor_pls = { version = "0.7.0", optional = true }
 bevy_lunex = "0.0.9"
 strum = "0.25.0"
 strum_macros = "0.25.3"
+bevy_gltf_blueprints = "0.5.1"
 
 # renet_steam = { path = "../renet_steam", version = "0.0.1", features = [ "bevy" ], optional = true }
 # ureq = { version = "2.7.1", features = [ "json" ] } # gigachad requests without async

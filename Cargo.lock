@@ -439,6 +439,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_animation"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7aa37683b1281e1ba8cf285644e6e3f0704f14b3901c5ee282067ff7ff6f4a56"
+dependencies = [
+ "bevy_app",
+ "bevy_asset",
+ "bevy_core",
+ "bevy_ecs",
+ "bevy_hierarchy",
+ "bevy_math",
+ "bevy_reflect",
+ "bevy_render",
+ "bevy_time",
+ "bevy_transform",
+ "bevy_utils",
+]
+
+[[package]]
 name = "bevy_app"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -694,6 +713,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85adc6b1fc86687bf67149e0bafaa4d6da432232fa956472d1b37f19121d3ace"
 dependencies = [
  "base64 0.13.1",
+ "bevy_animation",
  "bevy_app",
  "bevy_asset",
  "bevy_core",
@@ -714,6 +734,27 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+]
+
+[[package]]
+name = "bevy_gltf_blueprints"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "edc3e4334e17e2a64c4251549ba1ab866634324f7b840b2ac6ba7ddf84b7cc69"
+dependencies = [
+ "bevy",
+ "bevy_gltf_components",
+]
+
+[[package]]
+name = "bevy_gltf_components"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd745a2988c631286404e12d184d4a30a634fbbba1deceaaa1ca7fcbc607cc7a"
+dependencies = [
+ "bevy",
+ "ron",
+ "serde",
 ]
 
 [[package]]
@@ -752,6 +793,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f124bece9831afd80897815231072d51bfe3ac58c6bb58eca8880963b6d0487c"
 dependencies = [
  "bevy_a11y",
+ "bevy_animation",
  "bevy_app",
  "bevy_asset",
  "bevy_core",
@@ -3591,6 +3633,7 @@ dependencies = [
  "bevy",
  "bevy_editor_pls",
  "bevy_egui",
+ "bevy_gltf_blueprints",
  "bevy_kira_audio",
  "bevy_lunex",
  "bevy_renet",

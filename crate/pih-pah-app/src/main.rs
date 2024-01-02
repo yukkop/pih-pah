@@ -3,6 +3,7 @@ use std::env;
 use bevy::prelude::*;
 use bevy::winit::WinitWindows;
 use bevy_xpbd_3d::prelude::PhysicsPlugins;
+use pih_pah_app::editor::EditorPlugins;
 use pih_pah_app::game::GamePlugins;
 use winit::window::Icon;
 
@@ -73,7 +74,6 @@ fn main() {
         default_build(&mut app, asset_plugin);
     } 
     else {
-        use bevy_editor_pls::prelude::*;
         use bevy::window::WindowResolution;
         use bevy::window::PresentMode;
 
@@ -92,9 +92,7 @@ fn main() {
         };
         app.add_plugins((
             DefaultPlugins.set(window_plugin_override).set(asset_plugin),
-            // editor for easy debugging https://github.com/jakobhellermann/bevy_editor_pls
-            // its included egui plugin and egui_inspector plugin
-            EditorPlugin::default(),
+            EditorPlugins
         ));
     }
 

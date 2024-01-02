@@ -8,6 +8,8 @@ pub enum GameState {
     #[default]
     /// Main game menu
     Menu,
+    /// Level editor load
+    EditorLoad,
     /// Level editor
     Editor,
 }
