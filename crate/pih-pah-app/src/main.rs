@@ -3,7 +3,7 @@ use std::env;
 use bevy::prelude::*;
 use bevy::winit::WinitWindows;
 use bevy_xpbd_3d::prelude::PhysicsPlugins;
-use pih_pah_app::editor::EditorPlugins;
+use pih_pah_app::ASSET_DIR;
 use pih_pah_app::game::GamePlugins;
 use winit::window::Icon;
 
@@ -11,10 +11,6 @@ use winit::window::Icon;
 /// 
 /// wgpu_core fluds the logs on info level therefore we need to set it to error
 const RUST_LOG_DEFAULT: &str = "info,wgpu_core=error";
-
-/// The directory where the assets are located
-const ASSET_DIR: &str = "asset";
-
 /// The path to the icon
 const ICON_PATH: &str = "icon-v1.png";
 
@@ -74,6 +70,7 @@ fn main() {
         default_build(&mut app, asset_plugin);
     } 
     else {
+        use pih_pah_app::editor::EditorPlugins;
         use bevy::window::WindowResolution;
         use bevy::window::PresentMode;
 

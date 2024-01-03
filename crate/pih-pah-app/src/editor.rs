@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+#[cfg(feature = "dev")]
 use bevy_editor_pls::{controls, EditorPlugin};
 
 pub struct EditorPlugins;

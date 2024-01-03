@@ -1,7 +1,7 @@
 use bevy::{prelude::*, ecs::system::SystemId, utils::HashMap, app::AppExit};
 use strum_macros::EnumIter;
 
-use crate::{game::GameState, util::validate_hash_map};
+use crate::{game::{GlobalAction, GlobalActions}, util::validate_hash_map};
 
 /// Main menu state
 #[derive(Debug, Default, States, Hash, PartialEq, Eq, Clone)]
@@ -16,13 +16,14 @@ pub enum MenuWindow {
 /// Menu logic actions
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter)]
 pub enum MenuAction {
-    /// Key for `open_level_editor` system
+    /// Button for `open_level_editor` system
     /// that changes game state to `GameState::Editor`
     /// to open editor game mode
     StartLevelEditing,
-    /// Key for `exit_from_game` system
+    /// Button for `exit_from_game` system
     /// that closes application
     Exit,
+    /// Button for `open_options_window` system
     OpenOptions,
 }
 
@@ -68,11 +69,12 @@ fn register(
     }
 }
 
-/// Change game state to `GameState::Editor`
+/// Execute `GlobalAction::OpenLevelEditor`
 fn open_level_editor(
-    mut next_game_state: ResMut<NextState<GameState>>,
+    mut commands: Commands,
+    global_actions: Res<GlobalActions>,
 ) {
-    next_game_state.set(GameState::LevelEditor);
+    commands.run_system(global_actions.get(GlobalAction::OpenLevelEditor));
 }
 
 /// Open options window

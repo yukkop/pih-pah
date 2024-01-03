@@ -5,10 +5,13 @@ use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use std::mem::discriminant;
 
+use crate::game::GameState;
+
 #[derive(Debug)]
 pub enum Button {
     Keyboard(KeyCode),
     Mouse(MouseButton),
+    // TODO: add MouseAxis,
 }
 
 #[derive(Debug)]
@@ -21,12 +24,8 @@ pub enum ButtonCombination {
 
 #[derive(Debug)]
 pub enum BindingCondition {
-    /// Binding is active only if player is in level editor
-    InLevelEditor(bool),
-    /// Binding is active only if player is in game
-    InGame(bool),
-    /// Binding is active only if player is in menu
-    InMenu(bool),
+    /// During specific game state
+    InGameState(GameState),
     /// Binding is active only if player is in pause menu
     DuringPauseMenu(bool),
     /// Binding is active only if player types text
