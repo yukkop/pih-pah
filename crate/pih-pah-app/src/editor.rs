@@ -14,7 +14,6 @@ impl Plugin for EditorPlugins {
     }
 }
 
-
 fn editor_controls() -> controls::EditorControls {
     let mut editor_controls = controls::EditorControls::default_bindings();
     editor_controls.unbind(controls::Action::PlayPauseEditor);

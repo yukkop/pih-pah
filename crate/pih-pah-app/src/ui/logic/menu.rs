@@ -72,7 +72,7 @@ fn register(
 fn open_level_editor(
     mut next_game_state: ResMut<NextState<GameState>>,
 ) {
-    next_game_state.set(GameState::Editor);
+    next_game_state.set(GameState::LevelEditor);
 }
 
 /// Open options window

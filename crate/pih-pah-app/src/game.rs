@@ -5,13 +5,13 @@ use crate::{ui::MenuPlugins, option::OptionsPlugins, sound::SoundPlugins};
 /// Main state of the game
 #[derive(Debug, Default, States, Hash, PartialEq, Eq, Clone)]
 pub enum GameState {
-    #[default]
     /// Main game menu
+    #[default]
     Menu,
     /// Level editor load
-    EditorLoad,
+    LevelEditorLoad,
     /// Level editor
-    Editor,
+    LevelEditor,
 }
 
 /// Main plugin of the game
@@ -36,5 +36,5 @@ pub fn open_menu(mut next_state: ResMut<NextState<GameState>>) {
 /// This function is used from any state to open the editor and
 /// teardown the current state and its resources.
 pub fn open_editor(mut next_state: ResMut<NextState<GameState>>) {
-    next_state.set(GameState::Editor);
+    next_state.set(GameState::LevelEditor);
 }
