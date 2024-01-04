@@ -6,6 +6,8 @@ use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use std::mem::discriminant;
 
+use crate::hashmap;
+use crate::util::validate_hash_map;
 use crate::{game::GameState, lobby::Lobby};
 
 #[derive(Debug, PartialEq, Clone, Reflect)]
@@ -59,14 +61,14 @@ pub enum BindingCondition {
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug, EnumIter, Reflect)]
 pub enum Action {
     /// Move forward
-    Forward,
+    LeverEditorForward,
     /// Move backward
-    Backward,
+    LevelEditorBackward,
     /// Move left
-    Left,
+    LevelEditorLeft,
     /// Move right
-    Right,
-    Jump,
+    LvelEditorRight,
+    Fly,
 }
 
 /// Binding is a combination of buttons that triggers action
@@ -82,6 +84,20 @@ impl From<ActionBinding> for Binding {
             input,
             conditions: Vec::new(),
         }
+    }
+}
+
+impl Binding {
+    pub fn new(input: ActionBinding) -> Self {
+        Self {
+            input,
+            conditions: Vec::new(),
+        }
+    }
+
+    pub fn with_condition(mut self, condition: BindingCondition) -> Self {
+        self.conditions.push(condition);
+        self
     }
 }
 
@@ -147,9 +163,27 @@ impl InputValue {
 }
 
 /// Contains all bindings for actions
-#[derive(Resource, Default, Reflect, InspectorOptions)]
+#[derive(Resource, Reflect, InspectorOptions)]
 #[reflect(Resource, InspectorOptions)]
 pub struct Controls(HashMap<Action, Vec<Binding>>); // TODO: change HashMap to Vec for faster iteration 
+
+impl Default for Controls {
+    fn default() -> Self {
+        let controls = Self(hashmap!{
+            Action::LeverEditorForward => vec![Binding::from(ActionBinding::Immutable(InputMode::Hold(ButtonCombination::Single(Button::Keyboard(KeyCode::W))))).with_condition(BindingCondition::InGameState(GameState::LevelEditor))],
+            Action::LevelEditorBackward => vec![Binding::from(ActionBinding::Immutable(InputMode::Hold(ButtonCombination::Single(Button::Keyboard(KeyCode::S))))).with_condition(BindingCondition::InGameState(GameState::LevelEditor))],
+            Action::LevelEditorLeft => vec![Binding::from(ActionBinding::Immutable(InputMode::Hold(ButtonCombination::Single(Button::Keyboard(KeyCode::A))))).with_condition(BindingCondition::InGameState(GameState::LevelEditor))],
+            Action::LvelEditorRight => vec![Binding::from(ActionBinding::Immutable(InputMode::Hold(ButtonCombination::Single(Button::Keyboard(KeyCode::D))))).with_condition(BindingCondition::InGameState(GameState::LevelEditor))],
+            Action::Fly => vec![Binding::from(ActionBinding::Immutable(InputMode::Tap(ButtonCombination::Single(Button::Keyboard(KeyCode::Space))))).with_condition(BindingCondition::InGameState(GameState::LevelEditor))]
+        });
+        
+        // If you see this error, you may add new action in menu_actions
+        // or make sure that you have only one MenuAction with the same name in the MenuActions 
+        assert!(validate_hash_map(&controls.0));
+
+        controls
+    }
+}
 
 impl Controls {
     /// Returns bindings for action
@@ -164,7 +198,7 @@ impl Controls {
 
     /// Remove all bindings for action
     pub fn remove(&mut self, action: Action) {
-        self.0.remove(&action);
+        self.0.entry(action).or_insert_with(Vec::new).clear();
     }
 
     pub fn remove_binding(&mut self, action: Action, binding: Binding) {
@@ -200,8 +234,19 @@ impl Default for PlayerInputs {
 
 impl PlayerInputs {
     /// Returns current input value for action
+    /// 
+    /// in any case faster that `get_many` method
     pub fn get(&self, action: Action) -> InputValue {
+        // SAFETY: action is always valid
+        // because we iterate over all actions in `default` method
         *self.current.get(&action).unwrap()
+    }
+
+    /// Returns current input values for actions
+    pub fn get_many(&self, actions: Vec<Action>) -> Vec<InputValue> {
+        // SAFETY: action is always valid
+        // because we iterate over all actions in `default` method
+        actions.iter().map(|action| *self.current.get(action).unwrap()).collect()
     }
 
     /// Returns `true` if current `InputValue` has become `InputValue::Boolean(true)` in this frame
@@ -373,5 +418,88 @@ fn save_input(
     } else
     {
         log::error!("You like [`Player`] is not in lobby")
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{controls::PlayerInputs, util::test::{measure_time, enable_loggings}};
+
+    use super::{Controls, Action};
+    use std::time::Duration;
+
+    /// Test for execution time for [`Controls`] get
+    /// 
+    /// Example:
+    /// ```
+    ///     cargo test --package pih-pah-app --lib --features "dev, ui_egui" -- controls::test::controls_get --exact --nocapture 
+    /// ```
+    #[test]
+    fn controls_get() {
+        enable_loggings();
+
+        let times = 100000;
+        let controls = Controls::default();
+
+        let duration = measure_time(|| {
+            for _ in 0..times {
+                controls.get(Action::LeverEditorForward);
+                controls.get(Action::LevelEditorBackward);
+                controls.get(Action::LevelEditorLeft);
+                controls.get(Action::LvelEditorRight);
+            }
+        });
+
+        log::info!("time: {:?}", duration / times);
+    }
+
+    /// Test for execution speed for [`PlayerInputs`] get
+    fn player_inputs_get() -> Duration {
+        enable_loggings();
+
+        let inputs = PlayerInputs::default();
+        let times = 100000;
+
+        let duration = measure_time(|| {
+            for _ in 0..times {
+                inputs.get(Action::LeverEditorForward);
+                inputs.get(Action::LevelEditorBackward);
+                inputs.get(Action::LevelEditorLeft);
+                inputs.get(Action::LvelEditorRight);
+            }
+        });
+
+        duration / times
+    }
+
+    /// Test for execution speed for [`PlayerInputs`] get_many
+    fn player_inputs_get_many() -> Duration {
+        enable_loggings();
+
+        let inputs = PlayerInputs::default();
+        let times = 100000;
+
+        let duration = measure_time(|| {
+            for _ in 0..times {
+                inputs.get_many(vec![Action::LeverEditorForward, Action::LevelEditorBackward, Action::LevelEditorLeft, Action::LvelEditorRight]);
+            }
+        });
+
+        duration / times
+    }
+
+    /// Test for execution speed for [`PlayerInputs`] get and get_many
+    /// 
+    /// Example:
+    /// ```
+    ///     cargo test --package pih-pah-app --lib --features "dev, ui_egui" -- controls::test::compare_player_inputs_get_and_get_many --exact --nocapture 
+    /// ```
+    #[test]
+    fn compare_player_inputs_get_and_get_many() {
+        let get = player_inputs_get();
+        let get_many = player_inputs_get_many();
+
+        log::info!("get: {:?}", get);
+        log::info!("get_many: {:?}", get_many);
     }
 }

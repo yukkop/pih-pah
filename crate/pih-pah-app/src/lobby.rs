@@ -46,4 +46,6 @@ pub struct Player {
     #[serde(skip)]
     pub inputs: PlayerInputs,
     pub color: Color,
+    #[serde(skip)]
+    pub entity: Option<Entity>,
 }

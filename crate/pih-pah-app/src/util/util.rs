@@ -68,3 +68,46 @@ macro_rules! hashmap {
         map
     }};
 }
+
+#[cfg(test)]
+pub mod test {
+    use std::time::{Instant, Duration};
+
+    use log::Level;
+
+    /// Enable logging for debug
+    pub fn enable_loggings() {
+        use std::env;
+        use std::io::Write;
+
+        let _ = env::set_var("RUST_LOG", "debug");
+        // FIXME: colorize logs
+        // TODO: colorize thorwed args
+        let _ = env_logger::builder().is_test(true)
+            .format(|buf, record| {
+                let mut style = buf.style();
+                let level = record.level();
+                match level {
+                    Level::Trace => style.set_color(env_logger::fmt::Color::Magenta),
+                    Level::Debug => style.set_color(env_logger::fmt::Color::Blue),
+                    Level::Info => style.set_color(env_logger::fmt::Color::Green),
+                    Level::Warn => style.set_color(env_logger::fmt::Color::Yellow),
+                    Level::Error => style.set_color(env_logger::fmt::Color::Red),
+                };
+
+                writeln!(buf, "{}: {}", style.value(level), record.args())
+            })
+            .try_init();
+    }
+
+
+    /// Measure time of predicate
+    pub fn measure_time<F>(predicate: F) -> Duration
+    where
+        F: FnOnce() -> (),
+    {
+        let start = Instant::now();
+        predicate();
+        start.elapsed()
+    }
+}
