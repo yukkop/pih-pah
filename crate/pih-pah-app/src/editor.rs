@@ -23,7 +23,7 @@ fn editor_controls() -> controls::EditorControls {
         controls::Binding {
             input: controls::UserInput::Chord(vec![
                 controls::Button::Keyboard(KeyCode::ControlRight),
-                controls::Button::Keyboard(KeyCode::E)
+                controls::Button::Keyboard(KeyCode::E),
             ]),
             conditions: vec![controls::BindingCondition::ListeningForText(false)],
         },

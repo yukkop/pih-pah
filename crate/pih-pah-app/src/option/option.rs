@@ -58,7 +58,7 @@ pub struct ApplyOptions;
 pub struct ExemptOptions;
 
 /// Plugin that responsible for game options
-/// 
+///
 /// SAFETY: `OptionsPlugin` depends to many plugins namely to plugins resourses
 /// therefore it should be added to `App` after them
 pub struct OptionsPlugins;
@@ -131,7 +131,7 @@ fn apply_options(
 }
 
 /// System that setup options
-/// 
+///
 /// It reads options from the file or creates new file with default options
 /// if file exists but it is not valid yaml file, corrupted rename it to `options.yaml.corrupted`
 /// and create new file with default options

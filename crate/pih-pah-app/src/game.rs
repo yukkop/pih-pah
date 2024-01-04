@@ -1,12 +1,21 @@
 use std::fmt::Formatter;
 
-use bevy::{prelude::*, utils::HashMap, ecs::system::SystemId};
+use bevy::{ecs::system::SystemId, prelude::*, utils::HashMap};
+use serde::{Deserialize, Serialize};
 use strum_macros::EnumIter;
 
-use crate::{ui::MenuPlugins, option::OptionsPlugins, sound::SoundPlugins, asset_loader::{AssetLoaderPlugins, DEFAULT_LEVEL}, util::validate_hash_map, controls::ControlsPlugin, lobby::LobbyPlugins};
+use crate::{
+    asset_loader::{AssetLoaderPlugins, DEFAULT_LEVEL},
+    controls::ControlsPlugin,
+    lobby::LobbyPlugins,
+    option::OptionsPlugins,
+    sound::SoundPlugins,
+    ui::MenuPlugins,
+    util::validate_hash_map,
+};
 
 /// Main state of the game
-#[derive(Debug, Default, States, Hash, PartialEq, Eq, Clone, Reflect)]
+#[derive(Debug, Default, States, Hash, PartialEq, Eq, Clone, Reflect, Serialize, Deserialize)]
 pub enum GameState {
     #[default]
     CoreLoading,
@@ -27,12 +36,12 @@ pub enum GameState {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter)]
 pub enum GlobalAction {
     /// Open the menu via `open_menu` system
-    /// 
-    /// Used from any `GameState` to open the menu and 
+    ///
+    /// Used from any `GameState` to open the menu and
     /// teardown the current `GameState` and its resources.
     OpenMenu,
     /// Open the editor via `open_editor` system
-    /// 
+    ///
     /// Used from any `GameState` to open the editor and
     /// teardown the current `GameState` and its resources.
     OpenLevelEditor,
@@ -76,18 +85,23 @@ pub struct GamePlugins;
 
 impl Plugin for GamePlugins {
     fn build(&self, app: &mut App) {
-        app
-            .init_resource::<CurrentLevelPath>()
+        app.init_resource::<CurrentLevelPath>()
             .init_resource::<GlobalActions>()
             .add_systems(Startup, register)
-            .add_state::<GameState>().add_plugins((MenuPlugins, SoundPlugins, AssetLoaderPlugins, LobbyPlugins, ControlsPlugin, OptionsPlugins));
+            .add_state::<GameState>()
+            .add_plugins((
+                MenuPlugins,
+                SoundPlugins,
+                AssetLoaderPlugins,
+                LobbyPlugins,
+                ControlsPlugin,
+                OptionsPlugins,
+            ));
     }
 }
 
 /// System that runs once at startup to register all menu actions systems
-fn register(
-    world: &mut World,
-) {
+fn register(world: &mut World) {
     let open_menu_id = world.register_system(open_menu);
     let open_level_editor_id = world.register_system(open_level_editor);
 
@@ -96,22 +110,21 @@ fn register(
         global_actions.insert(GlobalAction::OpenLevelEditor, open_level_editor_id);
 
         // If you see this error, you may add new action in menu_actions
-        // or make sure that you have only one MenuAction with the same name in the MenuActions 
+        // or make sure that you have only one MenuAction with the same name in the MenuActions
         assert!(validate_hash_map(&global_actions));
     }
 }
 
-
 /// Open the menu
-/// 
-/// This function is used from any `GameState` to open the menu and 
+///
+/// This function is used from any `GameState` to open the menu and
 /// teardown the current `GameState` and its resources.
 pub fn open_menu(mut next_state: ResMut<NextState<GameState>>) {
     next_state.set(GameState::Menu);
 }
 
 /// Open the editor
-/// 
+///
 /// This function is used from any `GameState` to open the editor and
 /// teardown the current `GameState` and its resources.
 pub fn open_level_editor(mut next_state: ResMut<NextState<GameState>>) {

@@ -1,9 +1,9 @@
-use bevy::prelude::*;
-use bevy_egui::EguiContexts;
 use crate::define_module;
 use crate::game::GameState;
 use crate::ui::MenuAction;
 use crate::ui::MenuActions;
+use bevy::prelude::*;
+use bevy_egui::EguiContexts;
 
 use crate::ui::egui::TRANSPARENT;
 use crate::util::Uniq::Module;
@@ -12,7 +12,7 @@ use super::rich_text;
 
 define_module!();
 
-/// Plugin that registers all egui view layer that wrapp ui logic 
+/// Plugin that registers all egui view layer that wrapp ui logic
 pub struct MenuPlugins;
 
 impl Plugin for MenuPlugins {
@@ -21,8 +21,8 @@ impl Plugin for MenuPlugins {
     }
 }
 
-/// System for update menu 
-/// 
+/// System for update menu
+///
 /// It must only draw ui and runs metods from `MenuActions` to change game states
 fn menu(
     mut commands: Commands,
@@ -56,11 +56,7 @@ fn menu(
         .movable(false)
         .show(ctx, |ui| {
             if ui
-                .button(rich_text(
-                    "Editor".to_string(),
-                    Module(&MODULE),
-                    &font,
-                ))
+                .button(rich_text("Editor".to_string(), Module(&MODULE), &font))
                 .clicked()
             {
                 commands.run_system(menu_actions.get(MenuAction::StartLevelEditing));

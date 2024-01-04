@@ -1,9 +1,9 @@
 mod menu;
 mod options;
 
+use bevy::prelude::*;
 pub use menu::*;
 pub use options::*;
-use bevy::prelude::*;
 
 pub struct UiLogicPlugins;
 

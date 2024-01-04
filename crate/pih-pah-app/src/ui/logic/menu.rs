@@ -1,7 +1,10 @@
-use bevy::{prelude::*, ecs::system::SystemId, utils::HashMap, app::AppExit};
+use bevy::{app::AppExit, ecs::system::SystemId, prelude::*, utils::HashMap};
 use strum_macros::EnumIter;
 
-use crate::{game::{GlobalAction, GlobalActions}, util::validate_hash_map};
+use crate::{
+    game::{GlobalAction, GlobalActions},
+    util::validate_hash_map,
+};
 
 /// Main menu state
 #[derive(Debug, Default, States, Hash, PartialEq, Eq, Clone)]
@@ -43,17 +46,14 @@ pub struct MenuPlugins;
 
 impl Plugin for MenuPlugins {
     fn build(&self, app: &mut App) {
-        app
-        .init_resource::<MenuActions>()
-        .add_state::<MenuWindow>()
-        .add_systems(Startup, register);
+        app.init_resource::<MenuActions>()
+            .add_state::<MenuWindow>()
+            .add_systems(Startup, register);
     }
 }
 
 /// System that runs once at startup to register all menu actions systems
-fn register(
-    world: &mut World,
-) {
+fn register(world: &mut World) {
     let open_level_editor_id = world.register_system(open_level_editor);
     let exit_from_game_id = world.register_system(exit_from_game);
     let open_options_window_id = world.register_system(open_options_window);
@@ -64,29 +64,22 @@ fn register(
         menu_actions.insert(MenuAction::OpenOptions, open_options_window_id);
 
         // If you see this error, you may add new action in menu_actions
-        // or make sure that you have only one MenuAction with the same name in the MenuActions 
+        // or make sure that you have only one MenuAction with the same name in the MenuActions
         assert!(validate_hash_map(&menu_actions));
     }
 }
 
 /// Execute `GlobalAction::OpenLevelEditor`
-fn open_level_editor(
-    mut commands: Commands,
-    global_actions: Res<GlobalActions>,
-) {
+fn open_level_editor(mut commands: Commands, global_actions: Res<GlobalActions>) {
     commands.run_system(global_actions.get(GlobalAction::OpenLevelEditor));
 }
 
 /// Open options window
-fn open_options_window(
-    mut next_window: ResMut<NextState<MenuWindow>>,
-) {
+fn open_options_window(mut next_window: ResMut<NextState<MenuWindow>>) {
     next_window.set(MenuWindow::Options);
 }
 
 /// Close application
-fn exit_from_game(
-    mut exit: EventWriter<AppExit>,
-) {
+fn exit_from_game(mut exit: EventWriter<AppExit>) {
     exit.send(AppExit);
 }

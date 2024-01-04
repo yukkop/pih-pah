@@ -1,10 +1,10 @@
+use crate::game::GameState;
+use crate::ui::{MenuWindow, OptionsAction, OptionsActions};
+use crate::util::Uniq::Module;
+use crate::{define_module, rich_text};
 use bevy::prelude::*;
 use bevy_egui::EguiContexts;
 use egui::Align2;
-use crate::game::GameState;
-use crate::ui::{MenuWindow, OptionsActions, OptionsAction};
-use crate::{rich_text, define_module};
-use crate::util::Uniq::Module;
 
 use crate::option::Options;
 
@@ -12,12 +12,17 @@ use super::rich_text;
 
 define_module!();
 
-/// Plugin that registers all egui view layer that wrapp ui logic 
+/// Plugin that registers all egui view layer that wrapp ui logic
 pub struct OptionsPlugins;
 
 impl Plugin for OptionsPlugins {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, settings_window.run_if(in_state(MenuWindow::Options)).run_if(in_state(GameState::Menu)));
+        app.add_systems(
+            Update,
+            settings_window
+                .run_if(in_state(MenuWindow::Options))
+                .run_if(in_state(GameState::Menu)),
+        );
     }
 }
 
@@ -59,23 +64,14 @@ fn settings_window(
                 ui.add(egui::Slider::new(&mut options.music_volume, 0.0..=200.0).text("%"));
             });
             ui.horizontal(|ui| {
-                if ui
-                    .button(rich_text!("Cancel", &MODULE, &font))
-                    .clicked()
-                {
+                if ui.button(rich_text!("Cancel", &MODULE, &font)).clicked() {
                     commands.run_system(options_action.get(OptionsAction::Exempt));
                     commands.run_system(options_action.get(OptionsAction::Close));
                 }
-                if ui
-                    .button(rich_text!("Apply", &MODULE, &font))
-                    .clicked()
-                {
+                if ui.button(rich_text!("Apply", &MODULE, &font)).clicked() {
                     commands.run_system(options_action.get(OptionsAction::Apply));
                 }
-                if ui
-                    .button(rich_text!("Ok", &MODULE, &font))
-                    .clicked()
-                {
+                if ui.button(rich_text!("Ok", &MODULE, &font)).clicked() {
                     commands.run_system(options_action.get(OptionsAction::Ok));
                 }
             });

@@ -1,15 +1,15 @@
 use bevy::prelude::*;
 use egui::FontId;
 
-use crate::util::Uniq;
 use crate::util::trans;
-use std::sync::Arc;
+use crate::util::Uniq;
 use bevy_egui::EguiPlugin;
+use std::sync::Arc;
 
 use super::menu::MenuPlugins;
 use super::options::OptionsPlugins;
 
-/// Plugin that registers all egui view layer that wrapp ui logic 
+/// Plugin that registers all egui view layer that wrapp ui logic
 pub struct EguiPlugins;
 
 impl Plugin for EguiPlugins {

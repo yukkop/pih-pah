@@ -1,6 +1,6 @@
 use bevy::{prelude::*, utils::HashMap};
-use serde::{Serialize, Deserialize};
 use bevy_inspector_egui::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::{controls::PlayerInputs, hashmap};
 
@@ -8,9 +8,7 @@ pub struct LobbyPlugins;
 
 impl Plugin for LobbyPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .init_resource::<Lobby>()
-            .register_type::<Lobby>();
+        app.init_resource::<Lobby>().register_type::<Lobby>();
     }
 }
 
@@ -25,9 +23,9 @@ impl Default for Lobby {
     fn default() -> Self {
         Self {
             me: PlayerId::Host,
-            players: hashmap!{
+            players: hashmap! {
                 PlayerId::Host => Player::default()
-            }
+            },
         }
     }
 }

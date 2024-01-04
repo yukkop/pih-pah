@@ -3,12 +3,12 @@ use std::env;
 use bevy::prelude::*;
 use bevy::winit::WinitWindows;
 use bevy_xpbd_3d::prelude::PhysicsPlugins;
-use pih_pah_app::ASSET_DIR;
 use pih_pah_app::game::GamePlugins;
+use pih_pah_app::ASSET_DIR;
 use winit::window::Icon;
 
-/// default value for logging 
-/// 
+/// default value for logging
+///
 /// wgpu_core fluds the logs on info level therefore we need to set it to error
 const RUST_LOG_DEFAULT: &str = "info,wgpu_core=error";
 /// The path to the icon
@@ -30,7 +30,6 @@ lazy_static::lazy_static! {
     /// If the application is running in debug mode
     pub static ref DEBUG: bool = std::env::var("DEBUG").is_ok();
 }
-
 
 fn main() {
     std::env::set_var(
@@ -56,9 +55,7 @@ fn main() {
             }),
             ..default()
         };
-        app.add_plugins((
-            DefaultPlugins.set(window_plugin_override).set(asset_plugin),
-        ))
+        app.add_plugins((DefaultPlugins.set(window_plugin_override).set(asset_plugin),))
     }
 
     #[cfg(not(feature = "dev"))]
@@ -68,11 +65,10 @@ fn main() {
     #[cfg(feature = "dev")]
     if !*DEBUG {
         default_build(&mut app, asset_plugin);
-    } 
-    else {
-        use pih_pah_app::editor::EditorPlugins;
-        use bevy::window::WindowResolution;
+    } else {
         use bevy::window::PresentMode;
+        use bevy::window::WindowResolution;
+        use pih_pah_app::editor::EditorPlugins;
 
         let window_plugin_override = WindowPlugin {
             primary_window: Some(Window {
@@ -89,7 +85,7 @@ fn main() {
         };
         app.add_plugins((
             DefaultPlugins.set(window_plugin_override).set(asset_plugin),
-            EditorPlugins
+            EditorPlugins,
         ));
     }
 
@@ -98,7 +94,6 @@ fn main() {
     app.add_plugins(PhysicsPlugins::new(Update))
         .add_systems(Startup, set_window_icon)
         .add_plugins(GamePlugins);
-
 
     info!("Starting {APP_NAME} v{}", *VERSION);
 

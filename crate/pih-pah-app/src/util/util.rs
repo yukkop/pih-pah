@@ -10,14 +10,15 @@ pub fn module_cut_out<'a>(module: &'a str, part_to_remove: &str) -> &'a str {
         .split::<'a, &str>("::")
         .filter(|&part| part != part_to_remove)
         .collect::<Vec<&str>>()
-        .join("::").leak()
+        .join("::")
+        .leak()
 }
 
 use bevy::utils::hashbrown::HashMap;
 use strum::IntoEnumIterator;
 
 /// Validate that all enum variants are in the hash map
-pub fn validate_hash_map<K, V>(hash_map: &HashMap<K, V>) -> bool 
+pub fn validate_hash_map<K, V>(hash_map: &HashMap<K, V>) -> bool
 where
     K: Eq + std::hash::Hash + Copy + IntoEnumIterator,
     K::Iterator: Iterator<Item = K>,
@@ -43,7 +44,7 @@ macro_rules! define_module {
         use crate::util::module_cat_off;
 
         lazy_static::lazy_static! {
-            /// Module path for this module, 
+            /// Module path for this module,
             /// Use it for translate text like `trans("text", Module(&MODULE))`
             /// where `Module(&MODULE)` is `Uniq` id for translate text
             static ref MODULE: &'static str = module_cat_off(module_path!());
@@ -71,9 +72,9 @@ macro_rules! hashmap {
 
 #[cfg(test)]
 pub mod test {
-    use std::time::{Instant, Duration};
+    use std::time::{Duration, Instant};
 
-    use bevy::prelude::{DerefMut, Deref};
+    use bevy::prelude::{Deref, DerefMut};
     use log::Level;
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deref, DerefMut)]
@@ -119,7 +120,6 @@ pub mod test {
         fn from(times: u32) -> Self {
             Self(times as u64)
         }
-        
     }
 
     impl From<i32> for Times {
@@ -135,7 +135,6 @@ pub mod test {
         }
     }
 
-
     /// Enable logging for debug
     pub fn enable_loggings() {
         use std::env;
@@ -144,7 +143,8 @@ pub mod test {
         let _ = env::set_var("RUST_LOG", "debug");
         // FIXME: colorize logs
         // TODO: colorize thorwed args
-        let _ = env_logger::builder().is_test(true)
+        let _ = env_logger::builder()
+            .is_test(true)
             .format(|buf, record| {
                 let mut style = buf.style();
                 let level = record.level();

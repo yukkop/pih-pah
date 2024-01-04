@@ -1,8 +1,14 @@
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
-use std::{path::{Path, PathBuf}, env}; 
+use std::{
+    env,
+    path::{Path, PathBuf},
+};
 
-use crate::{game::{GameState, CurrentLevelPath}, ASSET_DIR};
+use crate::{
+    game::{CurrentLevelPath, GameState},
+    ASSET_DIR,
+};
 
 /// The name of the custom asset file for the core assets
 const CORE_ASSET: &str = "core.assets.ron";
@@ -21,21 +27,20 @@ const LEVEL_DIR: &str = "level";
 /// The default level name
 pub const DEFAULT_LEVEL: &str = "default";
 
-/// 
+///
 #[derive(AssetCollection, Resource)]
 pub struct CoreAsset {}
 
-/// Assets for the current level, that is reloade 
+/// Assets for the current level, that is reloade
 /// when the level is changed, or loaded
 #[derive(AssetCollection, Resource)]
-pub struct LevelAsset  {}
+pub struct LevelAsset {}
 
 pub struct AssetLoaderPlugins;
 
 impl Plugin for AssetLoaderPlugins {
     fn build(&self, app: &mut App) {
-        app
-            .add_systems(OnEnter(GameState::LevelEditorPreload), link_level)
+        app.add_systems(OnEnter(GameState::LevelEditorPreload), link_level)
             .add_loading_state(
                 LoadingState::new(GameState::CoreLoading).continue_to_state(GameState::Menu),
             )
@@ -45,7 +50,8 @@ impl Plugin for AssetLoaderPlugins {
             )
             .add_collection_to_loading_state::<_, CoreAsset>(GameState::CoreLoading)
             .add_loading_state(
-                LoadingState::new(GameState::LevelEditorLoad).continue_to_state(GameState::LevelEditor),
+                LoadingState::new(GameState::LevelEditorLoad)
+                    .continue_to_state(GameState::LevelEditor),
             )
             .add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
                 GameState::LevelEditorLoad,
@@ -91,15 +97,14 @@ fn link_level(
             // TODO: if level directory does not exist, this is an error
             // but we need open at least default level
             // TODO: if default level does not exist, this is an error
-            // but we need download it from server 
+            // but we need download it from server
             log::error!("Failed to create symlink: {err}")
         }
-
     }
 
     #[cfg(target_os = "linux")]
     {
-        use std::os::unix::fs::symlink; 
+        use std::os::unix::fs::symlink;
 
         if !original.exists() {
             match fs::create_dir_all(&original) {
@@ -110,18 +115,14 @@ fn link_level(
             println!("Directory already exists");
         }
 
-
-        if let Err(err) = symlink(
-            &original,
-            &link,
-        ) {
+        if let Err(err) = symlink(&original, &link) {
             log::trace!("original: {:?}, link: {:?}", original, link);
 
             // TODO: if symlink already exists, this is not an error
             // TODO: if level directory does not exist, this is an error
             // but we need open at least default level
             // TODO: if default level does not exist, this is an error
-            // but we need download it from server 
+            // but we need download it from server
             log::error!("Failed to create symlink: {err}");
         }
     }
