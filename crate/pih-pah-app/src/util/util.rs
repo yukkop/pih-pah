@@ -73,7 +73,68 @@ macro_rules! hashmap {
 pub mod test {
     use std::time::{Instant, Duration};
 
+    use bevy::prelude::{DerefMut, Deref};
     use log::Level;
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deref, DerefMut)]
+    pub struct Times(u64);
+
+    impl Into<u64> for Times {
+        fn into(self) -> u64 {
+            self.0
+        }
+    }
+
+    impl Into<usize> for Times {
+        fn into(self) -> usize {
+            self.0 as usize
+        }
+    }
+
+    impl Into<u32> for Times {
+        fn into(self) -> u32 {
+            self.0 as u32
+        }
+    }
+
+    impl Into<i32> for Times {
+        fn into(self) -> i32 {
+            self.0 as i32
+        }
+    }
+
+    impl From<u64> for Times {
+        fn from(times: u64) -> Self {
+            Self(times)
+        }
+    }
+
+    impl From<usize> for Times {
+        fn from(times: usize) -> Self {
+            Self(times as u64)
+        }
+    }
+
+    impl From<u32> for Times {
+        fn from(times: u32) -> Self {
+            Self(times as u64)
+        }
+        
+    }
+
+    impl From<i32> for Times {
+        fn from(times: i32) -> Self {
+            Self(times as u64)
+        }
+    }
+
+    impl Default for Times {
+        /// Value that may be enough for most cases
+        fn default() -> Self {
+            Self(100000)
+        }
+    }
+
 
     /// Enable logging for debug
     pub fn enable_loggings() {
@@ -100,14 +161,16 @@ pub mod test {
             .try_init();
     }
 
-
     /// Measure time of predicate
-    pub fn measure_time<F>(predicate: F) -> Duration
+    pub fn measure_time<F: Copy>(predicate: F, times: Times) -> Duration
     where
         F: FnOnce() -> (),
     {
         let start = Instant::now();
-        predicate();
-        start.elapsed()
+        for _ in 0..times.clone().into() {
+            predicate();
+        }
+        let global_duration = start.elapsed();
+        global_duration / times.into()
     }
 }

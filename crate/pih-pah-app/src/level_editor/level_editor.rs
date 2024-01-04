@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 
-use crate::{game::GameState, lobby::Lobby, controls::Action};
+use crate::{game::GameState, lobby::{Lobby, PlayerId}, controls::Action};
 
+// TODO: better naming
+#[derive(Debug, Default, Component)]
 pub struct EditorNavigator;
 
 pub struct LevelEditorPlugins;
@@ -15,13 +17,18 @@ impl Plugin for LevelEditorPlugins {
 
 fn navigation(
     lobby: ResMut<Lobby>,
+    mut query: Query<(&PlayerId, &mut Transform), With<EditorNavigator>>,
 ) {
+    for (player_id, mut transform) in query.iter_mut() {
+        if let Some(player) = lobby.players.get(player_id) {
+            let dx = (player.inputs.get(Action::LeverEditorForward).as_boolean() as i8 - player.inputs.get(Action::LevelEditorBackward).as_boolean() as i8) as f32;
+            let dy = (player.inputs.get(Action::LvelEditorRight).as_boolean() as i8 - player.inputs.get(Action::LevelEditorLeft).as_boolean() as i8) as f32;
 
-    for (_player_id, players) in lobby.players.iter() {
-        let _dx = (players.inputs.get(Action::LeverEditorForward).as_boolean() as i8 - players.inputs.get(Action::LevelEditorBackward).as_boolean() as i8) as f32;
-        let _dy = (players.inputs.get(Action::LvelEditorRight).as_boolean() as i8 - players.inputs.get(Action::LevelEditorLeft).as_boolean() as i8) as f32;
-        if players.inputs.get(Action::LevelEditorLeft).into() {
-            
+            transform.translation.x += dx;
+            transform.translation.y += dy;
+        } else {
+            // TODO: global error handler like in `bevy_renet`
+            log::error!("Player {:?} not found in lobby, but exist in world", player_id)
         }
     }
 }

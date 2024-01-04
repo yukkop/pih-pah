@@ -32,7 +32,7 @@ impl Default for Lobby {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, Reflect)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, Reflect, Component)]
 pub enum PlayerId {
     /// Host or alone
     Host,

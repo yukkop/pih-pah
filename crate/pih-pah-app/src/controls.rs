@@ -423,7 +423,7 @@ fn save_input(
 
 #[cfg(test)]
 mod test {
-    use crate::{controls::PlayerInputs, util::test::{measure_time, enable_loggings}};
+    use crate::{controls::PlayerInputs, util::test::{measure_time, enable_loggings, Times}};
 
     use super::{Controls, Action};
     use std::time::Duration;
@@ -438,19 +438,16 @@ mod test {
     fn controls_get() {
         enable_loggings();
 
-        let times = 100000;
         let controls = Controls::default();
 
         let duration = measure_time(|| {
-            for _ in 0..times {
                 controls.get(Action::LeverEditorForward);
                 controls.get(Action::LevelEditorBackward);
                 controls.get(Action::LevelEditorLeft);
                 controls.get(Action::LvelEditorRight);
-            }
-        });
+        }, Times::default());
 
-        log::info!("time: {:?}", duration / times);
+        log::info!("time: {:?}", duration);
     }
 
     /// Test for execution speed for [`PlayerInputs`] get
@@ -458,18 +455,15 @@ mod test {
         enable_loggings();
 
         let inputs = PlayerInputs::default();
-        let times = 100000;
 
         let duration = measure_time(|| {
-            for _ in 0..times {
                 inputs.get(Action::LeverEditorForward);
                 inputs.get(Action::LevelEditorBackward);
                 inputs.get(Action::LevelEditorLeft);
                 inputs.get(Action::LvelEditorRight);
-            }
-        });
+        }, Times::default());
 
-        duration / times
+        duration
     }
 
     /// Test for execution speed for [`PlayerInputs`] get_many
@@ -477,15 +471,12 @@ mod test {
         enable_loggings();
 
         let inputs = PlayerInputs::default();
-        let times = 100000;
 
         let duration = measure_time(|| {
-            for _ in 0..times {
                 inputs.get_many(vec![Action::LeverEditorForward, Action::LevelEditorBackward, Action::LevelEditorLeft, Action::LvelEditorRight]);
-            }
-        });
+        }, Times::default());
 
-        duration / times
+        duration
     }
 
     /// Test for execution speed for [`PlayerInputs`] get and get_many
@@ -501,5 +492,28 @@ mod test {
 
         log::info!("get: {:?}", get);
         log::info!("get_many: {:?}", get_many);
+    }
+
+    /// Test for execution speed for [`InputValue`] casting
+    #[test]
+    fn action_casting() {
+        enable_loggings();
+
+        let inputs = PlayerInputs::default();
+
+        let duration = measure_time(|| {
+            let _ = (inputs.get(Action::LeverEditorForward).as_boolean() as i8 - inputs.get(Action::LevelEditorBackward).as_boolean() as i8) as f32;
+        }, 10000000.into());
+
+        log::info!("with casting: {:?}", duration);
+
+        let inputs = PlayerInputs::default();
+
+        let duration = measure_time(|| {
+            let _ = inputs.get(Action::LeverEditorForward);
+            let _ = inputs.get(Action::LevelEditorBackward);
+        }, 10000000.into());
+
+        log::info!("without casting: {:?}", duration);
     }
 }
