@@ -12,7 +12,7 @@ const CURRENT_LEVEL_ASSET: &str = "current_level.assets.ron";
 
 /// The path to the current level directory
 /// that is symlinked to the chosen level directory
-/// in `LEVEL_DIR`
+/// in [`LEVEL_DIR`]
 const CURRENT_LEVEL_PATH: &str = "current_level";
 
 /// The directory where the levels are located
@@ -62,7 +62,7 @@ fn link_level(
     mut next_game_state: ResMut<NextState<GameState>>,
 ) {
     // TODO: you really want execute `root_asset_path` every time?
-    let asset_root = root_asset_path(ASSET_DIR);
+    let asset_root = root_path(ASSET_DIR);
     let link = asset_root.join(format!("{CURRENT_LEVEL_PATH}"));
     let original = asset_root.join(LEVEL_DIR).join(current_level_path.get());
 
@@ -129,7 +129,8 @@ fn link_level(
     next_game_state.set(GameState::LevelEditorLoad);
 }
 
-fn root_asset_path<P: AsRef<Path>>(path: P) -> PathBuf {
+/// Returns path to the root directory nad concatenates it with `path`
+fn root_path<P: AsRef<Path>>(path: P) -> PathBuf {
     let root_path = get_base_path().join(path.as_ref());
     if let Err(e) = std::fs::create_dir_all(&root_path) {
         warn!(
@@ -140,6 +141,7 @@ fn root_asset_path<P: AsRef<Path>>(path: P) -> PathBuf {
     root_path
 }
 
+/// Returns the base path of the application
 fn get_base_path() -> PathBuf {
     if let Ok(manifest_dir) = env::var("BEVY_ASSET_ROOT") {
         PathBuf::from(manifest_dir)

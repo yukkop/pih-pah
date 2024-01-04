@@ -3,10 +3,10 @@ use std::fmt::Formatter;
 use bevy::{prelude::*, utils::HashMap, ecs::system::SystemId};
 use strum_macros::EnumIter;
 
-use crate::{ui::MenuPlugins, option::OptionsPlugins, sound::SoundPlugins, asset_loader::{AssetLoaderPlugins, DEFAULT_LEVEL}, util::validate_hash_map};
+use crate::{ui::MenuPlugins, option::OptionsPlugins, sound::SoundPlugins, asset_loader::{AssetLoaderPlugins, DEFAULT_LEVEL}, util::validate_hash_map, controls::ControlsPlugin, lobby::LobbyPlugins};
 
 /// Main state of the game
-#[derive(Debug, Default, States, Hash, PartialEq, Eq, Clone)]
+#[derive(Debug, Default, States, Hash, PartialEq, Eq, Clone, Reflect)]
 pub enum GameState {
     #[default]
     CoreLoading,
@@ -80,7 +80,7 @@ impl Plugin for GamePlugins {
             .init_resource::<CurrentLevelPath>()
             .init_resource::<GlobalActions>()
             .add_systems(Startup, register)
-            .add_state::<GameState>().add_plugins((MenuPlugins, SoundPlugins, AssetLoaderPlugins, OptionsPlugins));
+            .add_state::<GameState>().add_plugins((MenuPlugins, SoundPlugins, AssetLoaderPlugins, LobbyPlugins, ControlsPlugin, OptionsPlugins));
     }
 }
 

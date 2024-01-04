@@ -3675,6 +3675,7 @@ name = "pih-pah-app"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy-inspector-egui",
  "bevy_asset_loader",
  "bevy_editor_pls",
  "bevy_egui",

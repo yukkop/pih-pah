@@ -57,3 +57,14 @@ macro_rules! rich_text {
         rich_text($text.to_string(), Module($module), $font)
     };
 }
+
+#[macro_export]
+macro_rules! hashmap {
+    ($( $key: expr => $val: expr ),*) => {{
+        let mut map = HashMap::new();
+        $(
+            map.insert($key, $val);
+        )*
+        map
+    }};
+}
