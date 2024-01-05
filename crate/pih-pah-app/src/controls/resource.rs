@@ -9,37 +9,91 @@ use strum_macros::EnumIter;
 
 use crate::hashmap;
 use crate::util::validate_hash_map;
-use crate::{game::GameState, lobby::Lobby};
+use crate::game::GameState;
 
 #[derive(Debug, PartialEq, Clone, Reflect, InspectorOptions, Serialize, Deserialize)]
 #[reflect(InspectorOptions)]
-pub enum Button {
+pub enum InputType {
     Keyboard(KeyCode),
-    Mouse(MouseButton),
-    // TODO: add MouseAxis,
+    Mouse(MouseInput),
+    // TODO: Gamepad(GamepadButtonType),
+    // TODO: Touch screen
+}
+
+#[derive(Debug, PartialEq, Clone, Reflect, InspectorOptions, Serialize, Deserialize)]
+#[reflect(InspectorOptions)]
+pub enum MouseInput {
+    Button(MouseButton),
+    Axis(AxisName),
+    Wheel(AxisName)
+    // TODO: CursorPosition
+    // TODO: TouchPad inputs
+}
+
+#[derive(Debug, PartialEq, Clone, Reflect, InspectorOptions, Serialize, Deserialize)]
+#[reflect(InspectorOptions)]
+pub enum AxisName {
+    Horizontal,
+    Vertical,
 }
 
 /// Represents a binding that can be changed by the player
 #[derive(Debug, PartialEq, Clone, Reflect, InspectorOptions, Serialize, Deserialize)]
 #[reflect(InspectorOptions)]
-pub enum ActionBinding {
+pub enum OptionsMode {
     /// Represents a binding that cannot be changed as it is crucial to the game logic
-    Immutable(InputMode),
+    Immutable,
     /// Represents a binding that the player can customize
-    Customizable(InputMode),
+    Customizable,
 }
 
 /// Represents the manner in which input is registered
 #[derive(Debug, PartialEq, Clone, Reflect, InspectorOptions, Serialize, Deserialize)]
 #[reflect(InspectorOptions)]
-pub enum InputMode {
+pub enum ActivationMode {
     /// Action is triggered when the button is pressed
-    Hold(ButtonCombination),
+    Hold,
     /// Action is triggered when the button is pressed
     /// and cannot be triggered again until the button is released
     /// you don't need to release all buttons in chord
     /// you can release only last pressed button
-    Tap(ButtonCombination),
+    Tap,
+}
+
+#[derive(Reflect, InspectorOptions, Serialize, Deserialize)]
+#[reflect(InspectorOptions)]
+pub struct ActivationOptions {
+    /// Manner in which input is registered
+    pub mode: ActivationMode,
+    /// Possibility to change this activation mode
+    pub option: OptionsMode,
+    /// Delay between activation
+    pub delay: f32,
+}
+
+impl Default for ActivationOptions {
+    fn default() -> Self {
+        Self {
+            mode: ActivationMode::Tap, // Because it is more safe
+            option: OptionsMode::Immutable,
+            delay: 0.05, // 20 times per second; 14 - world record?
+        }
+    }
+}
+
+impl ActivationOptions {
+    pub fn new(mode: ActivationMode, option: OptionsMode) -> Self {
+        Self {
+            mode,
+            option,
+            ..Default::default()
+        }
+    }
+
+    pub fn with_delay(mut self, delay: f32) -> Self {
+        self.delay = delay;
+        self
+    }
 }
 
 /// Represents a combination of buttons that triggers an action
@@ -47,9 +101,9 @@ pub enum InputMode {
 #[reflect(InspectorOptions)]
 pub enum ButtonCombination {
     /// Single button press
-    Single(Button),
+    Single(InputType),
     /// Chord is a combination of buttons that must be pressed at the same time
-    Chord(Vec<Button>),
+    Chord(Vec<InputType>),
 }
 
 #[derive(Debug, PartialEq, Clone, Reflect, InspectorOptions, Serialize, Deserialize)]
@@ -77,6 +131,7 @@ pub enum BindingCondition {
     Serialize,
     Deserialize,
 )]
+
 #[reflect(InspectorOptions)]
 pub enum Action {
     /// Move forward
@@ -93,12 +148,12 @@ pub enum Action {
 /// Binding is a combination of buttons that triggers action
 #[derive(Debug, PartialEq, Clone, Reflect, Serialize, Deserialize)]
 pub struct Binding {
-    pub input: ActionBinding,
+    pub input: ButtonCombination,
     pub conditions: Vec<BindingCondition>,
 }
 
-impl From<ActionBinding> for Binding {
-    fn from(input: ActionBinding) -> Self {
+impl From<ButtonCombination> for Binding {
+    fn from(input: ButtonCombination) -> Self {
         Binding {
             input,
             conditions: Vec::new(),
@@ -107,7 +162,7 @@ impl From<ActionBinding> for Binding {
 }
 
 impl Binding {
-    pub fn new(input: ActionBinding) -> Self {
+    pub fn new(input: ButtonCombination) -> Self {
         Self {
             input,
             conditions: Vec::new(),
@@ -189,32 +244,105 @@ impl InputValue {
 
 #[derive(Reflect, InspectorOptions, Serialize, Deserialize)]
 #[reflect(InspectorOptions)]
+pub struct Bindings {
+    /// List of bindings for action
+    list: Vec<Binding>,
+    /// Possibility to change this binding
+    options: OptionsMode,
+}
+
+impl Default for Bindings {
+    fn default() -> Self {
+        Self {
+            list: Vec::new(),
+            options: OptionsMode::Immutable,
+        }
+    }
+}
+
+impl Bindings {
+    pub fn new(bindings: Vec<Binding>, options: OptionsMode) -> Self {
+        Self {
+            list: bindings,
+            options,
+            ..Default::default()
+        }
+    }
+
+    pub fn push(&mut self, binding: Binding) {
+        if self.options == OptionsMode::Immutable {
+            warn!("You try to push binding to immutable bindings");
+            return;
+        }
+        self.list.push(binding);
+    }
+
+    pub fn clear(&mut self) {
+        if self.options == OptionsMode::Immutable {
+            warn!("You try to clear immutable bindings");
+            return;
+        }
+        self.list.clear();
+    }
+
+    pub fn retain<F>(&mut self, f: F)
+    where
+        F: FnMut(&Binding) -> bool,
+    {
+        if self.options == OptionsMode::Immutable {
+            warn!("You try to retain immutable bindings");
+            return;
+        }
+        self.list.retain(f);
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Binding> {
+        self.list.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> Result<impl Iterator<Item = &mut Binding>, Box<dyn error::Error>> {
+        if self.options == OptionsMode::Immutable {
+            warn!("You try to iterate over immutable bindings");
+            return  Err("You try to iterate over immutable bindings".into());
+        }
+        Ok(self.list.iter_mut())
+    }
+
+    pub fn is_customizable(&self) -> bool {
+        self.options == OptionsMode::Customizable
+    }
+
+    pub fn is_immutable(&self) -> bool {
+        self.options == OptionsMode::Immutable
+    }
+}
+
+/// Contains all bindings for action
+/// and different activation options
+#[derive(Reflect, InspectorOptions, Serialize, Deserialize)]
+#[reflect(InspectorOptions)]
 pub struct BindingConfig {
-    pub bindings: Vec<Binding>,
+    pub bindings: Bindings,
     #[serde(skip)]
-    pub delay: f32, // TODO: delay struct
+    pub activation: ActivationOptions,
 }
 
 impl Default for BindingConfig {
     fn default() -> Self {
         Self {
-            bindings: Vec::new(),
-            delay: 0.1,
+            bindings: Bindings::default(),
+            activation: ActivationOptions::default(),
         }
     }
 }
 
 impl BindingConfig {
-    pub fn new(binding: Vec<Binding>) -> Self {
+    pub fn new(binding: Bindings, activation: ActivationOptions) -> Self {
         Self {
             bindings: binding,
+            activation: activation,
             ..Default::default()
         }
-    }
-
-    pub fn with_delay(mut self, delay: f32) -> Self {
-        self.delay = delay;
-        self
     }
 }
 
@@ -227,11 +355,41 @@ pub struct Controls(HashMap<Action, BindingConfig>); // TODO: change HashMap to 
 impl Default for Controls {
     fn default() -> Self {
         let controls = Self(hashmap! {
-            Action::LeverEditorForward => BindingConfig::new(vec![Binding::from(ActionBinding::Immutable(InputMode::Hold(ButtonCombination::Single(Button::Keyboard(KeyCode::W))))).with_condition(BindingCondition::InGameState(GameState::LevelEditor))]),
-            Action::LevelEditorBackward => BindingConfig::new(vec![Binding::from(ActionBinding::Immutable(InputMode::Hold(ButtonCombination::Single(Button::Keyboard(KeyCode::S))))).with_condition(BindingCondition::InGameState(GameState::LevelEditor))]),
-            Action::LevelEditorLeft => BindingConfig::new(vec![Binding::from(ActionBinding::Immutable(InputMode::Hold(ButtonCombination::Single(Button::Keyboard(KeyCode::A))))).with_condition(BindingCondition::InGameState(GameState::LevelEditor))]),
-            Action::LevelEditorRight => BindingConfig::new(vec![Binding::from(ActionBinding::Immutable(InputMode::Hold(ButtonCombination::Single(Button::Keyboard(KeyCode::D))))).with_condition(BindingCondition::InGameState(GameState::LevelEditor))]),
-            Action::LevelEditorFly => BindingConfig::new(vec![Binding::from(ActionBinding::Immutable(InputMode::Tap(ButtonCombination::Single(Button::Keyboard(KeyCode::Space))))).with_condition(BindingCondition::InGameState(GameState::LevelEditor))])
+            Action::LeverEditorForward => BindingConfig::new(
+                Bindings::new(
+                    vec![Binding::from(ButtonCombination::Single(InputType::Keyboard(KeyCode::W))).with_condition(BindingCondition::InGameState(GameState::LevelEditor))],
+                    OptionsMode::Customizable,
+                ),
+                ActivationOptions::new(ActivationMode::Hold, OptionsMode::Immutable),
+            ),
+            Action::LevelEditorBackward => BindingConfig::new(
+                Bindings::new(
+                    vec![Binding::from(ButtonCombination::Single(InputType::Keyboard(KeyCode::S))).with_condition(BindingCondition::InGameState(GameState::LevelEditor))],
+                    OptionsMode::Customizable,
+                ),
+                ActivationOptions::new(ActivationMode::Hold, OptionsMode::Immutable),
+            ),
+            Action::LevelEditorLeft => BindingConfig::new(
+                Bindings::new(
+                    vec![Binding::from(ButtonCombination::Single(InputType::Keyboard(KeyCode::A))).with_condition(BindingCondition::InGameState(GameState::LevelEditor))],
+                    OptionsMode::Customizable,
+                ),
+                ActivationOptions::new(ActivationMode::Hold, OptionsMode::Immutable),
+            ),
+            Action::LevelEditorRight => BindingConfig::new(
+                Bindings::new(
+                    vec![Binding::from(ButtonCombination::Single(InputType::Keyboard(KeyCode::D))).with_condition(BindingCondition::InGameState(GameState::LevelEditor))],
+                    OptionsMode::Customizable,
+                ),
+                ActivationOptions::new(ActivationMode::Hold, OptionsMode::Immutable),
+            ),
+            Action::LevelEditorFly => BindingConfig::new(
+                Bindings::new(
+                    vec![Binding::from(ButtonCombination::Single(InputType::Keyboard(KeyCode::Space))).with_condition(BindingCondition::InGameState(GameState::LevelEditor))],
+                    OptionsMode::Customizable,
+                ),
+                ActivationOptions::new(ActivationMode::Hold, OptionsMode::Customizable),
+            )
         });
 
         // If you see this error, you may add new action in menu_actions
@@ -410,220 +568,5 @@ impl PlayerInputs {
             *current_input = *value;
         }
         Ok(())
-    }
-}
-
-pub struct ControlsPlugin;
-
-impl Plugin for ControlsPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<Controls>()
-            .register_type::<Controls>()
-            .add_systems(Update, save_input);
-    }
-}
-
-/// Process all hard inputs and bindings to update [`PlayerInputs`]
-fn save_input(
-    keyboard_input: Res<Input<KeyCode>>,
-    mouse_input: Res<Input<MouseButton>>,
-    mut lobby: ResMut<Lobby>,
-    controls: Res<Controls>,
-    game_state: Res<State<GameState>>,
-) {
-    let me = lobby.me;
-    if let Some(player) = lobby.players.get_mut(&me) {
-        for (action, config) in controls.iter() {
-            'bindings_loop: for binding in &config.bindings {
-                for condition in &binding.conditions {
-                    match condition {
-                        BindingCondition::InGameState(state) => {
-                            if state != game_state.get() {
-                                continue 'bindings_loop;
-                            }
-                        }
-                        BindingCondition::DuringPauseMenu(_value) => {
-                            todo!();
-                        }
-                        BindingCondition::ListeningForText(_value) => {
-                            todo!();
-                        }
-                    }
-                    break;
-                }
-
-                // TODO: match on one condition look like your ugly face
-                match &binding.input {
-                    ActionBinding::Customizable(mode) | ActionBinding::Immutable(mode) => {
-                        match mode {
-                            InputMode::Hold(button) | InputMode::Tap(button) => {
-                                match button {
-                                    ButtonCombination::Single(button) => match button {
-                                        Button::Keyboard(key) => {
-                                            player
-                                                .inputs
-                                                .forced_set(*action, keyboard_input.pressed(*key));
-                                        }
-                                        Button::Mouse(button) => {
-                                            player.inputs.forced_set(
-                                                *action,
-                                                mouse_input.get_pressed().any(|b| b == button),
-                                            );
-                                        }
-                                    },
-                                    ButtonCombination::Chord(buttons) => {
-                                        // If any button in chord is not pressed we skip this `binding`
-                                        for button in buttons {
-                                            match button {
-                                                Button::Keyboard(key) => {
-                                                    if !keyboard_input.pressed(*key) {
-                                                        continue 'bindings_loop;
-                                                    }
-                                                }
-                                                Button::Mouse(button) => {
-                                                    if !mouse_input
-                                                        .get_pressed()
-                                                        .any(|b| b == button)
-                                                    {
-                                                        continue 'bindings_loop;
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        // TODO: should be [`Chord`](ButtonCombination::Chord) only [`Boolean`](InputValue::Boolean) type
-                                        player.inputs.forced_set(*action, true);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    } else {
-        log::error!("You like [`Player`] is not in lobby")
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use crate::{
-        controls::PlayerInputs,
-        util::test::{enable_loggings, measure_time, Times},
-    };
-
-    use super::{Action, Controls};
-    use std::time::Duration;
-
-    /// Test for execution time for [`Controls`] get
-    ///
-    /// Example:
-    /// ```
-    ///     cargo test --package pih-pah-app --lib --features "dev, ui_egui" -- controls::test::controls_get --exact --nocapture
-    /// ```
-    #[test]
-    fn controls_get() {
-        enable_loggings();
-
-        let controls = Controls::default();
-
-        let duration = measure_time(
-            || {
-                controls.get(Action::LeverEditorForward);
-                controls.get(Action::LevelEditorBackward);
-                controls.get(Action::LevelEditorLeft);
-                controls.get(Action::LevelEditorRight);
-            },
-            Times::default(),
-        );
-
-        log::info!("time: {:?}", duration);
-    }
-
-    /// Test for execution speed for [`PlayerInputs`] get
-    fn player_inputs_get() -> Duration {
-        enable_loggings();
-
-        let inputs = PlayerInputs::default();
-
-        let duration = measure_time(
-            || {
-                inputs.get(Action::LeverEditorForward);
-                inputs.get(Action::LevelEditorBackward);
-                inputs.get(Action::LevelEditorLeft);
-                inputs.get(Action::LevelEditorRight);
-            },
-            Times::default(),
-        );
-
-        duration
-    }
-
-    /// Test for execution speed for [`PlayerInputs`] get_many
-    fn player_inputs_get_many() -> Duration {
-        enable_loggings();
-
-        let inputs = PlayerInputs::default();
-
-        let duration = measure_time(
-            || {
-                inputs.get_many(vec![
-                    Action::LeverEditorForward,
-                    Action::LevelEditorBackward,
-                    Action::LevelEditorLeft,
-                    Action::LevelEditorRight,
-                ]);
-            },
-            Times::default(),
-        );
-
-        duration
-    }
-
-    /// Test for execution speed for [`PlayerInputs`] get and get_many
-    ///
-    /// Example:
-    /// ```
-    ///     cargo test --package pih-pah-app --lib --features "dev, ui_egui" -- controls::test::compare_player_inputs_get_and_get_many --exact --nocapture
-    /// ```
-    #[test]
-    fn compare_player_inputs_get_and_get_many() {
-        let get = player_inputs_get();
-        let get_many = player_inputs_get_many();
-
-        log::info!("get: {:?}", get);
-        log::info!("get_many: {:?}", get_many);
-    }
-
-    /// Test for execution speed for [`InputValue`] casting
-    #[test]
-    fn action_casting() {
-        enable_loggings();
-
-        let inputs = PlayerInputs::default();
-
-        let duration = measure_time(
-            || {
-                let _ = (inputs.get(Action::LeverEditorForward).as_boolean() as i8
-                    - inputs.get(Action::LevelEditorBackward).as_boolean() as i8)
-                    as f32;
-            },
-            10000000.into(),
-        );
-
-        log::info!("with casting: {:?}", duration);
-
-        let inputs = PlayerInputs::default();
-
-        let duration = measure_time(
-            || {
-                let _ = inputs.get(Action::LeverEditorForward);
-                let _ = inputs.get(Action::LevelEditorBackward);
-            },
-            10000000.into(),
-        );
-
-        log::info!("without casting: {:?}", duration);
     }
 }
